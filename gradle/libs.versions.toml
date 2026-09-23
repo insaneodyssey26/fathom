@@ -12,9 +12,12 @@ androidx-testExt = "1.3.0"
 composeMultiplatform = "1.12.0"
 junit = "4.13.2"
 kotlin = "2.4.20"
+kotlinx-coroutines = "1.10.1"
 material3 = "1.12.0-alpha03"
 
 [libraries]
+kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinx-coroutines" }
+kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinx-coroutines" }
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
 kotlin-testJunit = { module = "org.jetbrains.kotlin:kotlin-test-junit", version.ref = "kotlin" }
 junit = { module = "junit:junit", version.ref = "junit" }
