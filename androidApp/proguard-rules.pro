@@ -1,21 +1,25 @@
-# Add project specific ProGuard rules here.
-# You can control the set of applied configuration files using the
-# proguardFiles setting in build.gradle.
-#
-# For more details, see
-#   http://developer.android.com/guide/developing/tools/proguard.html
+# Fathom Production ProGuard & R8 Optimization Rules
 
-# If your project uses WebView with JS, uncomment the following
-# and specify the fully qualified class name to the JavaScript interface
-# class:
-#-keepclassmembers class fqcn.of.javascript.interface.for.webview {
-#   public *;
-#}
+# 1. SQLDelight & SQLite Driver Preservation
+-keep class app.cash.sqldelight.** { *; }
+-keep class com.masum.fathom.core.database.** { *; }
+-dontwarn app.cash.sqldelight.**
 
-# Uncomment this to preserve the line number information for
-# debugging stack traces.
-#-keepattributes SourceFile,LineNumberTable
+# 2. Kotlin Coroutines & Flow
+-keepnames class kotlinx.coroutines.internal.MainDispatcherFactory {}
+-keepnames class kotlinx.coroutines.CoroutineExceptionHandler {}
+-keepclassmembernames class kotlinx.** {
+    volatile <fields>;
+}
+-dontwarn kotlinx.coroutines.**
 
-# If you keep the line number information, uncomment this to
-# hide the original source file name.
-#-renamesourcefileattribute SourceFile
+# 3. Jetpack Compose Runtime Optimization
+-assumenosideeffects class androidx.compose.runtime.ComposerKt {
+    void sourceInformation(androidx.compose.runtime.Composer, java.lang.String);
+    void sourceInformationMarkerStart(androidx.compose.runtime.Composer, int, java.lang.String);
+    void sourceInformationMarkerEnd(androidx.compose.runtime.Composer);
+}
+
+# 4. Preserve Line Numbers for Crash Reporting
+-keepattributes SourceFile,LineNumberTable
+-renamesourcefileattribute SourceFile
