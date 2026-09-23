@@ -2,6 +2,7 @@ package com.masum.fathom.core.database
 
 import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
 import com.masum.fathom.core.common.result.FathomResult
+import com.masum.fathom.core.database.user.FathomUserDatabase
 import com.masum.fathom.core.model.user.Bookmark
 import com.masum.fathom.core.model.user.UserNote
 import kotlinx.coroutines.flow.first

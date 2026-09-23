@@ -4,6 +4,7 @@ import app.cash.sqldelight.coroutines.asFlow
 import app.cash.sqldelight.coroutines.mapToList
 import com.masum.fathom.core.common.result.DataError
 import com.masum.fathom.core.common.result.FathomResult
+import com.masum.fathom.core.database.user.FathomUserDatabase
 import com.masum.fathom.core.model.user.Bookmark
 import com.masum.fathom.core.model.user.ReadingRecord
 import com.masum.fathom.core.model.user.UserNote

@@ -1,0 +1,115 @@
+CREATE TABLE tradition_entity (
+    id TEXT NOT NULL PRIMARY KEY,
+    name TEXT NOT NULL,
+    description TEXT NOT NULL
+);
+
+CREATE TABLE book_entity (
+    id TEXT NOT NULL PRIMARY KEY,
+    tradition_id TEXT NOT NULL,
+    title TEXT NOT NULL,
+    author TEXT,
+    language TEXT NOT NULL,
+    total_passages INTEGER NOT NULL,
+    is_bundled INTEGER NOT NULL DEFAULT 0,
+    FOREIGN KEY(tradition_id) REFERENCES tradition_entity(id) ON DELETE CASCADE
+);
+
+CREATE INDEX idx_book_tradition_id ON book_entity(tradition_id);
+
+CREATE TABLE passage_entity (
+    id TEXT NOT NULL PRIMARY KEY,
+    book_id TEXT NOT NULL,
+    tradition_id TEXT NOT NULL,
+    canonical_reference TEXT NOT NULL,
+    original_text TEXT,
+    translation TEXT NOT NULL,
+    order_index INTEGER NOT NULL,
+    chapter INTEGER,
+    verse_number INTEGER,
+    FOREIGN KEY(book_id) REFERENCES book_entity(id) ON DELETE CASCADE,
+    FOREIGN KEY(tradition_id) REFERENCES tradition_entity(id) ON DELETE CASCADE
+);
+
+CREATE INDEX idx_passage_book_order ON passage_entity(book_id, order_index);
+CREATE INDEX idx_passage_tradition_order ON passage_entity(tradition_id, order_index);
+
+CREATE TABLE theme_entity (
+    id TEXT NOT NULL PRIMARY KEY,
+    name TEXT NOT NULL,
+    description TEXT
+);
+
+CREATE TABLE passage_theme_cross_ref (
+    passage_id TEXT NOT NULL,
+    theme_id TEXT NOT NULL,
+    PRIMARY KEY(passage_id, theme_id),
+    FOREIGN KEY(passage_id) REFERENCES passage_entity(id) ON DELETE CASCADE,
+    FOREIGN KEY(theme_id) REFERENCES theme_entity(id) ON DELETE CASCADE
+);
+
+CREATE INDEX idx_cross_ref_theme ON passage_theme_cross_ref(theme_id);
+
+CREATE TABLE explanation_entity (
+    id TEXT NOT NULL PRIMARY KEY,
+    passage_id TEXT NOT NULL,
+    title TEXT,
+    body TEXT NOT NULL,
+    author TEXT,
+    source TEXT,
+    FOREIGN KEY(passage_id) REFERENCES passage_entity(id) ON DELETE CASCADE
+);
+
+CREATE INDEX idx_explanation_passage_id ON explanation_entity(passage_id);
+
+-- Ingestion Queries
+insertTradition:
+INSERT OR REPLACE INTO tradition_entity(id, name, description)
+VALUES (?, ?, ?);
+
+insertBook:
+INSERT OR REPLACE INTO book_entity(id, tradition_id, title, author, language, total_passages, is_bundled)
+VALUES (?, ?, ?, ?, ?, ?, ?);
+
+insertPassage:
+INSERT OR REPLACE INTO passage_entity(id, book_id, tradition_id, canonical_reference, original_text, translation, order_index, chapter, verse_number)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+insertTheme:
+INSERT OR REPLACE INTO theme_entity(id, name, description)
+VALUES (?, ?, ?);
+
+linkPassageTheme:
+INSERT OR REPLACE INTO passage_theme_cross_ref(passage_id, theme_id)
+VALUES (?, ?);
+
+insertExplanation:
+INSERT OR REPLACE INTO explanation_entity(id, passage_id, title, body, author, source)
+VALUES (?, ?, ?, ?, ?, ?);
+
+-- Selection Queries
+selectPassageById:
+SELECT * FROM passage_entity WHERE id = ?;
+
+selectPassagesForBook:
+SELECT * FROM passage_entity WHERE book_id = :book_id ORDER BY order_index ASC LIMIT :limit OFFSET :offset;
+
+selectPassagesByTradition:
+SELECT * FROM passage_entity WHERE tradition_id = :tradition_id ORDER BY order_index ASC LIMIT :limit OFFSET :offset;
+
+selectThemesForPassage:
+SELECT t.* FROM theme_entity t
+JOIN passage_theme_cross_ref ref ON t.id = ref.theme_id
+WHERE ref.passage_id = ?;
+
+selectExplanationsForPassage:
+SELECT * FROM explanation_entity WHERE passage_id = ?;
+
+selectAllTraditions:
+SELECT * FROM tradition_entity ORDER BY name ASC;
+
+selectAllBooks:
+SELECT * FROM book_entity ORDER BY title ASC;
+
+countPassages:
+SELECT COUNT(*) FROM passage_entity;

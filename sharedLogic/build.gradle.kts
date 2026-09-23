@@ -56,7 +56,13 @@ kotlin {
 sqldelight {
     databases {
         create("FathomUserDatabase") {
-            packageName.set("com.masum.fathom.core.database")
+            packageName.set("com.masum.fathom.core.database.user")
+            srcDirs.setFrom("src/commonMain/userSqldelight")
+            dialect(libs.sqldelight.sqlite324.dialect)
+        }
+        create("FathomContentDatabase") {
+            packageName.set("com.masum.fathom.core.database.content")
+            srcDirs.setFrom("src/commonMain/contentSqldelight")
             dialect(libs.sqldelight.sqlite324.dialect)
         }
     }
