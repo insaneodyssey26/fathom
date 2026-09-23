@@ -1,7 +1,6 @@
 package com.masum.fathom.ui.library
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -12,8 +11,11 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -27,14 +29,18 @@ import androidx.compose.material3.TabRowDefaults
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.masum.fathom.ui.components.SacredDivider
 import com.masum.fathom.ui.components.TraditionBadge
 import com.masum.fathom.ui.theme.FathomTheme
+import com.masum.fathom.ui.theme.JakartaFontFamily
+import kotlinx.coroutines.launch
 
 @Composable
 fun LibraryScreen(
@@ -47,6 +53,32 @@ fun LibraryScreen(
             .fillMaxSize()
             .background(FathomTheme.colors.background)
     ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .statusBarsPadding()
+                .padding(horizontal = 24.dp)
+                .padding(top = 10.dp, bottom = 12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                Text(
+                    text = "LIBRARY",
+                    style = FathomTheme.typography.brandTitle,
+                    color = FathomTheme.colors.textPrimary
+                )
+                Box(
+                    modifier = Modifier
+                        .size(5.dp)
+                        .clip(CircleShape)
+                        .background(FathomTheme.colors.accentGold)
+                )
+            }
+        }
+
         when (state) {
             is LibraryUiState.Loading -> {
                 Box(
@@ -71,37 +103,67 @@ fun LibraryScreen(
             }
 
             is LibraryUiState.Success -> {
+                val coroutineScope = rememberCoroutineScope()
+                val pagerState = rememberPagerState(
+                    initialPage = state.selectedTab.ordinal,
+                    pageCount = { LibraryTab.entries.size }
+                )
+
+                LaunchedEffect(pagerState.currentPage) {
+                    val targetTab = LibraryTab.entries[pagerState.currentPage]
+                    if (targetTab != state.selectedTab) {
+                        onEvent(LibraryUiEvent.OnSelectTab(targetTab))
+                    }
+                }
+
+                LaunchedEffect(state.selectedTab) {
+                    if (pagerState.currentPage != state.selectedTab.ordinal) {
+                        pagerState.animateScrollToPage(state.selectedTab.ordinal)
+                    }
+                }
+
                 TabRow(
-                    selectedTabIndex = state.selectedTab.ordinal,
+                    selectedTabIndex = pagerState.currentPage,
                     containerColor = FathomTheme.colors.background,
                     contentColor = FathomTheme.colors.accentGold,
                     indicator = { tabPositions ->
                         TabRowDefaults.SecondaryIndicator(
-                            modifier = Modifier.tabIndicatorOffset(tabPositions[state.selectedTab.ordinal]),
+                            modifier = Modifier.tabIndicatorOffset(tabPositions[pagerState.currentPage]),
                             color = FathomTheme.colors.accentGold
                         )
                     },
-                    divider = { SacredDivider(modifier = Modifier.padding(0.dp)) }
+                    divider = {}
                 ) {
-                    LibraryTab.entries.forEach { tab ->
+                    LibraryTab.entries.forEachIndexed { index, tab ->
                         Tab(
-                            selected = state.selectedTab == tab,
-                            onClick = { onEvent(LibraryUiEvent.OnSelectTab(tab)) },
+                            selected = pagerState.currentPage == index,
+                            onClick = {
+                                coroutineScope.launch {
+                                    pagerState.animateScrollToPage(index)
+                                }
+                            },
                             text = {
                                 Text(
                                     text = tab.name,
                                     style = FathomTheme.typography.traditionBadge,
-                                    color = if (state.selectedTab == tab) FathomTheme.colors.accentGold else FathomTheme.colors.textSecondary
+                                    color = if (pagerState.currentPage == index) FathomTheme.colors.accentGold else FathomTheme.colors.textSecondary
                                 )
                             }
                         )
                     }
                 }
 
-                when (state.selectedTab) {
-                    LibraryTab.BOOKMARKS -> BookmarksList(state.bookmarks, onEvent)
-                    LibraryTab.REFLECTIONS -> ReflectionsPlaceholder()
-                    LibraryTab.HISTORY -> HistoryStatsView(state.history, state.totalReadCount)
+                HorizontalPager(
+                    state = pagerState,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f)
+                ) { page ->
+                    when (LibraryTab.entries[page]) {
+                        LibraryTab.BOOKMARKS -> BookmarksList(state.bookmarks, onEvent)
+                        LibraryTab.REFLECTIONS -> ReflectionsPlaceholder()
+                        LibraryTab.HISTORY -> HistoryStatsView(state.history, state.totalReadCount)
+                    }
                 }
             }
         }
@@ -204,15 +266,26 @@ private fun HistoryStatsView(
             style = FathomTheme.typography.canonicalHeader,
             color = FathomTheme.colors.accentGold
         )
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(16.dp))
         Text(
             text = "$totalCount Verses Explored",
-            style = FathomTheme.typography.commentaryTitle,
+            style = FathomTheme.typography.commentaryTitle.copy(
+                fontFamily = JakartaFontFamily,
+                fontWeight = FontWeight.Bold,
+                fontSize = 24.sp,
+                lineHeight = 32.sp,
+                letterSpacing = (-0.3).sp
+            ),
             color = FathomTheme.colors.textPrimary
         )
+        Spacer(modifier = Modifier.height(6.dp))
         Text(
             text = "${history.size} Unique Passages Encountered",
-            style = FathomTheme.typography.commentaryBody,
+            style = FathomTheme.typography.commentaryBody.copy(
+                fontFamily = JakartaFontFamily,
+                fontSize = 15.sp,
+                lineHeight = 22.sp
+            ),
             color = FathomTheme.colors.textSecondary
         )
     }

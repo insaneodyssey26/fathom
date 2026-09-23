@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
@@ -43,15 +44,18 @@ fun PassageCard(
         modifier = modifier
             .fillMaxSize()
             .background(FathomTheme.colors.background)
-            .padding(horizontal = 24.dp, vertical = 20.dp)
+            .padding(horizontal = 24.dp)
+            .padding(top = 8.dp, bottom = 12.dp),
+        contentAlignment = Alignment.Center
     ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .widthIn(max = 620.dp)
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.SpaceBetween
         ) {
-            Column {
+            Column(modifier = Modifier.fillMaxWidth()) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -66,7 +70,7 @@ fun PassageCard(
                     )
                 }
 
-                Spacer(modifier = Modifier.height(32.dp))
+                Spacer(modifier = Modifier.height(24.dp))
 
                 if (!passage.originalText.isNullOrBlank()) {
                     Text(
@@ -74,7 +78,7 @@ fun PassageCard(
                         style = FathomTheme.typography.verseOriginal,
                         color = FathomTheme.colors.textTertiary
                     )
-                    SacredDivider(modifier = Modifier.padding(vertical = 12.dp))
+                    SacredDivider(modifier = Modifier.padding(vertical = 16.dp))
                 }
 
                 Text(
@@ -84,8 +88,12 @@ fun PassageCard(
                 )
             }
 
-            Column(modifier = Modifier.fillMaxWidth().padding(top = 24.dp)) {
-                SacredDivider(modifier = Modifier.padding(vertical = 8.dp))
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 28.dp, bottom = 8.dp)
+            ) {
+                SacredDivider(modifier = Modifier.padding(vertical = 12.dp))
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -96,23 +104,26 @@ fun PassageCard(
                         Text(
                             text = passage.themes.joinToString(" • ") { it.name.uppercase() },
                             style = FathomTheme.typography.caption,
-                            color = FathomTheme.colors.accentGold
+                            color = FathomTheme.colors.accentGold,
+                            modifier = Modifier.weight(1f, fill = false)
                         )
                     } else {
                         Spacer(modifier = Modifier.size(1.dp))
                     }
 
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                         IconButton(
                             onClick = onOpenContext,
                             modifier = Modifier
                                 .clip(CircleShape)
                                 .background(FathomTheme.colors.surfaceElevated)
+                                .size(40.dp)
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Info,
                                 contentDescription = "Context & Commentary",
-                                tint = FathomTheme.colors.textSecondary
+                                tint = FathomTheme.colors.textSecondary,
+                                modifier = Modifier.size(18.dp)
                             )
                         }
 
@@ -121,11 +132,13 @@ fun PassageCard(
                             modifier = Modifier
                                 .clip(CircleShape)
                                 .background(FathomTheme.colors.surfaceElevated)
+                                .size(40.dp)
                         ) {
                             Icon(
                                 imageVector = if (isBookmarked) Icons.Filled.Bookmark else Icons.Outlined.BookmarkBorder,
                                 contentDescription = "Bookmark",
-                                tint = if (isBookmarked) FathomTheme.colors.accentGold else FathomTheme.colors.textSecondary
+                                tint = if (isBookmarked) FathomTheme.colors.accentGold else FathomTheme.colors.textSecondary,
+                                modifier = Modifier.size(18.dp)
                             )
                         }
                     }
@@ -134,3 +147,5 @@ fun PassageCard(
         }
     }
 }
+
+

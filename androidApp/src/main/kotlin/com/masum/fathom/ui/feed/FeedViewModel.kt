@@ -177,11 +177,40 @@ class FeedViewModel(
         }
 
         currentConfig = currentConfig.copy(selectedTraditions = updatedTraditions)
-        loadInitialFeed()
+        _uiState.update { state ->
+            if (state is FeedUiState.Success) state.copy(selectedTraditions = updatedTraditions) else state
+        }
+
+        refreshFeedPreservingState()
     }
 
     private fun handleChangeMode(mode: FeedMode) {
         currentConfig = currentConfig.copy(mode = mode)
-        loadInitialFeed()
+        _uiState.update { state ->
+            if (state is FeedUiState.Success) state.copy(activeMode = mode) else state
+        }
+        refreshFeedPreservingState()
+    }
+
+    private fun refreshFeedPreservingState() {
+        viewModelScope.launch {
+            when (val result = feedRepository.getFeedBatch(currentConfig, batchSize = 10)) {
+                is FathomResult.Success -> {
+                    _uiState.update { state ->
+                        if (state is FeedUiState.Success) {
+                            state.copy(
+                                passages = if (result.data.isNotEmpty()) result.data else state.passages,
+                                currentIndex = 0
+                            )
+                        } else state
+                    }
+                    if (result.data.isNotEmpty()) {
+                        recordCurrentReading(result.data.first())
+                    }
+                }
+                is FathomResult.Failure -> Unit
+            }
+        }
     }
 }
+

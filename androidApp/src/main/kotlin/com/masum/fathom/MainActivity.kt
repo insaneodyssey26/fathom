@@ -4,7 +4,9 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
+
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -46,8 +48,19 @@ enum class NavigationItem {
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
-        enableEdgeToEdge()
+        enableEdgeToEdge(
+            statusBarStyle = androidx.activity.SystemBarStyle.auto(
+                android.graphics.Color.TRANSPARENT,
+                android.graphics.Color.TRANSPARENT
+            ),
+            navigationBarStyle = androidx.activity.SystemBarStyle.auto(
+                android.graphics.Color.TRANSPARENT,
+                android.graphics.Color.TRANSPARENT
+            )
+        )
         super.onCreate(savedInstanceState)
+
+
 
         setContent {
             val context = LocalContext.current
@@ -86,59 +99,12 @@ class MainActivity : ComponentActivity() {
                 Scaffold(
                     modifier = Modifier.fillMaxSize(),
                     containerColor = FathomTheme.colors.background,
+                    contentWindowInsets = androidx.compose.foundation.layout.WindowInsets(0, 0, 0, 0),
                     bottomBar = {
-                        NavigationBar(
-                            containerColor = FathomTheme.colors.surface,
-                            contentColor = FathomTheme.colors.accentGold
-                        ) {
-                            NavigationBarItem(
-                                selected = selectedNav == NavigationItem.FEED,
-                                onClick = { selectedNav = NavigationItem.FEED },
-                                icon = {
-                                    Icon(
-                                        imageVector = Icons.Default.AutoAwesome,
-                                        contentDescription = "Wisdom Feed"
-                                    )
-                                },
-                                label = {
-                                    Text(
-                                        text = "DISCOVER",
-                                        style = FathomTheme.typography.traditionBadge
-                                    )
-                                },
-                                colors = NavigationBarItemDefaults.colors(
-                                    selectedIconColor = FathomTheme.colors.accentGold,
-                                    selectedTextColor = FathomTheme.colors.accentGold,
-                                    unselectedIconColor = FathomTheme.colors.textTertiary,
-                                    unselectedTextColor = FathomTheme.colors.textTertiary,
-                                    indicatorColor = FathomTheme.colors.surfaceElevated
-                                )
-                            )
-
-                            NavigationBarItem(
-                                selected = selectedNav == NavigationItem.LIBRARY,
-                                onClick = { selectedNav = NavigationItem.LIBRARY },
-                                icon = {
-                                    Icon(
-                                        imageVector = Icons.Default.Bookmarks,
-                                        contentDescription = "Library"
-                                    )
-                                },
-                                label = {
-                                    Text(
-                                        text = "LIBRARY",
-                                        style = FathomTheme.typography.traditionBadge
-                                    )
-                                },
-                                colors = NavigationBarItemDefaults.colors(
-                                    selectedIconColor = FathomTheme.colors.accentGold,
-                                    selectedTextColor = FathomTheme.colors.accentGold,
-                                    unselectedIconColor = FathomTheme.colors.textTertiary,
-                                    unselectedTextColor = FathomTheme.colors.textTertiary,
-                                    indicatorColor = FathomTheme.colors.surfaceElevated
-                                )
-                            )
-                        }
+                        com.masum.fathom.ui.components.FathomBottomNavBar(
+                            selectedItem = selectedNav,
+                            onItemSelected = { selectedNav = it }
+                        )
                     }
                 ) { innerPadding ->
                     Box(
@@ -147,18 +113,46 @@ class MainActivity : ComponentActivity() {
                             .padding(innerPadding)
                             .background(FathomTheme.colors.background)
                     ) {
-                        when (selectedNav) {
-                            NavigationItem.FEED -> FeedScreen(
-                                state = feedUiState,
-                                onEvent = feedViewModel::onEvent
-                            )
-                            NavigationItem.LIBRARY -> LibraryScreen(
-                                state = libraryUiState,
-                                onEvent = libraryViewModel::onEvent
-                            )
+                        androidx.compose.animation.AnimatedContent(
+                            targetState = selectedNav,
+                            transitionSpec = {
+                                if (targetState == NavigationItem.LIBRARY) {
+                                    (androidx.compose.animation.slideInHorizontally(androidx.compose.animation.core.tween(320)) { width -> (width * 0.12f).toInt() } +
+                                        androidx.compose.animation.fadeIn(androidx.compose.animation.core.tween(320)) +
+                                        androidx.compose.animation.scaleIn(initialScale = 0.98f, animationSpec = androidx.compose.animation.core.tween(320)))
+                                        .togetherWith(
+                                            androidx.compose.animation.slideOutHorizontally(androidx.compose.animation.core.tween(280)) { width -> (-width * 0.12f).toInt() } +
+                                                androidx.compose.animation.fadeOut(androidx.compose.animation.core.tween(250)) +
+                                                androidx.compose.animation.scaleOut(targetScale = 0.98f, animationSpec = androidx.compose.animation.core.tween(280))
+                                        )
+                                } else {
+                                    (androidx.compose.animation.slideInHorizontally(androidx.compose.animation.core.tween(320)) { width -> (-width * 0.12f).toInt() } +
+                                        androidx.compose.animation.fadeIn(androidx.compose.animation.core.tween(320)) +
+                                        androidx.compose.animation.scaleIn(initialScale = 0.98f, animationSpec = androidx.compose.animation.core.tween(320)))
+                                        .togetherWith(
+                                            androidx.compose.animation.slideOutHorizontally(androidx.compose.animation.core.tween(280)) { width -> (width * 0.12f).toInt() } +
+                                                androidx.compose.animation.fadeOut(androidx.compose.animation.core.tween(250)) +
+                                                androidx.compose.animation.scaleOut(targetScale = 0.98f, animationSpec = androidx.compose.animation.core.tween(280))
+                                        )
+                                }
+                            },
+                            label = "screen_nav_transition",
+                            modifier = Modifier.fillMaxSize()
+                        ) { targetNav ->
+                            when (targetNav) {
+                                NavigationItem.FEED -> FeedScreen(
+                                    state = feedUiState,
+                                    onEvent = feedViewModel::onEvent
+                                )
+                                NavigationItem.LIBRARY -> LibraryScreen(
+                                    state = libraryUiState,
+                                    onEvent = libraryViewModel::onEvent
+                                )
+                            }
                         }
                     }
                 }
+
             }
         }
     }
