@@ -113,3 +113,16 @@ SELECT * FROM book_entity ORDER BY title ASC;
 
 countPassages:
 SELECT COUNT(*) FROM passage_entity;
+
+selectCandidatePassages:
+SELECT * FROM passage_entity
+WHERE tradition_id IN :tradition_ids
+ORDER BY RANDOM()
+LIMIT :limit;
+
+selectCandidatePassagesByThemes:
+SELECT DISTINCT p.* FROM passage_entity p
+JOIN passage_theme_cross_ref ref ON p.id = ref.passage_id
+WHERE ref.theme_id IN :theme_ids
+ORDER BY RANDOM()
+LIMIT :limit;
