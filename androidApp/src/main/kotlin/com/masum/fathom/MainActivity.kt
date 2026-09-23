@@ -4,9 +4,25 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.Bookmarks
+import androidx.compose.material3.Icon
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -18,8 +34,15 @@ import com.masum.fathom.core.database.user.FathomUserDatabase
 import com.masum.fathom.core.feed.FeedEngine
 import com.masum.fathom.ui.feed.FeedScreen
 import com.masum.fathom.ui.feed.FeedViewModel
+import com.masum.fathom.ui.library.LibraryScreen
+import com.masum.fathom.ui.library.LibraryViewModel
 import com.masum.fathom.ui.theme.FathomTheme
 import com.masum.fathom.ui.theme.ReadingTheme
+
+enum class NavigationItem {
+    FEED,
+    LIBRARY
+}
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -28,7 +51,7 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             val context = LocalContext.current
-            val (feedRepository, userDataRepository) = remember {
+            val (feedEngine, userRepo, passageRepo) = remember {
                 val userDriver = AndroidSqliteDriver(FathomUserDatabase.Schema, context, "app_user_data.db")
                 val contentDriver = AndroidSqliteDriver(FathomContentDatabase.Schema, context, "starter_content.db")
 
@@ -37,27 +60,105 @@ class MainActivity : ComponentActivity() {
 
                 seedInitialWisdomIfEmpty(contentDb)
 
-                val feedEngine = FeedEngine(contentDb, userDb)
-                val userRepo = SqlDelightUserDataRepository(userDb)
+                val feed = FeedEngine(contentDb, userDb)
+                val user = SqlDelightUserDataRepository(userDb)
+                val passage = SqlDelightPassageRepository(contentDb)
 
-                Pair(feedEngine, userRepo)
+                Triple(feed, user, passage)
             }
 
-            val viewModel: FeedViewModel = viewModel {
-                FeedViewModel(
-                    feedRepository = feedRepository,
-                    userDataRepository = userDataRepository
-                )
+            val feedViewModel: FeedViewModel = viewModel {
+                FeedViewModel(feedRepository = feedEngine, userDataRepository = userRepo)
             }
 
-            val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-            val activeTheme = (uiState as? com.masum.fathom.ui.feed.FeedUiState.Success)?.activeTheme ?: ReadingTheme.OBSIDIAN
+            val libraryViewModel: LibraryViewModel = viewModel {
+                LibraryViewModel(userDataRepository = userRepo, passageRepository = passageRepo)
+            }
+
+            val feedUiState by feedViewModel.uiState.collectAsStateWithLifecycle()
+            val libraryUiState by libraryViewModel.uiState.collectAsStateWithLifecycle()
+
+            val activeTheme = (feedUiState as? com.masum.fathom.ui.feed.FeedUiState.Success)?.activeTheme ?: ReadingTheme.OBSIDIAN
+
+            var selectedNav by remember { mutableStateOf(NavigationItem.FEED) }
 
             FathomTheme(readingTheme = activeTheme) {
-                FeedScreen(
-                    state = uiState,
-                    onEvent = viewModel::onEvent
-                )
+                Scaffold(
+                    modifier = Modifier.fillMaxSize(),
+                    containerColor = FathomTheme.colors.background,
+                    bottomBar = {
+                        NavigationBar(
+                            containerColor = FathomTheme.colors.surface,
+                            contentColor = FathomTheme.colors.accentGold
+                        ) {
+                            NavigationBarItem(
+                                selected = selectedNav == NavigationItem.FEED,
+                                onClick = { selectedNav = NavigationItem.FEED },
+                                icon = {
+                                    Icon(
+                                        imageVector = Icons.Default.AutoAwesome,
+                                        contentDescription = "Wisdom Feed"
+                                    )
+                                },
+                                label = {
+                                    Text(
+                                        text = "DISCOVER",
+                                        style = FathomTheme.typography.traditionBadge
+                                    )
+                                },
+                                colors = NavigationBarItemDefaults.colors(
+                                    selectedIconColor = FathomTheme.colors.accentGold,
+                                    selectedTextColor = FathomTheme.colors.accentGold,
+                                    unselectedIconColor = FathomTheme.colors.textTertiary,
+                                    unselectedTextColor = FathomTheme.colors.textTertiary,
+                                    indicatorColor = FathomTheme.colors.surfaceElevated
+                                )
+                            )
+
+                            NavigationBarItem(
+                                selected = selectedNav == NavigationItem.LIBRARY,
+                                onClick = { selectedNav = NavigationItem.LIBRARY },
+                                icon = {
+                                    Icon(
+                                        imageVector = Icons.Default.Bookmarks,
+                                        contentDescription = "Library"
+                                    )
+                                },
+                                label = {
+                                    Text(
+                                        text = "LIBRARY",
+                                        style = FathomTheme.typography.traditionBadge
+                                    )
+                                },
+                                colors = NavigationBarItemDefaults.colors(
+                                    selectedIconColor = FathomTheme.colors.accentGold,
+                                    selectedTextColor = FathomTheme.colors.accentGold,
+                                    unselectedIconColor = FathomTheme.colors.textTertiary,
+                                    unselectedTextColor = FathomTheme.colors.textTertiary,
+                                    indicatorColor = FathomTheme.colors.surfaceElevated
+                                )
+                            )
+                        }
+                    }
+                ) { innerPadding ->
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(innerPadding)
+                            .background(FathomTheme.colors.background)
+                    ) {
+                        when (selectedNav) {
+                            NavigationItem.FEED -> FeedScreen(
+                                state = feedUiState,
+                                onEvent = feedViewModel::onEvent
+                            )
+                            NavigationItem.LIBRARY -> LibraryScreen(
+                                state = libraryUiState,
+                                onEvent = libraryViewModel::onEvent
+                            )
+                        }
+                    }
+                }
             }
         }
     }
