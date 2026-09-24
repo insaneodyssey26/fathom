@@ -408,7 +408,8 @@ private fun BookmarksList(
         }
     } else {
         LazyColumn(
-            modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp, vertical = 8.dp)
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = androidx.compose.foundation.layout.PaddingValues(start = 20.dp, top = 8.dp, end = 20.dp, bottom = 96.dp)
         ) {
             items(bookmarks, key = { it.bookmark.id }) { item ->
                 val passage = item.passage
@@ -696,7 +697,8 @@ private fun ReflectionsList(
         }
     } else {
         LazyColumn(
-            modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp, vertical = 8.dp)
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = androidx.compose.foundation.layout.PaddingValues(start = 20.dp, top = 8.dp, end = 20.dp, bottom = 96.dp)
         ) {
             items(notes, key = { it.note.id }) { item ->
                 Column(
@@ -919,7 +921,7 @@ private fun HistoryStatsView(
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(24.dp)
+            .padding(start = 24.dp, top = 24.dp, end = 24.dp, bottom = 96.dp)
     ) {
         Text(
             text = "EXPLORATION RECORD",

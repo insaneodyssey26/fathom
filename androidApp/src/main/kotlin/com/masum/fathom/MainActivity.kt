@@ -20,6 +20,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -135,52 +136,45 @@ class MainActivity : ComponentActivity() {
             }
 
             FathomTheme(readingTheme = activeTheme) {
-                Scaffold(
-                    modifier = Modifier.fillMaxSize(),
-                    containerColor = FathomTheme.colors.background,
-                    contentWindowInsets = androidx.compose.foundation.layout.WindowInsets(0, 0, 0, 0),
-                    bottomBar = {
-                        com.masum.fathom.ui.components.FathomBottomNavBar(
-                            selectedItem = selectedNav,
-                            onItemSelected = { selectedNav = it }
-                        )
-                    }
-                ) { innerPadding ->
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(innerPadding)
-                            .background(FathomTheme.colors.background)
-                    ) {
-                        androidx.compose.animation.AnimatedContent(
-                            targetState = selectedNav,
-                            transitionSpec = {
-                                (androidx.compose.animation.fadeIn(androidx.compose.animation.core.tween(240)) +
-                                    androidx.compose.animation.scaleIn(initialScale = 0.98f, animationSpec = androidx.compose.animation.core.tween(240)))
-                                    .togetherWith(
-                                        androidx.compose.animation.fadeOut(androidx.compose.animation.core.tween(200)) +
-                                            androidx.compose.animation.scaleOut(targetScale = 0.98f, animationSpec = androidx.compose.animation.core.tween(200))
-                                    )
-                            },
-                            label = "screen_nav_transition",
-                            modifier = Modifier.fillMaxSize()
-                        ) { targetNav ->
-                            when (targetNav) {
-                                NavigationItem.FEED -> FeedScreen(
-                                    state = feedUiState,
-                                    onEvent = feedViewModel::onEvent
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(FathomTheme.colors.background)
+                ) {
+                    androidx.compose.animation.AnimatedContent(
+                        targetState = selectedNav,
+                        transitionSpec = {
+                            (androidx.compose.animation.fadeIn(androidx.compose.animation.core.tween(240)) +
+                                androidx.compose.animation.scaleIn(initialScale = 0.98f, animationSpec = androidx.compose.animation.core.tween(240)))
+                                .togetherWith(
+                                    androidx.compose.animation.fadeOut(androidx.compose.animation.core.tween(200)) +
+                                        androidx.compose.animation.scaleOut(targetScale = 0.98f, animationSpec = androidx.compose.animation.core.tween(200))
                                 )
-                                NavigationItem.SEARCH -> SearchScreen(
-                                    state = searchUiState,
-                                    onEvent = searchViewModel::onEvent
-                                )
-                                NavigationItem.LIBRARY -> LibraryScreen(
-                                    state = libraryUiState,
-                                    onEvent = libraryViewModel::onEvent
-                                )
-                            }
+                        },
+                        label = "screen_nav_transition",
+                        modifier = Modifier.fillMaxSize()
+                    ) { targetNav ->
+                        when (targetNav) {
+                            NavigationItem.FEED -> FeedScreen(
+                                state = feedUiState,
+                                onEvent = feedViewModel::onEvent
+                            )
+                            NavigationItem.SEARCH -> SearchScreen(
+                                state = searchUiState,
+                                onEvent = searchViewModel::onEvent
+                            )
+                            NavigationItem.LIBRARY -> LibraryScreen(
+                                state = libraryUiState,
+                                onEvent = libraryViewModel::onEvent
+                            )
                         }
                     }
+
+                    com.masum.fathom.ui.components.FathomBottomNavBar(
+                        selectedItem = selectedNav,
+                        onItemSelected = { selectedNav = it },
+                        modifier = Modifier.align(Alignment.BottomCenter)
+                    )
                 }
             }
         }

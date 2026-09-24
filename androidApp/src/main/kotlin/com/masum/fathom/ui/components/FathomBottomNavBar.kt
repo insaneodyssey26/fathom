@@ -32,6 +32,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -59,7 +60,8 @@ fun FathomBottomNavBar(
                 brush = Brush.verticalGradient(
                     colors = listOf(
                         Color.Transparent,
-                        FathomTheme.colors.background.copy(alpha = 0.7f),
+                        FathomTheme.colors.background.copy(alpha = 0.72f),
+                        FathomTheme.colors.background.copy(alpha = 0.95f),
                         FathomTheme.colors.background
                     )
                 )
@@ -72,15 +74,21 @@ fun FathomBottomNavBar(
             modifier = Modifier
                 .widthIn(max = 360.dp)
                 .fillMaxWidth()
-                .height(50.dp)
-                .clip(RoundedCornerShape(26.dp))
-                .background(FathomTheme.colors.surface.copy(alpha = 0.88f))
+                .height(52.dp)
+                .shadow(
+                    elevation = 16.dp,
+                    shape = RoundedCornerShape(28.dp),
+                    ambientColor = Color.Black.copy(alpha = 0.5f),
+                    spotColor = Color.Black.copy(alpha = 0.5f)
+                )
+                .clip(RoundedCornerShape(28.dp))
+                .background(FathomTheme.colors.surface.copy(alpha = 0.92f))
                 .border(
                     width = 1.dp,
-                    color = FathomTheme.colors.borderSubtle.copy(alpha = 0.75f),
-                    shape = RoundedCornerShape(26.dp)
+                    color = FathomTheme.colors.borderSubtle.copy(alpha = 0.9f),
+                    shape = RoundedCornerShape(28.dp)
                 )
-                .padding(3.dp)
+                .padding(4.dp)
         ) {
             val segmentWidth = maxWidth / 3
             val targetOffset = when (selectedItem) {
@@ -92,7 +100,7 @@ fun FathomBottomNavBar(
             val indicatorOffset by animateDpAsState(
                 targetValue = targetOffset,
                 animationSpec = spring(
-                    dampingRatio = 0.8f,
+                    dampingRatio = 0.82f,
                     stiffness = Spring.StiffnessMediumLow
                 ),
                 label = "nav_indicator_glide"
@@ -103,12 +111,12 @@ fun FathomBottomNavBar(
                     .offset(x = indicatorOffset)
                     .width(segmentWidth)
                     .fillMaxHeight()
-                    .clip(RoundedCornerShape(23.dp))
-                    .background(FathomTheme.colors.surfaceElevated.copy(alpha = 0.95f))
+                    .clip(RoundedCornerShape(24.dp))
+                    .background(FathomTheme.colors.surfaceElevated)
                     .border(
                         width = 1.dp,
-                        color = FathomTheme.colors.accentGold.copy(alpha = 0.18f),
-                        shape = RoundedCornerShape(23.dp)
+                        color = FathomTheme.colors.accentGold.copy(alpha = 0.28f),
+                        shape = RoundedCornerShape(24.dp)
                     )
             )
 
@@ -163,7 +171,7 @@ private fun NavBarItem(
     )
 
     val scale by animateFloatAsState(
-        targetValue = if (isSelected) 1.0f else 0.95f,
+        targetValue = if (isSelected) 1.0f else 0.94f,
         animationSpec = spring(dampingRatio = 0.8f, stiffness = Spring.StiffnessMediumLow),
         label = "nav_item_scale"
     )
@@ -171,7 +179,7 @@ private fun NavBarItem(
     Box(
         modifier = modifier
             .fillMaxHeight()
-            .clip(RoundedCornerShape(23.dp))
+            .clip(RoundedCornerShape(24.dp))
             .clickable(
                 interactionSource = interactionSource,
                 indication = null,
@@ -181,7 +189,7 @@ private fun NavBarItem(
     ) {
         Row(
             modifier = Modifier.scale(scale),
-            horizontalArrangement = Arrangement.spacedBy(7.dp),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(

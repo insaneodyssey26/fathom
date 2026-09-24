@@ -5,8 +5,6 @@ import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.scaleIn
-import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
@@ -30,7 +28,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
@@ -50,6 +47,8 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -68,6 +67,7 @@ import com.adamglin.phosphoricons.regular.CaretRight
 import com.adamglin.phosphoricons.regular.Info
 import com.adamglin.phosphoricons.regular.MagnifyingGlass
 import com.adamglin.phosphoricons.regular.ShareNetwork
+import com.adamglin.phosphoricons.regular.Sparkle
 import com.adamglin.phosphoricons.regular.X
 import com.masum.fathom.core.model.Book
 import com.masum.fathom.core.model.Passage
@@ -106,15 +106,11 @@ fun SearchScreen(
             targetState = state.selectedBook,
             transitionSpec = {
                 if (targetState != null) {
-                    (slideInHorizontally(tween(320)) { it } + fadeIn(tween(320)) + scaleIn(initialScale = 0.96f, animationSpec = tween(320)))
-                        .togetherWith(
-                            slideOutHorizontally(tween(260)) { -it / 3 } + fadeOut(tween(220)) + scaleOut(targetScale = 0.96f, animationSpec = tween(260))
-                        )
+                    (slideInHorizontally(tween(320)) { it } + fadeIn(tween(320)))
+                        .togetherWith(slideOutHorizontally(tween(260)) { -it / 3 } + fadeOut(tween(200)))
                 } else {
-                    (slideInHorizontally(tween(300)) { -it / 3 } + fadeIn(tween(300)) + scaleIn(initialScale = 0.96f, animationSpec = tween(300)))
-                        .togetherWith(
-                            slideOutHorizontally(tween(280)) { it } + fadeOut(tween(220)) + scaleOut(targetScale = 0.96f, animationSpec = tween(280))
-                        )
+                    (slideInHorizontally(tween(300)) { -it / 3 } + fadeIn(tween(300)))
+                        .togetherWith(slideOutHorizontally(tween(280)) { it } + fadeOut(tween(200)))
                 }
             },
             label = "explore_screen_transition",
@@ -125,48 +121,16 @@ fun SearchScreen(
                     book = activeBook,
                     chapters = state.availableChapters,
                     selectedChapter = state.selectedChapter,
-                    passagesMap = state.chapterPassagesMap,
+                    chapterPassagesMap = state.chapterPassagesMap,
                     isLoading = state.isLoadingChapter,
                     bookmarkedIds = state.bookmarkedPassageIds,
                     onEvent = onEvent
                 )
             } else {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(FathomTheme.colors.background)
-                ) {
-                    ExploreTopHeader(
-                        query = state.searchQuery,
-                        selectedTradition = state.selectedTradition,
-                        onQueryChange = { onEvent(SearchUiEvent.OnQueryChange(it)) },
-                        onSelectTradition = { onEvent(SearchUiEvent.OnSelectTradition(it)) }
-                    )
-
-                    SacredDivider(modifier = Modifier.padding(horizontal = 20.dp, vertical = 2.dp))
-
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .weight(1f)
-                    ) {
-                        if (state.searchQuery.isNotBlank()) {
-                            SearchResultsView(
-                                query = state.searchQuery,
-                                results = state.searchResults,
-                                isSearching = state.isSearching,
-                                bookmarkedIds = state.bookmarkedPassageIds,
-                                onEvent = onEvent
-                            )
-                        } else {
-                            ScripturesDirectoryView(
-                                books = state.allBooks,
-                                selectedTradition = state.selectedTradition,
-                                onSelectBook = { onEvent(SearchUiEvent.OnSelectBook(it)) }
-                            )
-                        }
-                    }
-                }
+                DirectoryAndSearchRootView(
+                    state = state,
+                    onEvent = onEvent
+                )
             }
         }
 
@@ -187,53 +151,87 @@ fun SearchScreen(
 }
 
 @Composable
-private fun ExploreTopHeader(
-    query: String,
-    selectedTradition: TraditionId?,
-    onQueryChange: (String) -> Unit,
-    onSelectTradition: (TraditionId?) -> Unit
+private fun DirectoryAndSearchRootView(
+    state: SearchUiState,
+    onEvent: (SearchUiEvent) -> Unit
 ) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .statusBarsPadding()
-            .padding(horizontal = 20.dp)
-            .padding(top = 10.dp, bottom = 8.dp)
-    ) {
-        Column {
-            Text(
-                text = "SACRED EXPLORATION",
-                style = FathomTheme.typography.caption.copy(
-                    fontSize = 10.5.sp,
-                    letterSpacing = 1.6.sp,
-                    fontWeight = FontWeight.Bold
-                ),
-                color = FathomTheme.colors.accentGold
+    Column(modifier = Modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .statusBarsPadding()
+                .padding(horizontal = 20.dp)
+                .padding(top = 10.dp, bottom = 4.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = "Explore & Search",
+                        style = FathomTheme.typography.brandTitle,
+                        color = FathomTheme.colors.textPrimary
+                    )
+                }
+
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(FathomTheme.colors.accentGold.copy(alpha = 0.12f))
+                        .border(1.dp, FathomTheme.colors.accentGold.copy(alpha = 0.35f), RoundedCornerShape(12.dp))
+                        .padding(horizontal = 8.dp, vertical = 4.dp)
+                ) {
+                    Text(
+                        text = "10K+ VERSES",
+                        fontFamily = JakartaFontFamily,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 9.5.sp,
+                        letterSpacing = 1.sp,
+                        color = FathomTheme.colors.accentGold
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            SearchInputBar(
+                query = state.searchQuery,
+                onQueryChange = { onEvent(SearchUiEvent.OnQueryChange(it)) }
             )
-            Spacer(modifier = Modifier.height(2.dp))
-            Text(
-                text = "Universal Canons",
-                style = FathomTheme.typography.brandTitle.copy(
-                    fontSize = 24.sp,
-                    letterSpacing = (-0.5).sp
-                ),
-                color = FathomTheme.colors.textPrimary
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            TraditionFilterBar(
+                selectedTradition = state.selectedTradition,
+                onSelectTradition = { onEvent(SearchUiEvent.OnSelectTradition(it)) }
             )
         }
 
-        Spacer(modifier = Modifier.height(12.dp))
+        SacredDivider(modifier = Modifier.padding(horizontal = 20.dp, vertical = 2.dp))
 
-        SearchInputBar(
-            query = query,
-            onQueryChange = onQueryChange
-        )
-
-        Spacer(modifier = Modifier.height(10.dp))
-
-        TraditionFilterBar(
-            selectedTradition = selectedTradition,
-            onSelectTradition = onSelectTradition
-        )
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f)
+        ) {
+            if (state.searchQuery.isNotBlank()) {
+                SearchResultsView(
+                    query = state.searchQuery,
+                    results = state.searchResults,
+                    isSearching = state.isSearching,
+                    bookmarkedIds = state.bookmarkedPassageIds,
+                    onEvent = onEvent
+                )
+            } else {
+                ScripturesDirectoryView(
+                    books = state.allBooks,
+                    selectedTradition = state.selectedTradition,
+                    onSelectBook = { onEvent(SearchUiEvent.OnSelectBook(it)) }
+                )
+            }
+        }
     }
 }
 
@@ -242,8 +240,6 @@ private fun SearchInputBar(
     query: String,
     onQueryChange: (String) -> Unit
 ) {
-    val isFocusedOrNotEmpty = query.isNotEmpty()
-
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -251,16 +247,16 @@ private fun SearchInputBar(
             .background(FathomTheme.colors.surfaceElevated)
             .border(
                 width = 1.dp,
-                color = if (isFocusedOrNotEmpty) FathomTheme.colors.accentGold.copy(alpha = 0.55f) else FathomTheme.colors.borderSubtle,
+                color = if (query.isNotEmpty()) FathomTheme.colors.accentGold.copy(alpha = 0.6f) else FathomTheme.colors.borderSubtle,
                 shape = RoundedCornerShape(14.dp)
             )
-            .padding(horizontal = 14.dp, vertical = 10.dp),
+            .padding(horizontal = 14.dp, vertical = 11.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Icon(
             imageVector = PhosphorIcons.Regular.MagnifyingGlass,
             contentDescription = null,
-            tint = if (isFocusedOrNotEmpty) FathomTheme.colors.accentGold else FathomTheme.colors.textTertiary,
+            tint = if (query.isNotEmpty()) FathomTheme.colors.accentGold else FathomTheme.colors.textTertiary,
             modifier = Modifier.size(17.dp)
         )
 
@@ -280,7 +276,7 @@ private fun SearchInputBar(
             decorationBox = { innerTextField ->
                 if (query.isEmpty()) {
                     Text(
-                        text = "Search 10,000+ sacred verses, themes, words...",
+                        text = "Search verses, chapters, keywords...",
                         fontFamily = JakartaFontFamily,
                         fontSize = 13.5.sp,
                         color = FathomTheme.colors.textTertiary
@@ -293,13 +289,13 @@ private fun SearchInputBar(
         if (query.isNotEmpty()) {
             IconButton(
                 onClick = { onQueryChange("") },
-                modifier = Modifier.size(22.dp)
+                modifier = Modifier.size(20.dp)
             ) {
                 Icon(
                     imageVector = PhosphorIcons.Regular.X,
                     contentDescription = "Clear",
                     tint = FathomTheme.colors.textTertiary,
-                    modifier = Modifier.size(15.dp)
+                    modifier = Modifier.size(14.dp)
                 )
             }
         }
@@ -318,7 +314,7 @@ private fun TraditionFilterBar(
         horizontalArrangement = Arrangement.spacedBy(6.dp)
     ) {
         FilterPill(
-            label = "ALL TRADITIONS",
+            label = "ALL CANONS",
             isSelected = selectedTradition == null,
             onClick = { onSelectTradition(null) }
         )
@@ -344,7 +340,7 @@ private fun FilterPill(
     Box(
         modifier = Modifier
             .clip(RoundedCornerShape(16.dp))
-            .background(if (isSelected) FathomTheme.colors.accentGold.copy(alpha = 0.18f) else FathomTheme.colors.surfaceElevated)
+            .background(if (isSelected) FathomTheme.colors.accentGold.copy(alpha = 0.2f) else FathomTheme.colors.surfaceElevated)
             .border(
                 width = 1.dp,
                 color = if (isSelected) FathomTheme.colors.accentGold else FathomTheme.colors.borderSubtle,
@@ -407,7 +403,7 @@ private fun SearchResultsView(
     } else {
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 10.dp, bottom = 88.dp)
+            contentPadding = PaddingValues(start = 20.dp, top = 12.dp, end = 20.dp, bottom = 96.dp)
         ) {
             item {
                 Text(
@@ -564,7 +560,7 @@ private fun ScripturesDirectoryView(
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 10.dp, bottom = 88.dp)
+        contentPadding = PaddingValues(start = 20.dp, top = 12.dp, end = 20.dp, bottom = 96.dp)
     ) {
         item {
             Text(
@@ -650,7 +646,7 @@ private fun ChapterReaderView(
     book: Book,
     chapters: List<Int>,
     selectedChapter: Int?,
-    passagesMap: Map<Int, List<Passage>>,
+    chapterPassagesMap: Map<Int, List<Passage>>,
     isLoading: Boolean,
     bookmarkedIds: Set<String>,
     onEvent: (SearchUiEvent) -> Unit
@@ -658,30 +654,34 @@ private fun ChapterReaderView(
     val coroutineScope = rememberCoroutineScope()
     val chapterScrollState = rememberLazyListState()
 
-    val initialIndex = if (selectedChapter != null && chapters.isNotEmpty()) {
-        chapters.indexOf(selectedChapter).coerceAtLeast(0)
+    val initialPage = if (selectedChapter != null) {
+        val idx = chapters.indexOf(selectedChapter)
+        if (idx >= 0) idx else 0
     } else 0
 
     val pagerState = rememberPagerState(
-        initialPage = initialIndex,
+        initialPage = initialPage,
         pageCount = { chapters.size }
     )
 
-    LaunchedEffect(pagerState.currentPage) {
-        if (chapters.isNotEmpty() && pagerState.currentPage in chapters.indices) {
-            val currentChapter = chapters[pagerState.currentPage]
-            if (currentChapter != selectedChapter) {
-                onEvent(SearchUiEvent.OnSelectChapter(currentChapter))
+    LaunchedEffect(pagerState) {
+        snapshotFlow { pagerState.currentPage }
+            .collect { page ->
+                if (page in chapters.indices) {
+                    val targetChapter = chapters[page]
+                    if (targetChapter != selectedChapter) {
+                        onEvent(SearchUiEvent.OnSelectChapter(targetChapter))
+                    }
+                    chapterScrollState.animateScrollToItem(page)
+                }
             }
-            chapterScrollState.animateScrollToItem(pagerState.currentPage)
-        }
     }
 
     LaunchedEffect(selectedChapter) {
-        if (selectedChapter != null && chapters.isNotEmpty()) {
-            val targetIndex = chapters.indexOf(selectedChapter)
-            if (targetIndex >= 0 && targetIndex != pagerState.currentPage) {
-                pagerState.animateScrollToPage(targetIndex)
+        if (selectedChapter != null) {
+            val targetPage = chapters.indexOf(selectedChapter)
+            if (targetPage >= 0 && targetPage != pagerState.currentPage) {
+                pagerState.scrollToPage(targetPage)
             }
         }
     }
@@ -706,7 +706,7 @@ private fun ChapterReaderView(
                     modifier = Modifier
                         .clip(CircleShape)
                         .background(FathomTheme.colors.surfaceElevated)
-                        .size(38.dp)
+                        .size(36.dp)
                 ) {
                     Icon(
                         imageVector = PhosphorIcons.Regular.ArrowLeft,
@@ -723,7 +723,7 @@ private fun ChapterReaderView(
                         text = book.title,
                         fontFamily = SyneFontFamily,
                         fontWeight = FontWeight.Bold,
-                        fontSize = 18.sp,
+                        fontSize = 17.5.sp,
                         color = FathomTheme.colors.textPrimary,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
@@ -732,7 +732,7 @@ private fun ChapterReaderView(
                         text = "${book.traditionId.displayName.uppercase()} CANON • ${book.totalPassages} VERSES",
                         style = FathomTheme.typography.caption.copy(
                             fontSize = 10.sp,
-                            letterSpacing = 1.sp
+                            letterSpacing = 0.9.sp
                         ),
                         color = FathomTheme.colors.accentGold
                     )
@@ -747,7 +747,8 @@ private fun ChapterReaderView(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    itemsIndexed(chapters, key = { _, ch -> ch }) { index, chapter ->
+                    items(chapters.size, key = { chapters[it] }) { index ->
+                        val chapter = chapters[index]
                         val isSelected = pagerState.currentPage == index
                         val prefix = when (book.traditionId) {
                             TraditionId.ISLAM -> "SURAH"
@@ -786,17 +787,19 @@ private fun ChapterReaderView(
 
         SacredDivider(modifier = Modifier.padding(horizontal = 16.dp, vertical = 2.dp))
 
-        HorizontalPager(
-            state = pagerState,
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .weight(1f)
-        ) { pageIndex ->
-            if (pageIndex in chapters.indices) {
-                val chapterNumber = chapters[pageIndex]
-                val chapterPassages = passagesMap[chapterNumber]
+        ) {
+            HorizontalPager(
+                state = pagerState,
+                modifier = Modifier.fillMaxSize()
+            ) { page ->
+                val currentCh = if (page in chapters.indices) chapters[page] else null
+                val passages = currentCh?.let { chapterPassagesMap[it] } ?: emptyList()
 
-                if (chapterPassages == null && isLoading) {
+                if (passages.isEmpty() && isLoading) {
                     Box(
                         modifier = Modifier.fillMaxSize(),
                         contentAlignment = Alignment.Center
@@ -804,10 +807,9 @@ private fun ChapterReaderView(
                         CircularProgressIndicator(color = FathomTheme.colors.accentGold)
                     }
                 } else {
-                    val passages = chapterPassages ?: emptyList()
                     LazyColumn(
                         modifier = Modifier.fillMaxSize(),
-                        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 88.dp)
+                        contentPadding = PaddingValues(start = 16.dp, top = 8.dp, end = 16.dp, bottom = 96.dp)
                     ) {
                         items(passages, key = { it.id }) { passage ->
                             ChapterVerseCard(
