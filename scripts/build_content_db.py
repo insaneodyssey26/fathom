@@ -393,8 +393,34 @@ def build_upanishads(cursor):
     )
     print(f"Kena Upanishad complete: {kena_count} verses ingested with Sanskrit & pronunciation.")
 
+def chinese_to_pinyin(text, p_map):
+    words = []
+    curr = []
+    for ch in text:
+        if ch in p_map:
+            curr.append(p_map[ch])
+        elif ch in '，,':
+            if curr:
+                words.append(' '.join(curr) + ',')
+                curr = []
+        elif ch in '。；;':
+            if curr:
+                words.append(' '.join(curr) + '.')
+                curr = []
+        elif ch.isspace():
+            if curr:
+                words.append(' '.join(curr))
+                curr = []
+        else:
+            if curr:
+                words.append(' '.join(curr))
+                curr = []
+    if curr:
+        words.append(' '.join(curr))
+    return ' '.join(words)
+
 def build_tao_te_ching(cursor):
-    print("Ingesting Tao Te Ching (81 Chapters with Classical Chinese & English Translation)...")
+    print("Ingesting Tao Te Ching (81 Chapters with Classical Chinese, Pinyin pronunciation & English)...")
     url_eng = "https://www.gutenberg.org/cache/epub/216/pg216.txt"
     raw_eng = fetch_url(url_eng, "tao_te_ching.txt")
 
@@ -406,6 +432,17 @@ def build_tao_te_ching(cursor):
         if len(item.get("paragraphs", [])) == 81:
             paragraphs_zh = item["paragraphs"]
             break
+
+    url_pinyin = "https://raw.githubusercontent.com/mozillazg/pinyin-data/master/pinyin.txt"
+    raw_pinyin = fetch_url(url_pinyin, "pinyin.txt")
+    p_map = {}
+    if raw_pinyin:
+        for line in raw_pinyin.split('\n'):
+            if line.startswith('U+'):
+                parts = line.split(': ')
+                code = chr(int(parts[0][2:], 16))
+                pinyin = parts[1].split('#')[0].strip().split(',')[0].strip()
+                p_map[code] = pinyin
 
     start_pos = raw_eng.find('PART 1.')
     end_pos = raw_eng.find('*** END OF THE PROJECT GUTENBERG')
@@ -436,12 +473,18 @@ def build_tao_te_ching(cursor):
         text_eng = re.sub(r'\s+', ' ', chaps[chap_num]).strip()
         zh_text = paragraphs_zh[chap_num - 1].strip() if chap_num - 1 < len(paragraphs_zh) else None
 
+        if zh_text:
+            pinyin_text = chinese_to_pinyin(zh_text, p_map)
+            original_field = f"{zh_text}\n\n{pinyin_text}"
+        else:
+            original_field = None
+
         passage_id = f"tao_te_ching_{chap_num}"
         ref = f"Tao Te Ching {chap_num}"
 
         cursor.execute(
             "INSERT OR REPLACE INTO passage_entity VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-            (passage_id, "tao_te_ching", "taoism", ref, zh_text, text_eng, chap_num, chap_num, 1)
+            (passage_id, "tao_te_ching", "taoism", ref, original_field, text_eng, chap_num, chap_num, 1)
         )
         count += 1
 
@@ -449,7 +492,7 @@ def build_tao_te_ching(cursor):
         "INSERT OR REPLACE INTO book_entity VALUES (?, ?, ?, ?, ?, ?, ?)",
         ("tao_te_ching", "taoism", "Tao Te Ching", "Lao Tzu", "Classical Chinese", count, 1)
     )
-    print(f"Tao Te Ching complete: {count} chapters ingested with Classical Chinese and English translation.")
+    print(f"Tao Te Ching complete: {count} chapters ingested with Classical Chinese, Pinyin & English.")
 
 
 def build_meditations(cursor):
