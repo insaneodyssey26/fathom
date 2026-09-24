@@ -73,7 +73,12 @@ import com.adamglin.phosphoricons.regular.Info
 import com.adamglin.phosphoricons.regular.MagnifyingGlass
 import com.adamglin.phosphoricons.regular.ShareNetwork
 import com.adamglin.phosphoricons.regular.Sparkle
+import com.adamglin.phosphoricons.regular.SpeakerHigh
 import com.adamglin.phosphoricons.regular.X
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import com.masum.fathom.core.audio.LocalSacredAudioEngine
+import com.masum.fathom.core.audio.SacredAudioState
 import com.masum.fathom.core.model.Book
 import com.masum.fathom.core.model.Passage
 import com.masum.fathom.core.model.TraditionId
@@ -645,12 +650,28 @@ private fun SearchPassageCard(
 
         SacredDivider(modifier = Modifier.padding(vertical = 10.dp))
 
+        val audioEngine = LocalSacredAudioEngine.current
+        val playbackState by audioEngine.playbackState.collectAsState()
+        val isSpeakingThis = (playbackState as? SacredAudioState.Playing)?.passage?.id == passage.id
+
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                IconButton(
+                    onClick = { audioEngine.toggle(passage) },
+                    modifier = Modifier.size(32.dp)
+                ) {
+                    Icon(
+                        imageVector = PhosphorIcons.Regular.SpeakerHigh,
+                        contentDescription = "Sacred Recitation",
+                        tint = if (isSpeakingThis) FathomTheme.colors.accentGold else FathomTheme.colors.textSecondary,
+                        modifier = Modifier.size(16.dp)
+                    )
+                }
+
                 IconButton(
                     onClick = onOpenShare,
                     modifier = Modifier.size(32.dp)
@@ -997,6 +1018,10 @@ private fun ChapterVerseCard(
     onOpenContext: () -> Unit,
     onOpenShare: () -> Unit
 ) {
+    val audioEngine = LocalSacredAudioEngine.current
+    val playbackState by audioEngine.playbackState.collectAsState()
+    val isSpeakingThis = (playbackState as? SacredAudioState.Playing)?.passage?.id == passage.id
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -1032,6 +1057,18 @@ private fun ChapterVerseCard(
             }
 
             Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                IconButton(
+                    onClick = { audioEngine.toggle(passage) },
+                    modifier = Modifier.size(30.dp)
+                ) {
+                    Icon(
+                        imageVector = PhosphorIcons.Regular.SpeakerHigh,
+                        contentDescription = "Sacred Recitation",
+                        tint = if (isSpeakingThis) FathomTheme.colors.accentGold else FathomTheme.colors.textSecondary,
+                        modifier = Modifier.size(15.dp)
+                    )
+                }
+
                 IconButton(
                     onClick = onOpenShare,
                     modifier = Modifier.size(30.dp)

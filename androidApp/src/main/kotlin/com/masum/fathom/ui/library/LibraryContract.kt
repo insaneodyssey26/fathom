@@ -23,6 +23,11 @@ data class NoteWithPassage(
     val passage: Passage?
 )
 
+data class HistoryWithPassage(
+    val record: ReadingRecord,
+    val passage: Passage?
+)
+
 @Immutable
 sealed interface LibraryUiState {
     data object Loading : LibraryUiState
@@ -31,7 +36,7 @@ sealed interface LibraryUiState {
         val selectedTab: LibraryTab = LibraryTab.BOOKMARKS,
         val bookmarks: List<BookmarkWithPassage> = emptyList(),
         val notes: List<NoteWithPassage> = emptyList(),
-        val history: List<ReadingRecord> = emptyList(),
+        val history: List<HistoryWithPassage> = emptyList(),
         val totalReadCount: Int = 0,
         val selectedPassageForNote: Passage? = null,
         val selectedPassageForContext: Passage? = null,

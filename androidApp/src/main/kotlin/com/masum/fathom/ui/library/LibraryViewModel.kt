@@ -97,6 +97,11 @@ class LibraryViewModel(
                 NoteWithPassage(note, passage)
             }
 
+            val historyItems = history.map { record ->
+                val passage = passageRepository.getPassage(record.passageId).asSuccessOrNull()
+                HistoryWithPassage(record, passage)
+            }
+
             val filteredBookmarks = bookmarkItems.filter { item ->
                 val matchesTradition = traditionFilter == null || item.passage?.traditionId == traditionFilter
                 val matchesTag = tagFilter == null || tagFilter in item.bookmark.tags
@@ -119,7 +124,7 @@ class LibraryViewModel(
                 selectedTab = tab,
                 bookmarks = filteredBookmarks,
                 notes = filteredNotes,
-                history = history,
+                history = historyItems,
                 totalReadCount = totalReads,
                 selectedPassageForNote = notePassage,
                 selectedPassageForContext = contextPassage,

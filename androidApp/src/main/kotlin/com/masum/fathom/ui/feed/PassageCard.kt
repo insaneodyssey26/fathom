@@ -23,14 +23,19 @@ import com.adamglin.phosphoricons.regular.CaretDown
 import com.adamglin.phosphoricons.regular.CaretUp
 import com.adamglin.phosphoricons.regular.Info
 import com.adamglin.phosphoricons.regular.ShareNetwork
+import com.adamglin.phosphoricons.regular.SpeakerHigh
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
+import com.masum.fathom.core.audio.LocalSacredAudioEngine
+import com.masum.fathom.core.audio.SacredAudioState
 import com.masum.fathom.core.model.Passage
 import com.masum.fathom.ui.components.SacredDivider
 import com.masum.fathom.ui.components.TraditionBadge
@@ -49,6 +54,9 @@ fun PassageCard(
     hasNext: Boolean = true,
     modifier: Modifier = Modifier
 ) {
+    val audioEngine = LocalSacredAudioEngine.current
+    val playbackState by audioEngine.playbackState.collectAsState()
+    val isSpeakingThis = (playbackState as? SacredAudioState.Playing)?.passage?.id == passage.id
     val scrollState = rememberScrollState()
 
     Box(
@@ -165,6 +173,21 @@ fun PassageCard(
                                 imageVector = PhosphorIcons.Regular.CaretDown,
                                 contentDescription = "Next Verse",
                                 tint = if (hasNext) FathomTheme.colors.textSecondary else FathomTheme.colors.textTertiary.copy(alpha = 0.35f),
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+
+                        IconButton(
+                            onClick = { audioEngine.toggle(passage) },
+                            modifier = Modifier
+                                .clip(CircleShape)
+                                .background(if (isSpeakingThis) FathomTheme.colors.accentGold.copy(alpha = 0.2f) else FathomTheme.colors.surfaceElevated)
+                                .size(40.dp)
+                        ) {
+                            Icon(
+                                imageVector = PhosphorIcons.Regular.SpeakerHigh,
+                                contentDescription = "Sacred Recitation",
+                                tint = if (isSpeakingThis) FathomTheme.colors.accentGold else FathomTheme.colors.textSecondary,
                                 modifier = Modifier.size(18.dp)
                             )
                         }

@@ -3,8 +3,8 @@ package com.masum.fathom.ui.library
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
-import android.content.Intent
 import android.widget.Toast
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
@@ -17,6 +17,7 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -32,7 +33,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
@@ -40,10 +40,6 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.Tab
-import androidx.compose.material3.TabRow
-import androidx.compose.material3.TabRowDefaults
-import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -56,25 +52,30 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.adamglin.PhosphorIcons
 import com.adamglin.phosphoricons.Regular
+import com.adamglin.phosphoricons.regular.ClockCounterClockwise
 import com.adamglin.phosphoricons.regular.Copy
-import com.adamglin.phosphoricons.regular.Info
 import com.adamglin.phosphoricons.regular.MagnifyingGlass
 import com.adamglin.phosphoricons.regular.NotePencil
 import com.adamglin.phosphoricons.regular.ShareNetwork
+import com.adamglin.phosphoricons.regular.Sparkle
 import com.adamglin.phosphoricons.regular.Tag
 import com.adamglin.phosphoricons.regular.TrashSimple
 import com.adamglin.phosphoricons.regular.X
 import com.masum.fathom.core.model.Passage
 import com.masum.fathom.core.model.TraditionId
+import com.masum.fathom.ui.components.QuoteCardModal
 import com.masum.fathom.ui.components.SacredDivider
 import com.masum.fathom.ui.components.TraditionBadge
 import com.masum.fathom.ui.feed.PassageContextSheet
@@ -99,7 +100,7 @@ fun LibraryScreen(
                 .fillMaxWidth()
                 .statusBarsPadding()
                 .padding(horizontal = 24.dp)
-                .padding(top = 10.dp, bottom = 8.dp),
+                .padding(top = 10.dp, bottom = 6.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -135,13 +136,13 @@ fun LibraryScreen(
 
             is LibraryUiState.Success -> {
                 if (state.selectedPassageForShare != null) {
-                    androidx.activity.compose.BackHandler { onEvent(LibraryUiEvent.OnCloseShare) }
+                    BackHandler { onEvent(LibraryUiEvent.OnCloseShare) }
                 } else if (state.selectedPassageForContext != null) {
-                    androidx.activity.compose.BackHandler { onEvent(LibraryUiEvent.OnCloseContext) }
+                    BackHandler { onEvent(LibraryUiEvent.OnCloseContext) }
                 } else if (state.selectedPassageForNote != null) {
-                    androidx.activity.compose.BackHandler { onEvent(LibraryUiEvent.OnCloseNoteDialog) }
+                    BackHandler { onEvent(LibraryUiEvent.OnCloseNoteDialog) }
                 } else if (state.searchQuery.isNotEmpty()) {
-                    androidx.activity.compose.BackHandler { onEvent(LibraryUiEvent.OnSearchQueryChanged("")) }
+                    BackHandler { onEvent(LibraryUiEvent.OnSearchQueryChanged("")) }
                 }
 
                 val coroutineScope = rememberCoroutineScope()
@@ -163,40 +164,16 @@ fun LibraryScreen(
                     }
                 }
 
-                TabRow(
-                    selectedTabIndex = pagerState.currentPage,
-                    containerColor = FathomTheme.colors.background,
-                    contentColor = FathomTheme.colors.accentGold,
-                    indicator = { tabPositions ->
-                        TabRowDefaults.SecondaryIndicator(
-                            modifier = Modifier.tabIndicatorOffset(tabPositions[pagerState.currentPage]),
-                            color = FathomTheme.colors.accentGold
-                        )
-                    },
-                    divider = {}
-                ) {
-                    LibraryTab.entries.forEachIndexed { index, tab ->
-                        Tab(
-                            selected = pagerState.currentPage == index,
-                            onClick = {
-                                coroutineScope.launch {
-                                    pagerState.animateScrollToPage(index)
-                                }
-                            },
-                            text = {
-                                Text(
-                                    text = when (tab) {
-                                        LibraryTab.BOOKMARKS -> "SAVED (${state.bookmarks.size})"
-                                        LibraryTab.REFLECTIONS -> "REFLECTIONS (${state.notes.size})"
-                                        LibraryTab.HISTORY -> "HISTORY"
-                                    },
-                                    style = FathomTheme.typography.traditionBadge,
-                                    color = if (pagerState.currentPage == index) FathomTheme.colors.accentGold else FathomTheme.colors.textSecondary
-                                )
-                            }
-                        )
+                SacredSegmentedTabBar(
+                    selectedTab = state.selectedTab,
+                    bookmarksCount = state.bookmarks.size,
+                    notesCount = state.notes.size,
+                    onTabSelected = { tab ->
+                        coroutineScope.launch {
+                            pagerState.animateScrollToPage(tab.ordinal)
+                        }
                     }
-                }
+                )
 
                 if (state.selectedTab == LibraryTab.BOOKMARKS || state.selectedTab == LibraryTab.REFLECTIONS) {
                     SearchBarAndFilters(
@@ -207,17 +184,37 @@ fun LibraryScreen(
                     )
                 }
 
-                HorizontalPager(
-                    state = pagerState,
+                Box(
                     modifier = Modifier
                         .fillMaxWidth()
                         .weight(1f)
-                ) { page ->
-                    when (LibraryTab.entries[page]) {
-                        LibraryTab.BOOKMARKS -> BookmarksList(state.bookmarks, onEvent)
-                        LibraryTab.REFLECTIONS -> ReflectionsList(state.notes, onEvent)
-                        LibraryTab.HISTORY -> HistoryStatsView(state.history, state.totalReadCount)
+                ) {
+                    HorizontalPager(
+                        state = pagerState,
+                        modifier = Modifier.fillMaxSize()
+                    ) { page ->
+                        when (LibraryTab.entries[page]) {
+                            LibraryTab.BOOKMARKS -> BookmarksList(state.bookmarks, onEvent)
+                            LibraryTab.REFLECTIONS -> ReflectionsList(state.notes, onEvent)
+                            LibraryTab.HISTORY -> HistoryStatsView(state.history, state.totalReadCount, onEvent)
+                        }
                     }
+
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(26.dp)
+                            .align(Alignment.TopCenter)
+                            .background(
+                                brush = Brush.verticalGradient(
+                                    colors = listOf(
+                                        FathomTheme.colors.background,
+                                        FathomTheme.colors.background.copy(alpha = 0.75f),
+                                        Color.Transparent
+                                    )
+                                )
+                            )
+                    )
                 }
 
                 state.selectedPassageForContext?.let { contextPassage ->
@@ -238,11 +235,70 @@ fun LibraryScreen(
                 }
 
                 state.selectedPassageForShare?.let { sharePassage ->
-                    com.masum.fathom.ui.components.QuoteCardModal(
+                    QuoteCardModal(
                         passage = sharePassage,
                         onDismiss = { onEvent(LibraryUiEvent.OnCloseShare) }
                     )
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SacredSegmentedTabBar(
+    selectedTab: LibraryTab,
+    bookmarksCount: Int,
+    notesCount: Int,
+    onTabSelected: (LibraryTab) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp, vertical = 6.dp)
+            .clip(RoundedCornerShape(16.dp))
+            .background(FathomTheme.colors.surfaceElevated)
+            .border(
+                width = 1.dp,
+                color = FathomTheme.colors.borderSubtle,
+                shape = RoundedCornerShape(16.dp)
+            )
+            .padding(4.dp),
+        horizontalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        LibraryTab.entries.forEach { tab ->
+            val isSelected = selectedTab == tab
+            val label = when (tab) {
+                LibraryTab.BOOKMARKS -> "SAVED ($bookmarksCount)"
+                LibraryTab.REFLECTIONS -> "REFLECTIONS ($notesCount)"
+                LibraryTab.HISTORY -> "HISTORY"
+            }
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(
+                        if (isSelected) FathomTheme.colors.accentGold.copy(alpha = 0.16f)
+                        else Color.Transparent
+                    )
+                    .border(
+                        width = if (isSelected) 1.dp else 0.dp,
+                        color = if (isSelected) FathomTheme.colors.accentGold else Color.Transparent,
+                        shape = RoundedCornerShape(12.dp)
+                    )
+                    .clickable { onTabSelected(tab) }
+                    .padding(vertical = 8.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = label,
+                    fontFamily = JakartaFontFamily,
+                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                    fontSize = 10.5.sp,
+                    letterSpacing = 0.6.sp,
+                    color = if (isSelected) FathomTheme.colors.accentGold else FathomTheme.colors.textSecondary
+                )
             }
         }
     }
@@ -258,7 +314,7 @@ private fun SearchBarAndFilters(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 20.dp, vertical = 8.dp)
+            .padding(horizontal = 20.dp, vertical = 4.dp)
     ) {
         Row(
             modifier = Modifier
@@ -402,14 +458,14 @@ private fun BookmarksList(
                     text = "Tap the bookmark icon on any passage in the feed to save it to your sacred sanctuary.",
                     style = FathomTheme.typography.commentaryBody,
                     color = FathomTheme.colors.textTertiary,
-                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                    textAlign = TextAlign.Center
                 )
             }
         }
     } else {
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
-            contentPadding = androidx.compose.foundation.layout.PaddingValues(start = 20.dp, top = 8.dp, end = 20.dp, bottom = 96.dp)
+            contentPadding = PaddingValues(start = 20.dp, top = 28.dp, end = 20.dp, bottom = 96.dp)
         ) {
             items(bookmarks, key = { it.bookmark.id }) { item ->
                 val passage = item.passage
@@ -578,7 +634,7 @@ private fun BookmarksList(
 
                         TextButton(
                             onClick = { passage?.let { onEvent(LibraryUiEvent.OnOpenContext(it)) } },
-                            contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 8.dp)
+                            contentPadding = PaddingValues(horizontal = 8.dp)
                         ) {
                             Text(
                                 text = "EXEGESIS",
@@ -691,14 +747,14 @@ private fun ReflectionsList(
                     text = "Tap the pencil icon on any saved passage to record your personal contemplations and marginalia notes.",
                     style = FathomTheme.typography.commentaryBody,
                     color = FathomTheme.colors.textTertiary,
-                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                    textAlign = TextAlign.Center
                 )
             }
         }
     } else {
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
-            contentPadding = androidx.compose.foundation.layout.PaddingValues(start = 20.dp, top = 8.dp, end = 20.dp, bottom = 96.dp)
+            contentPadding = PaddingValues(start = 20.dp, top = 28.dp, end = 20.dp, bottom = 96.dp)
         ) {
             items(notes, key = { it.note.id }) { item ->
                 Column(
@@ -774,7 +830,7 @@ private fun ReflectionsList(
                         item.passage?.let { p ->
                             TextButton(
                                 onClick = { onEvent(LibraryUiEvent.OnOpenContext(p)) },
-                                contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 4.dp)
+                                contentPadding = PaddingValues(horizontal = 4.dp)
                             ) {
                                 Text(
                                     text = "OPEN CONTEXT",
@@ -911,117 +967,387 @@ private fun NoteEditDialog(
     )
 }
 
-
 @Composable
 private fun HistoryStatsView(
-    history: List<com.masum.fathom.core.model.user.ReadingRecord>,
-    totalCount: Int
+    history: List<HistoryWithPassage>,
+    totalCount: Int,
+    onEvent: (LibraryUiEvent) -> Unit
 ) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(start = 24.dp, top = 24.dp, end = 24.dp, bottom = 96.dp)
-    ) {
-        Text(
-            text = "EXPLORATION RECORD",
-            style = FathomTheme.typography.canonicalHeader,
-            color = FathomTheme.colors.accentGold
-        )
-        Spacer(modifier = Modifier.height(16.dp))
+    val context = LocalContext.current
+    val traditionCounts = remember(history) {
+        history.mapNotNull { it.passage?.traditionId }
+            .groupingBy { it }
+            .eachCount()
+    }
 
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(14.dp))
-                .background(FathomTheme.colors.surfaceElevated)
-                .border(
-                    width = 1.dp,
-                    color = FathomTheme.colors.borderSubtle,
-                    shape = RoundedCornerShape(14.dp)
-                )
-                .padding(20.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column {
-                Text(
-                    text = "$totalCount",
-                    style = FathomTheme.typography.brandTitle.copy(
-                        fontFamily = SyneFontFamily,
-                        fontSize = 32.sp,
-                        fontWeight = FontWeight.Bold
-                    ),
-                    color = FathomTheme.colors.accentGold
-                )
-                Text(
-                    text = "Total Contemplations",
-                    style = FathomTheme.typography.caption.copy(
-                        fontFamily = JakartaFontFamily,
-                        fontSize = 13.sp
-                    ),
-                    color = FathomTheme.colors.textSecondary
-                )
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(start = 20.dp, top = 28.dp, end = 20.dp, bottom = 96.dp)
+    ) {
+        item {
+            Text(
+                text = "EXPLORATION RECORD",
+                style = FathomTheme.typography.canonicalHeader,
+                color = FathomTheme.colors.accentGold
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(FathomTheme.colors.surfaceElevated)
+                    .border(
+                        width = 1.dp,
+                        color = FathomTheme.colors.borderSubtle,
+                        shape = RoundedCornerShape(14.dp)
+                    )
+                    .padding(20.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column {
+                    Text(
+                        text = "$totalCount",
+                        style = FathomTheme.typography.brandTitle.copy(
+                            fontFamily = SyneFontFamily,
+                            fontSize = 32.sp,
+                            fontWeight = FontWeight.Bold
+                        ),
+                        color = FathomTheme.colors.accentGold
+                    )
+                    Text(
+                        text = "Total Contemplations",
+                        style = FathomTheme.typography.caption.copy(
+                            fontFamily = JakartaFontFamily,
+                            fontSize = 13.sp
+                        ),
+                        color = FathomTheme.colors.textSecondary
+                    )
+                }
+
+                Column(horizontalAlignment = Alignment.End) {
+                    Text(
+                        text = "${history.size}",
+                        style = FathomTheme.typography.brandTitle.copy(
+                            fontFamily = SyneFontFamily,
+                            fontSize = 32.sp,
+                            fontWeight = FontWeight.Bold
+                        ),
+                        color = FathomTheme.colors.textPrimary
+                    )
+                    Text(
+                        text = "Unique Verses Explored",
+                        style = FathomTheme.typography.caption.copy(
+                            fontFamily = JakartaFontFamily,
+                            fontSize = 13.sp
+                        ),
+                        color = FathomTheme.colors.textSecondary
+                    )
+                }
             }
 
-            Column(horizontalAlignment = Alignment.End) {
+            if (traditionCounts.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(16.dp))
                 Text(
-                    text = "${history.size}",
-                    style = FathomTheme.typography.brandTitle.copy(
-                        fontFamily = SyneFontFamily,
-                        fontSize = 32.sp,
-                        fontWeight = FontWeight.Bold
-                    ),
-                    color = FathomTheme.colors.textPrimary
+                    text = "CANONS EXPLORED",
+                    style = FathomTheme.typography.canonicalHeader,
+                    color = FathomTheme.colors.accentGold
                 )
+                Spacer(modifier = Modifier.height(8.dp))
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    traditionCounts.forEach { (tradition, count) ->
+                        Row(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(FathomTheme.colors.surfaceElevated)
+                                .border(
+                                    width = 1.dp,
+                                    color = FathomTheme.colors.borderSubtle,
+                                    shape = RoundedCornerShape(8.dp)
+                                )
+                                .padding(horizontal = 10.dp, vertical = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Text(
+                                text = tradition.displayName.uppercase(),
+                                style = FathomTheme.typography.traditionBadge,
+                                color = FathomTheme.colors.accentGold
+                            )
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(4.dp))
+                                    .background(FathomTheme.colors.accentGold.copy(alpha = 0.15f))
+                                    .padding(horizontal = 6.dp, vertical = 2.dp)
+                            ) {
+                                Text(
+                                    text = "$count",
+                                    fontFamily = JakartaFontFamily,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 10.5.sp,
+                                    color = FathomTheme.colors.accentGold
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(20.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 Text(
-                    text = "Unique Verses Explored",
-                    style = FathomTheme.typography.caption.copy(
-                        fontFamily = JakartaFontFamily,
-                        fontSize = 13.sp
-                    ),
-                    color = FathomTheme.colors.textSecondary
+                    text = "CHRONOLOGICAL TIMELINE",
+                    style = FathomTheme.typography.canonicalHeader,
+                    color = FathomTheme.colors.accentGold
                 )
+                Icon(
+                    imageVector = PhosphorIcons.Regular.ClockCounterClockwise,
+                    contentDescription = null,
+                    tint = FathomTheme.colors.textTertiary,
+                    modifier = Modifier.size(14.dp)
+                )
+            }
+            Spacer(modifier = Modifier.height(10.dp))
+        }
+
+        if (history.isEmpty()) {
+            item {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(FathomTheme.colors.surfaceElevated)
+                        .border(
+                            width = 1.dp,
+                            color = FathomTheme.colors.borderSubtle,
+                            shape = RoundedCornerShape(14.dp)
+                        )
+                        .padding(24.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(
+                            text = "No Reading History Yet",
+                            fontFamily = SyneFontFamily,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 16.sp,
+                            color = FathomTheme.colors.textPrimary
+                        )
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Text(
+                            text = "Verses you contemplate in the daily stream and scriptures will appear here in chronological order.",
+                            fontFamily = JakartaFontFamily,
+                            fontSize = 13.sp,
+                            color = FathomTheme.colors.textTertiary,
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                }
+            }
+        } else {
+            items(history, key = { it.record.passageId }) { item ->
+                val passage = item.passage
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(FathomTheme.colors.surfaceElevated)
+                        .border(
+                            width = 1.dp,
+                            color = FathomTheme.colors.borderSubtle,
+                            shape = RoundedCornerShape(14.dp)
+                        )
+                        .clickable {
+                            passage?.let { onEvent(LibraryUiEvent.OnOpenContext(it)) }
+                        }
+                        .padding(16.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            passage?.let {
+                                TraditionBadge(traditionId = it.traditionId)
+                                Text(
+                                    text = it.canonicalReference,
+                                    style = FathomTheme.typography.canonicalHeader,
+                                    color = FathomTheme.colors.textSecondary
+                                )
+                            } ?: Text(
+                                text = item.record.passageId,
+                                style = FathomTheme.typography.canonicalHeader,
+                                color = FathomTheme.colors.textSecondary
+                            )
+                        }
+
+                        if (item.record.readCount > 1) {
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(6.dp))
+                                    .background(FathomTheme.colors.accentGold.copy(alpha = 0.14f))
+                                    .padding(horizontal = 6.dp, vertical = 2.dp)
+                            ) {
+                                Text(
+                                    text = "${item.record.readCount}× READ",
+                                    fontFamily = JakartaFontFamily,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 9.5.sp,
+                                    letterSpacing = 0.5.sp,
+                                    color = FathomTheme.colors.accentGold
+                                )
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    Text(
+                        text = passage?.translation ?: "Passage text",
+                        style = FathomTheme.typography.verseDisplay.copy(
+                            fontSize = 15.sp,
+                            lineHeight = 23.sp
+                        ),
+                        color = FathomTheme.colors.textPrimary,
+                        maxLines = 4,
+                        overflow = TextOverflow.Ellipsis
+                    )
+
+                    SacredDivider(modifier = Modifier.padding(vertical = 8.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                            IconButton(
+                                onClick = {
+                                    passage?.let {
+                                        copyToClipboard(context, "${it.translation}\n— ${it.canonicalReference}")
+                                    }
+                                },
+                                modifier = Modifier.size(32.dp)
+                            ) {
+                                Icon(
+                                    imageVector = PhosphorIcons.Regular.Copy,
+                                    contentDescription = "Copy Passage",
+                                    tint = FathomTheme.colors.textSecondary,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            }
+
+                            IconButton(
+                                onClick = {
+                                    passage?.let {
+                                        onEvent(LibraryUiEvent.OnOpenShare(it))
+                                    }
+                                },
+                                modifier = Modifier.size(32.dp)
+                            ) {
+                                Icon(
+                                    imageVector = PhosphorIcons.Regular.ShareNetwork,
+                                    contentDescription = "Share Quote Card",
+                                    tint = FathomTheme.colors.textSecondary,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            }
+
+                            IconButton(
+                                onClick = {
+                                    passage?.let { onEvent(LibraryUiEvent.OnOpenNoteDialog(it)) }
+                                },
+                                modifier = Modifier.size(32.dp)
+                            ) {
+                                Icon(
+                                    imageVector = PhosphorIcons.Regular.NotePencil,
+                                    contentDescription = "Write Reflection",
+                                    tint = FathomTheme.colors.textSecondary,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            }
+                        }
+
+                        TextButton(
+                            onClick = { passage?.let { onEvent(LibraryUiEvent.OnOpenContext(it)) } },
+                            contentPadding = PaddingValues(horizontal = 8.dp)
+                        ) {
+                            Text(
+                                text = "EXEGESIS",
+                                fontFamily = JakartaFontFamily,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 11.5.sp,
+                                letterSpacing = 0.8.sp,
+                                color = FathomTheme.colors.accentGold
+                            )
+                        }
+                    }
+                }
+                Spacer(modifier = Modifier.height(10.dp))
             }
         }
 
-        Spacer(modifier = Modifier.height(20.dp))
-
-        Text(
-            text = "OFFLINE INTEGRITY",
-            style = FathomTheme.typography.canonicalHeader,
-            color = FathomTheme.colors.accentGold
-        )
-
-        Spacer(modifier = Modifier.height(10.dp))
-
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(14.dp))
-                .background(FathomTheme.colors.surfaceElevated)
-                .border(
-                    width = 1.dp,
-                    color = FathomTheme.colors.borderSubtle,
-                    shape = RoundedCornerShape(14.dp)
+        item {
+            Spacer(modifier = Modifier.height(16.dp))
+            Text(
+                text = "OFFLINE INTEGRITY",
+                style = FathomTheme.typography.canonicalHeader,
+                color = FathomTheme.colors.accentGold
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(FathomTheme.colors.surfaceElevated)
+                    .border(
+                        width = 1.dp,
+                        color = FathomTheme.colors.borderSubtle,
+                        shape = RoundedCornerShape(14.dp)
+                    )
+                    .padding(18.dp)
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Icon(
+                        imageVector = PhosphorIcons.Regular.Sparkle,
+                        contentDescription = null,
+                        tint = FathomTheme.colors.accentGold,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Text(
+                        text = "100% On-Device Storage",
+                        fontFamily = JakartaFontFamily,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 15.sp,
+                        color = FathomTheme.colors.textPrimary
+                    )
+                }
+                Spacer(modifier = Modifier.height(6.dp))
+                Text(
+                    text = "All your bookmarks, notes, marginalia, and reading history reside in private local SQLite databases on your device.",
+                    fontFamily = JakartaFontFamily,
+                    fontSize = 13.5.sp,
+                    lineHeight = 20.sp,
+                    color = FathomTheme.colors.textSecondary
                 )
-                .padding(18.dp)
-        ) {
-            Text(
-                text = "100% On-Device Storage",
-                fontFamily = JakartaFontFamily,
-                fontWeight = FontWeight.Bold,
-                fontSize = 15.sp,
-                color = FathomTheme.colors.textPrimary
-            )
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = "All your bookmarks, notes, marginalia, and reading history reside in private local SQLite databases on your device.",
-                fontFamily = JakartaFontFamily,
-                fontSize = 13.5.sp,
-                lineHeight = 20.sp,
-                color = FathomTheme.colors.textSecondary
-            )
+            }
         }
     }
 }
@@ -1032,4 +1358,3 @@ private fun copyToClipboard(context: Context, text: String) {
     clipboard?.setPrimaryClip(clip)
     Toast.makeText(context, "Passage copied to clipboard", Toast.LENGTH_SHORT).show()
 }
-

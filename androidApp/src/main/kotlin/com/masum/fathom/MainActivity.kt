@@ -8,7 +8,9 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -135,46 +137,63 @@ class MainActivity : ComponentActivity() {
                 }
             }
 
-            FathomTheme(readingTheme = activeTheme) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(FathomTheme.colors.background)
-                ) {
-                    androidx.compose.animation.AnimatedContent(
-                        targetState = selectedNav,
-                        transitionSpec = {
-                            (androidx.compose.animation.fadeIn(androidx.compose.animation.core.tween(240)) +
-                                androidx.compose.animation.scaleIn(initialScale = 0.98f, animationSpec = androidx.compose.animation.core.tween(240)))
-                                .togetherWith(
-                                    androidx.compose.animation.fadeOut(androidx.compose.animation.core.tween(200)) +
-                                        androidx.compose.animation.scaleOut(targetScale = 0.98f, animationSpec = androidx.compose.animation.core.tween(200))
+            val audioEngine = remember { com.masum.fathom.core.audio.SacredAudioEngine(context) }
+            androidx.compose.runtime.DisposableEffect(audioEngine) {
+                onDispose {
+                    audioEngine.release()
+                }
+            }
+
+            androidx.compose.runtime.CompositionLocalProvider(
+                com.masum.fathom.core.audio.LocalSacredAudioEngine provides audioEngine
+            ) {
+                FathomTheme(readingTheme = activeTheme) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(FathomTheme.colors.background)
+                    ) {
+                        androidx.compose.animation.AnimatedContent(
+                            targetState = selectedNav,
+                            transitionSpec = {
+                                (androidx.compose.animation.fadeIn(androidx.compose.animation.core.tween(240)) +
+                                    androidx.compose.animation.scaleIn(initialScale = 0.98f, animationSpec = androidx.compose.animation.core.tween(240)))
+                                    .togetherWith(
+                                        androidx.compose.animation.fadeOut(androidx.compose.animation.core.tween(200)) +
+                                            androidx.compose.animation.scaleOut(targetScale = 0.98f, animationSpec = androidx.compose.animation.core.tween(200))
+                                    )
+                            },
+                            label = "screen_nav_transition",
+                            modifier = Modifier.fillMaxSize()
+                        ) { targetNav ->
+                            when (targetNav) {
+                                NavigationItem.FEED -> FeedScreen(
+                                    state = feedUiState,
+                                    onEvent = feedViewModel::onEvent
                                 )
-                        },
-                        label = "screen_nav_transition",
-                        modifier = Modifier.fillMaxSize()
-                    ) { targetNav ->
-                        when (targetNav) {
-                            NavigationItem.FEED -> FeedScreen(
-                                state = feedUiState,
-                                onEvent = feedViewModel::onEvent
-                            )
-                            NavigationItem.SEARCH -> SearchScreen(
-                                state = searchUiState,
-                                onEvent = searchViewModel::onEvent
-                            )
-                            NavigationItem.LIBRARY -> LibraryScreen(
-                                state = libraryUiState,
-                                onEvent = libraryViewModel::onEvent
+                                NavigationItem.SEARCH -> SearchScreen(
+                                    state = searchUiState,
+                                    onEvent = searchViewModel::onEvent
+                                )
+                                NavigationItem.LIBRARY -> LibraryScreen(
+                                    state = libraryUiState,
+                                    onEvent = libraryViewModel::onEvent
+                                )
+                            }
+                        }
+
+                        androidx.compose.foundation.layout.Column(
+                            modifier = Modifier
+                                .align(Alignment.BottomCenter)
+                                .fillMaxWidth()
+                        ) {
+                            com.masum.fathom.ui.components.SacredAudioPlayerBar()
+                            com.masum.fathom.ui.components.FathomBottomNavBar(
+                                selectedItem = selectedNav,
+                                onItemSelected = { selectedNav = it }
                             )
                         }
                     }
-
-                    com.masum.fathom.ui.components.FathomBottomNavBar(
-                        selectedItem = selectedNav,
-                        onItemSelected = { selectedNav = it },
-                        modifier = Modifier.align(Alignment.BottomCenter)
-                    )
                 }
             }
         }

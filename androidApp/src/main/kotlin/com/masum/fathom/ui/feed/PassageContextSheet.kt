@@ -24,8 +24,11 @@ import com.adamglin.PhosphorIcons
 import com.adamglin.phosphoricons.Regular
 import com.adamglin.phosphoricons.regular.BookBookmark
 import com.adamglin.phosphoricons.regular.Compass
+import com.adamglin.phosphoricons.regular.Pause
+import com.adamglin.phosphoricons.regular.Play
 import com.adamglin.phosphoricons.regular.Quotes
 import com.adamglin.phosphoricons.regular.Sparkle
+import com.adamglin.phosphoricons.regular.SpeakerHigh
 import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -33,6 +36,8 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -41,6 +46,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.masum.fathom.core.audio.LocalSacredAudioEngine
+import com.masum.fathom.core.audio.SacredAudioState
 import com.masum.fathom.core.model.Passage
 import com.masum.fathom.core.model.TraditionId
 import com.masum.fathom.ui.components.SacredDivider
@@ -128,7 +135,63 @@ fun PassageContextSheet(
                 )
             }
 
-            Spacer(modifier = Modifier.height(20.dp))
+            val audioEngine = LocalSacredAudioEngine.current
+            val playbackState by audioEngine.playbackState.collectAsState()
+            val isSpeakingThis = (playbackState as? SacredAudioState.Playing)?.passage?.id == passage.id
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(if (isSpeakingThis) FathomTheme.colors.accentGold.copy(alpha = 0.16f) else FathomTheme.colors.surfaceElevated)
+                    .border(
+                        width = 1.dp,
+                        color = if (isSpeakingThis) FathomTheme.colors.accentGold else FathomTheme.colors.borderSubtle,
+                        shape = RoundedCornerShape(12.dp)
+                    )
+                    .clickable { audioEngine.toggle(passage) }
+                    .padding(horizontal = 14.dp, vertical = 10.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Icon(
+                        imageVector = PhosphorIcons.Regular.SpeakerHigh,
+                        contentDescription = null,
+                        tint = FathomTheme.colors.accentGold,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Column {
+                        Text(
+                            text = if (isSpeakingThis) "RECITING PASSAGE..." else "SACRED RECITATION",
+                            fontFamily = JakartaFontFamily,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 11.5.sp,
+                            letterSpacing = 0.6.sp,
+                            color = FathomTheme.colors.accentGold
+                        )
+                        Text(
+                            text = "Original pronunciation & English contemplation",
+                            fontFamily = JakartaFontFamily,
+                            fontSize = 10.5.sp,
+                            color = FathomTheme.colors.textSecondary
+                        )
+                    }
+                }
+
+                Icon(
+                    imageVector = if (isSpeakingThis) PhosphorIcons.Regular.Pause else PhosphorIcons.Regular.Play,
+                    contentDescription = null,
+                    tint = FathomTheme.colors.accentGold,
+                    modifier = Modifier.size(16.dp)
+                )
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
 
             if (!passage.originalText.isNullOrBlank()) {
                 Row(
