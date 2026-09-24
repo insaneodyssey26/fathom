@@ -1,12 +1,16 @@
 package com.masum.fathom.ui.theme
 
+import android.app.Activity
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.ReadOnlyComposable
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalView
+import androidx.core.view.WindowCompat
 
 enum class ReadingTheme {
     OBSIDIAN,
@@ -61,6 +65,17 @@ fun FathomTheme(
         isDark = targetColors.isDark
     )
 
+    val view = LocalView.current
+    if (!view.isInEditMode) {
+        SideEffect {
+            val window = (view.context as? Activity)?.window
+            if (window != null) {
+                val insetsController = WindowCompat.getInsetsController(window, view)
+                insetsController.isAppearanceLightStatusBars = !animatedColors.isDark
+                insetsController.isAppearanceLightNavigationBars = !animatedColors.isDark
+            }
+        }
+    }
 
     CompositionLocalProvider(
         LocalFathomColors provides animatedColors,

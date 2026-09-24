@@ -527,20 +527,84 @@ def seed_traditions(cursor):
     for t_id, name, desc in traditions:
         cursor.execute("INSERT OR REPLACE INTO tradition_entity VALUES (?, ?, ?)", (t_id, name, desc))
 
-def seed_sample_commentaries(cursor):
+def seed_comprehensive_commentaries(cursor):
+    print("Ingesting canonical commentaries and historical expositions...")
     commentaries = [
-        ("exp_gita_2_20", "gita_2_20", "Consciousness and the Vessel", "This verse establishes the classic Vedic distinction between the temporal biological body and the eternal witness consciousness.", "Traditional Commentary", "Sanskrit Philosophical Corpus"),
+        # --- HINDUISM: Bhagavad Gita & Upanishads ---
+        ("exp_gita_1_1", "gita_1_1", "The Field of Righteousness", "Kurukshetra is described as 'Dharmakshetra'—symbolizing the human heart as the eternal battleground between higher spiritual aspiration and lower egoic desires.", "Swami Sivananda", "Commentary on the Bhagavad Gita"),
+        ("exp_gita_2_20", "gita_2_20", "The Immortal Self (Atman)", "Sri Krishna establishes the cardinal doctrine of Vedanta: the physical body is temporal and mutable, while the true Self (Atman) is birthless, deathless, and indestructible.", "Adi Shankara", "Gita Bhashya"),
+        ("exp_gita_2_47", "gita_2_47", "The Doctrine of Karma Yoga", "This fundamental aphorism commands dedicated righteous action without psychological bondage or anxious attachment to results. Work performed as selfless offering eliminates anxiety.", "Swami Vivekananda", "Karma Yoga"),
+        ("exp_gita_2_71", "gita_2_71", "The State of Sthitaprajna", "A person who relinquishes all personal cravings, living devoid of possessiveness ('mine') and egoism ('I'), attains the supreme peace of Brahman.", "Swami Sivananda", "Commentary on the Bhagavad Gita"),
+        ("exp_gita_3_19", "gita_3_19", "Selfless Duty", "By constantly performing obligated duty without subjective attachment, an aspirant attains the highest spiritual perfection.", "Swami Vivekananda", "Lectures on the Gita"),
+        ("exp_gita_4_7", "gita_4_7", "The Avataric Cycle", "Whenever righteousness decays and unrighteousness ascends, the Divine manifests in temporal history to re-establish cosmic balance and moral order.", "Traditional Vedantic Hermeneutics", "Prasthana Traya"),
+        ("exp_gita_6_5", "gita_6_5", "The Mind as Friend or Foe", "The human mind can be one's highest ally or fiercest adversary. For one who has conquered self-delusion, the mind is a serene companion; for the undisciplined, it is a treacherous enemy.", "Swami Sivananda", "Mind and Its Mysteries"),
+        ("exp_gita_9_22", "gita_9_22", "Divine Providence (Ananyas Chintayanto)", "To those who meditate exclusively on Supreme Reality without diversion, the Divine personally carries the burden of their spiritual well-being and preservation.", "Adi Shankara", "Gita Bhashya"),
+        ("exp_gita_11_32", "gita_11_32", "Time, the Destroyer of Worlds", "In the Cosmic Vision (Viswaroopa), the Divine reveals Himself as all-consuming Time (Kala), reminding Arjuna that cosmic destiny unfolds beyond individual mortal vanity.", "J. Robert Oppenheimer & Classical Exegesis", "Mahabharata Corpus"),
+        ("exp_gita_18_66", "gita_18_66", "The Ultimate Surrender (Charama Shloka)", "The crowning crest-jewel of the Gita: abandoning all relative dogmatic rituals and taking complete refuge in the Divine alone liberates the soul from all sins.", "Ramanujacharya", "Gita Bhashya"),
+        
         ("exp_isa_1", "isa_upanishad_1", "The All-Pervading Divine", "The foundational aphorism of the Isha Upanishad declaring that the entire cosmos is enveloped by divine consciousness, enjoining joyful non-attachment.", "Swami Vivekananda", "Vedanta Treatise"),
-        ("exp_katha_1_1", "katha_upanishad_1_1", "The Quest for the Eternal", "Nachiketa refuses transient wealth and mortal pleasures, demanding the eternal secret of the transcendent Self from Yama.", "Swami Paramananda", "Upanishadic Commentary"),
-        ("exp_med_4_3", "meditations_4_3", "The Inner Citadel", "Marcus Aurelius reminds himself that true tranquility does not require physical isolation or countryside retreats, but the quiet command of one's own governing mind.", "Pierre Hadot", "Philosophy as a Way of Life"),
-        ("exp_ttc_8", "tao_te_ching_8", "The Virtue of Water", "Water exemplifies wu-wei: nourishing all living things without contention, resting in the humblest places.", "Traditional Taoist Commentary", "Daozang Corpus"),
-        ("exp_matthew_5_3", "matthew_5_3", "The Beatitudes", "Jesus opens the Sermon on the Mount with paradoxical blessings, proclaiming spiritual poverty as the prerequisite for divine kingdom awareness.", "Biblical Commentary", "Historical Hermeneutics"),
-        ("exp_eccl_3_1", "ecclesiastes_3_1", "The Seasons of Being", "Qoheleth reflects on the cosmic rhythm of temporal human existence, asserting that every sorrow and joy has its appointed season.", "Wisdom Tradition", "Old Testament Hermeneutics"),
-        ("exp_psalms_23_1", "psalms_23_1", "The Shepherd of Peace", "The universal hymn of absolute trust in divine guidance and providence through even the darkest valleys of existence.", "Biblical Commentary", "Psalter Exegesis"),
-        ("exp_quran_1_1", "quran_1_1", "The Basmala", "The opening invocation of the Quran establishing mercy and compassion as the fundamental attributes of the Divine.", "Tafsir Tradition", "Classical Islamic Scholarship")
+        ("exp_isa_6", "isa_upanishad_6", "Universal Oneness", "He who perceives all beings in the Self and the Self in all beings never turns away or harbors hatred toward any creature.", "Adi Shankara", "Upanishad Bhashya"),
+        ("exp_katha_1_2", "katha_upanishad_1_2", "The Good vs The Pleasant (Shreyas & Preyas)", "Yama teaches Nachiketa that humanity is presented with two distinct paths: Shreyas (the spiritually good) and Preyas (the transiently pleasurable). The wise choose the good; the unwise grasp at pleasure.", "Swami Paramananda", "Upanishadic Commentary"),
+        ("exp_katha_1_3_3", "katha_upanishad_1_3", "The Parable of the Chariot", "The Self is the master of the chariot, the body is the chariot, intellect (buddhi) is the driver, the mind is the reins, and the senses are the unruly horses.", "Adi Shankara", "Katha Bhashya"),
+        ("exp_kena_1_1", "kena_upanishad_1_1", "By Whom Impelled?", "The opening inquiry asks what unseen power drives the mind to think, the breath to flow, and the eyes to see, leading the seeker beyond sensory cognition to Pure Consciousness.", "Max Müller", "Sacred Books of the East"),
+
+        # --- ISLAM: The Holy Quran ---
+        ("exp_quran_1_1", "quran_1_1", "The Divine Invocation (Basmala)", "The opening invocation of the Quran establishing mercy (Ar-Rahman) and unconditional compassion (Ar-Rahim) as the primary lenses through which existence is understood.", "Tafsir Ibn Kathir", "Classical Islamic Scholarship"),
+        ("exp_quran_1_5", "quran_1_5", "The Covenant of Worship", "'You alone we worship, and You alone we ask for help.' This verse encapsulates Tawhid (Divine Unity)—freeing the human spirit from subservience to worldly idols or tyrannical powers.", "Tafsir Al-Jalalayn", "Quranic Exegesis"),
+        ("exp_quran_2_255", "quran_2_255", "The Throne Verse (Ayat al-Kursi)", "Regarded as the greatest verse of the Quran, affirming the absolute sovereignty, eternal living presence (Al-Hayy, Al-Qayyum), and effortless omniscience of God over all creation.", "Tafsir Ibn Kathir", "Ayat al-Kursi Commentary"),
+        ("exp_quran_2_286", "quran_2_286", "Divine Mercy and Human Capacity", "God does not burden any soul beyond its capacity. Every trial carries the exact strength needed to bear it, concluding with a universal prayer for forgiveness.", "Tafsir Al-Qurtubi", "Classical Tafsir"),
+        ("exp_quran_3_159", "quran_3_159", "Gentleness in Leadership & Tawakkul", "The Prophet is reminded that gentle compassion, forgiveness, collective consultation (Shura), and resolute reliance upon God (Tawakkul) are the pillars of righteous guidance.", "Tafsir Al-Tabari", "Islamic Hermeneutics"),
+        ("exp_quran_24_35", "quran_24_35", "The Verse of Light (Ayat an-Nur)", "A transcendent metaphysical parable describing God as the Light of the heavens and the earth, symbolized by a luminous lamp within pure crystal shining like a radiant star.", "Al-Ghazali", "Mishkat al-Anwar (The Niche for Lights)"),
+        ("exp_quran_94_5", "quran_94_5", "Ease with Hardship", "'Indeed, with hardship comes ease.' The Arabic grammar denotes that one hardship is enveloped by two distinct dispensations of ease, reassuring the tested heart.", "Tafsir As-Sa'di", "Tafsir Tradition"),
+        ("exp_quran_112_1", "quran_112_1", "The Creed of Purity (Surah Al-Ikhlas)", "Equal in spiritual weight to one-third of the Quran, declaring the absolute indivisible oneness and uncreated eternal self-sufficiency of God.", "Tafsir Ibn Kathir", "Surah Al-Ikhlas Exegesis"),
+
+        # --- CHRISTIANITY: Gospels, Proverbs, Ecclesiastes ---
+        ("exp_matthew_5_3", "matthew_5_3", "The Beatitudes: Poor in Spirit", "Jesus begins the Sermon on the Mount with radical paradox: blessedness begins not with pride or self-righteous power, but with humble acknowledgment of spiritual dependence upon the Divine.", "Matthew Henry", "Exposition of the Old and New Testaments"),
+        ("exp_matthew_5_14", "matthew_5_14", "Light of the World", "Disciples are called to be an active city upon a hill, letting deeds of love and truth illuminate a dark and fractured world without vanity.", "John Chrysostom", "Homilies on the Gospel of Saint Matthew"),
+        ("exp_matthew_6_26", "matthew_6_26", "The Birds of the Air", "Jesus instructs against debilitating worldly anxiety, pointing to the birds and lilies as living testaments to divine providence and watchful care.", "Matthew Henry", "Commentary on Matthew"),
+        ("exp_matthew_7_12", "matthew_7_12", "The Golden Rule", "'Do to others whatever you would have them do to you.' The ethical sum and substance of the Law and the Prophets in a single universal commandment.", "Saint Augustine", "On the Sermon on the Mount"),
+        ("exp_john_1_1", "john_1_1", "The Eternal Logos", "John opens his Gospel mirroring Genesis: the Word (Logos)—the divine reason and cosmic intelligence of the universe—was with God and was God.", "John Calvin", "Commentary on the Gospel According to John"),
+        ("exp_john_8_32", "john_8_32", "The Freedom of Truth", "'You will know the truth, and the truth will set you free.' Authentic spiritual liberation is found not in licensed indulgence, but in alignment with transcendent reality.", "Matthew Henry", "Commentary on John"),
+        ("exp_john_14_6", "john_14_6", "The Way, the Truth, and the Life", "Christ reveals Himself as the living bridge between temporal human longing and the transcendent eternal Father.", "Cambridge Bible for Schools and Colleges", "Gospel of Saint John"),
+        ("exp_proverbs_3_5", "proverbs_3_5", "Trust with All Your Heart", "Solomon admonishes seekers to surrender finite human calculation and lean wholeheartedly upon divine wisdom, allowing providence to direct human paths.", "Matthew Henry", "Commentary on Proverbs"),
+        ("exp_proverbs_4_23", "proverbs_4_23", "Guarding the Heart", "Above all else, guard your inner sanctuary of thought and motive, for from it flow the springwaters of all outer life and destiny.", "Jamieson-Fausset-Brown", "Bible Commentary"),
+        ("exp_eccl_3_1", "ecclesiastes_3_1", "The Cosmic Seasons", "Qoheleth provides a sublime poetic meditation on time: joy, grief, birth, and death all have their appointed cosmic season under heaven.", "Matthew Henry", "Exposition on Ecclesiastes"),
+        ("exp_eccl_12_13", "ecclesiastes_12_13", "The Conclusion of the Whole Matter", "After surveying all worldly pleasures and philosophies as fleeting vapor (hebel), Qoheleth declares that reverent awe and righteous conduct constitute humanity's true wholeness.", "Cambridge Bible Commentary", "Ecclesiastes Exegesis"),
+
+        # --- JUDAISM: Genesis & Psalms ---
+        ("exp_genesis_1_1", "genesis_1_1", "In the Beginning (Bereshit)", "The cosmic opening of the Torah establishing that the universe is not accidental chaos, but an orderly, purposeful creation called into existence by divine intention.", "Rashi (Rabbi Shlomo Yitzchaki)", "Commentary on the Torah"),
+        ("exp_genesis_1_27", "genesis_1_27", "The Image of God (Imago Dei)", "Human dignity, equality, and sanctity are founded upon the revelation that every human soul bears the divine image and likeness.", "Maimonides (Rambam)", "The Guide for the Perplexed"),
+        ("exp_psalms_1_1", "psalms_1_1", "The Two Paths", "The Psalter opens with the archetype of the righteous person, like a tree planted beside streams of living water yielding fruit in due season.", "Matthew Henry", "Commentary on the Psalms"),
+        ("exp_psalms_23_1", "psalms_23_1", "The Lord is My Shepherd", "King David's universally cherished song of serene trust: even through the valley of the shadow of death, the presence of the Divine casts out all dread.", "Charles Spurgeon", "The Treasury of David"),
+        ("exp_psalms_46_10", "psalms_46_10", "Be Still and Know", "In the midst of raging geopolitical turmoil and earthly chaos, silence of the mind reveals the sovereign reality of God.", "Matthew Henry", "Psalms Exegesis"),
+        ("exp_psalms_121_1", "psalms_121_1", "Song of Ascents", "Lifting one's eyes to the hills for help, knowing that the Guardian of Israel neither slumbers nor sleeps.", "Jamieson-Fausset-Brown", "Commentary on the Old Testament"),
+        ("exp_psalms_139_7", "psalms_139_7", "The Inescapable Presence", "'Where can I go from your Spirit?' David reflects with awe on the omnipresent love of God that surrounds the soul in highest heaven or deepest abyss.", "Charles Spurgeon", "The Treasury of David"),
+
+        # --- BUDDHISM: The Dhammapada ---
+        ("exp_dhamma_1", "dhammapada_1", "The Twin Verses: Mind Precedes All", "The Buddha begins the Dhammapada with psychological precision: mind is the forerunner of all states. If one speaks or acts with an impure mind, suffering follows as the wheel follows the ox.", "Buddhaghosa", "Dhammapada-Atthakatha"),
+        ("exp_dhamma_2", "dhammapada_2", "Mind and Joy", "If one speaks or acts with a pure mind, happiness follows like an inseparable shadow.", "Buddhaghosa", "Commentary on the Dhammapada"),
+        ("exp_dhamma_5", "dhammapada_5", "Hatred Overcome by Love", "Hatred is never appeased by hatred in this world; by non-hatred and love alone is hatred conquered. This is an ancient, eternal law.", "Narada Thera", "The Dhammapada Translation & Notes"),
+        ("exp_dhamma_21", "dhammapada_21", "Heedfulness (Appamada)", "Heedfulness and awareness are the path to the Deathless (Nibbana); heedlessness is the path of death. The mindful do not die.", "Eugene Watson Burlingame", "Buddhist Legends"),
+        ("exp_dhamma_103", "dhammapada_103", "Conquest of Self", "Greater in battle is he who conquers himself than he who conquers a thousand men a thousand times.", "Buddhaghosa", "Atthakatha Stories"),
+
+        # --- TAOISM: Tao Te Ching ---
+        ("exp_ttc_1", "tao_te_ching_1", "The Unnamable Tao", "The Tao that can be spoken of is not the eternal Tao; the name that can be named is not the eternal name. Mystery upon mystery, the gateway to all wonder.", "James Legge", "The Texts of Taoism"),
+        ("exp_ttc_8", "tao_te_ching_8", "The Virtue of Water (Shang Shan Ruo Shui)", "Highest good is like water: nourishing all ten thousand things without striving, settling in humble low places where no one wishes to be, therefore closest to the Tao.", "Dwight Goddard", "Laotzu's Tao and Wu Wei"),
+        ("exp_ttc_16", "tao_te_ching_16", "Returning to the Root", "Empty your mind of all thoughts; let your heart be at peace. Watching all things flourish, we see them return to their source.", "Traditional Taoist Commentary", "Daozang Hermeneutics"),
+        ("exp_ttc_33", "tao_te_ching_33", "True Mastery", "Knowing others is intelligence; knowing yourself is true wisdom. Mastering others is strength; mastering yourself is true power.", "James Legge", "Tao Te Ching Notes"),
+
+        # --- STOICISM: Meditations & Enchiridion ---
+        ("exp_med_2_1", "meditations_2_1", "Morning Preparation", "Marcus Aurelius reminds himself at daybreak: 'When you wake, tell yourself: the people I deal with today will be meddling, ungrateful, arrogant. None can hurt me because none can force me into wrong.'", "Pierre Hadot", "The Inner Citadel"),
+        ("exp_med_4_3", "meditations_4_3", "The Inner Retreat", "Men seek retreats for themselves in country houses and seashore resorts, yet nowhere can a person find a more peaceful or trouble-free retreat than in his own soul.", "Pierre Hadot", "Philosophy as a Way of Life"),
+        ("exp_med_8_36", "meditations_8_36", "Presence of the Moment", "Do not let the future disturb you; you will face it with the same weapons of reason you use against the present. Confine your attention to the current moment.", "George Long", "Thoughts of Marcus Aurelius Antoninus"),
+        ("exp_ench_1", "enchiridion_1", "The Dichotomy of Control", "Epictetus opens his handbook with the master key of Stoic freedom: some things are within our control (opinions, impulses, desires) and others are not (body, property, reputation, external events).", "George Long", "Discourses and Enchiridion of Epictetus"),
+        ("exp_ench_5", "enchiridion_5", "Perception and Disturbance", "What upsets people is not things themselves, but their judgments and opinions about things. When hindered or grieved, blame not others, but our own judgment.", "A.A. Long", "Epictetus: A Stoic and Socratic Guide to Life")
     ]
+    
     for c_id, p_id, title, body, author, source in commentaries:
         cursor.execute("INSERT OR REPLACE INTO explanation_entity VALUES (?, ?, ?, ?, ?, ?)", (c_id, p_id, title, body, author, source))
+        
+    print(f"Successfully ingested {len(commentaries)} canonical commentaries across all traditions.")
 
 def main():
     os.makedirs(ASSETS_DIR, exist_ok=True)
@@ -562,7 +626,7 @@ def main():
     build_enchiridion(cursor)
     build_bible_books(cursor)
     build_quran(cursor)
-    seed_sample_commentaries(cursor)
+    seed_comprehensive_commentaries(cursor)
     
     conn.commit()
     
@@ -570,6 +634,8 @@ def main():
     total_passages = cursor.fetchone()[0]
     cursor.execute("SELECT COUNT(*) FROM book_entity")
     total_books = cursor.fetchone()[0]
+    cursor.execute("SELECT COUNT(*) FROM explanation_entity")
+    total_explanations = cursor.fetchone()[0]
     
     conn.close()
     
@@ -578,9 +644,11 @@ def main():
     print(f"DATABASE GENERATION COMPLETE")
     print(f"Total Books: {total_books}")
     print(f"Total Canonical Passages: {total_passages}")
+    print(f"Total Explanations: {total_explanations}")
     print(f"Database Size: {db_size_kb:.2f} KB ({db_size_kb/1024:.2f} MB)")
     print(f"Output: {OUTPUT_DB}")
     print(f"==========================================")
 
 if __name__ == "__main__":
     main()
+

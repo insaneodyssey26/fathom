@@ -2,8 +2,8 @@ package com.masum.fathom.ui.feed
 
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
-
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -14,23 +14,22 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.pager.PagerDefaults
 import androidx.compose.foundation.pager.VerticalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
-import com.adamglin.PhosphorIcons
-import com.adamglin.phosphoricons.Regular
-import com.adamglin.phosphoricons.regular.Sliders
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
@@ -38,9 +37,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.launch
+import com.adamglin.PhosphorIcons
+import com.adamglin.phosphoricons.Regular
+import com.adamglin.phosphoricons.regular.BookBookmark
+import com.adamglin.phosphoricons.regular.CaretDown
+import com.adamglin.phosphoricons.regular.Sliders
+import com.adamglin.phosphoricons.regular.Sparkle
 import com.masum.fathom.ui.theme.FathomTheme
-
 
 @Composable
 fun FeedScreen(
@@ -49,6 +56,7 @@ fun FeedScreen(
     modifier: Modifier = Modifier
 ) {
     var showFilterSheet by remember { mutableStateOf(false) }
+    var showScriptureSheet by remember { mutableStateOf(false) }
 
     when (state) {
         is FeedUiState.Loading -> {
@@ -71,7 +79,7 @@ fun FeedScreen(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = "No wisdom passages found for the selected traditions.",
+                    text = "No wisdom passages found for the selected traditions or scriptures.",
                     style = FathomTheme.typography.commentaryBody,
                     color = FathomTheme.colors.textSecondary
                 )
@@ -95,6 +103,7 @@ fun FeedScreen(
         }
 
         is FeedUiState.Success -> {
+            val coroutineScope = rememberCoroutineScope()
             val pagerState = rememberPagerState(
                 initialPage = state.currentIndex,
                 pageCount = { state.passages.size }
@@ -109,10 +118,10 @@ fun FeedScreen(
 
             val flingBehavior = PagerDefaults.flingBehavior(
                 state = pagerState,
-                snapPositionalThreshold = 0.15f,
+                snapPositionalThreshold = 0.35f,
                 snapAnimationSpec = androidx.compose.animation.core.tween(
-                    durationMillis = 420,
-                    easing = androidx.compose.animation.core.CubicBezierEasing(0.22f, 1.0f, 0.36f, 1.0f)
+                    durationMillis = 380,
+                    easing = androidx.compose.animation.core.CubicBezierEasing(0.25f, 1.0f, 0.5f, 1.0f)
                 )
             )
 
@@ -125,41 +134,83 @@ fun FeedScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .statusBarsPadding()
-                        .padding(horizontal = 24.dp)
+                        .padding(horizontal = 20.dp)
                         .padding(top = 10.dp, bottom = 12.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        horizontalArrangement = Arrangement.spacedBy(0.dp)
                     ) {
                         Text(
-                            text = "FATHOM",
+                            text = "fathom",
                             style = FathomTheme.typography.brandTitle,
                             color = FathomTheme.colors.textPrimary
                         )
-                        Box(
-                            modifier = Modifier
-                                .size(5.dp)
-                                .clip(CircleShape)
-                                .background(FathomTheme.colors.accentGold)
+                        Text(
+                            text = ".",
+                            style = FathomTheme.typography.brandTitle.copy(color = FathomTheme.colors.accentGold)
                         )
                     }
 
-                    IconButton(
-                        onClick = { showFilterSheet = true },
-                        modifier = Modifier
-                            .clip(CircleShape)
-                            .background(FathomTheme.colors.surfaceElevated)
-                            .size(38.dp)
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Icon(
-                            imageVector = PhosphorIcons.Regular.Sliders,
-                            contentDescription = "Tradition and Theme Filters",
-                            tint = FathomTheme.colors.textSecondary,
-                            modifier = Modifier.size(18.dp)
-                        )
+                        val activeBook = state.availableBooks.find { it.id == state.selectedBookId }
+                        val activeTitle = activeBook?.title ?: "All Scriptures"
+
+                        Row(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(20.dp))
+                                .background(FathomTheme.colors.surfaceElevated)
+                                .border(
+                                    width = 1.dp,
+                                    color = if (state.selectedBookId != null) FathomTheme.colors.accentGold.copy(alpha = 0.7f) else FathomTheme.colors.borderSubtle,
+                                    shape = RoundedCornerShape(20.dp)
+                                )
+                                .clickable { showScriptureSheet = true }
+                                .padding(horizontal = 11.dp, vertical = 7.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Icon(
+                                imageVector = if (state.selectedBookId != null) PhosphorIcons.Regular.BookBookmark else PhosphorIcons.Regular.Sparkle,
+                                contentDescription = null,
+                                tint = if (state.selectedBookId != null) FathomTheme.colors.accentGold else FathomTheme.colors.textSecondary,
+                                modifier = Modifier.size(13.dp)
+                            )
+                            Text(
+                                text = activeTitle,
+                                style = FathomTheme.typography.traditionBadge.copy(fontSize = 11.sp),
+                                color = if (state.selectedBookId != null) FathomTheme.colors.accentGold else FathomTheme.colors.textPrimary,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier.widthIn(max = 135.dp)
+                            )
+                            Icon(
+                                imageVector = PhosphorIcons.Regular.CaretDown,
+                                contentDescription = null,
+                                tint = FathomTheme.colors.textTertiary,
+                                modifier = Modifier.size(11.dp)
+                            )
+                        }
+
+                        IconButton(
+                            onClick = { showFilterSheet = true },
+                            modifier = Modifier
+                                .clip(CircleShape)
+                                .background(FathomTheme.colors.surfaceElevated)
+                                .size(38.dp)
+                        ) {
+                            Icon(
+                                imageVector = PhosphorIcons.Regular.Sliders,
+                                contentDescription = "Tradition and Theme Filters",
+                                tint = FathomTheme.colors.textSecondary,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
                     }
                 }
 
@@ -197,13 +248,27 @@ fun FeedScreen(
                             passage = passage,
                             isBookmarked = passage.id in state.bookmarkedPassageIds,
                             onToggleBookmark = { onEvent(FeedUiEvent.OnToggleBookmark(passage)) },
-                            onOpenContext = { onEvent(FeedUiEvent.OnOpenContext(passage)) }
+                            onOpenContext = { onEvent(FeedUiEvent.OnOpenContext(passage)) },
+                            onScrollPrevious = if (page > 0) {
+                                {
+                                    coroutineScope.launch {
+                                        pagerState.animateScrollToPage(page - 1)
+                                    }
+                                }
+                            } else null,
+                            onScrollNext = if (page < state.passages.lastIndex) {
+                                {
+                                    coroutineScope.launch {
+                                        pagerState.animateScrollToPage(page + 1)
+                                    }
+                                }
+                            } else null,
+                            hasPrevious = page > 0,
+                            hasNext = page < state.passages.lastIndex
                         )
                     }
                 }
             }
-
-
 
             state.selectedPassageForContext?.let { contextPassage ->
                 PassageContextSheet(
@@ -212,12 +277,24 @@ fun FeedScreen(
                 )
             }
 
+            if (showScriptureSheet) {
+                ScriptureSelectorSheet(
+                    availableBooks = state.availableBooks,
+                    selectedBookId = state.selectedBookId,
+                    onSelectBook = { onEvent(FeedUiEvent.OnSelectBook(it)) },
+                    onDismiss = { showScriptureSheet = false }
+                )
+            }
+
             if (showFilterSheet) {
                 TraditionFilterSheet(
                     selectedTraditions = state.selectedTraditions,
+                    availableBooks = state.availableBooks,
+                    selectedBookId = state.selectedBookId,
                     activeMode = state.activeMode,
                     activeTheme = state.activeTheme,
                     onToggleTradition = { onEvent(FeedUiEvent.OnToggleTradition(it)) },
+                    onSelectBook = { onEvent(FeedUiEvent.OnSelectBook(it)) },
                     onChangeMode = { onEvent(FeedUiEvent.OnChangeMode(it)) },
                     onChangeTheme = { onEvent(FeedUiEvent.OnChangeTheme(it)) },
                     onDismiss = { showFilterSheet = false }
@@ -226,4 +303,5 @@ fun FeedScreen(
         }
     }
 }
+
 

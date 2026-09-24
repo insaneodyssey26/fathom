@@ -62,7 +62,11 @@ class MainActivity : ComponentActivity() {
             val context = LocalContext.current
             val (feedEngine, userRepo, passageRepo) = remember {
                 val dbFile = context.getDatabasePath("starter_content.db")
-                var needsExtraction = !dbFile.exists() || dbFile.length() < 100_000L
+                val prefs = context.getSharedPreferences("fathom_content_prefs", android.content.Context.MODE_PRIVATE)
+                val currentVersion = prefs.getInt("db_asset_version", 0)
+                val TARGET_VERSION = 4
+                val needsExtraction = !dbFile.exists() || dbFile.length() < 100_000L || currentVersion < TARGET_VERSION
+
                 if (needsExtraction) {
                     dbFile.parentFile?.mkdirs()
                     if (dbFile.exists()) dbFile.delete()
@@ -71,6 +75,7 @@ class MainActivity : ComponentActivity() {
                             input.copyTo(output)
                         }
                     }
+                    prefs.edit().putInt("db_asset_version", TARGET_VERSION).apply()
                 }
 
                 val userDriver = AndroidSqliteDriver(FathomUserDatabase.Schema, context, "app_user_data.db")
@@ -95,7 +100,11 @@ class MainActivity : ComponentActivity() {
             }
 
             val feedViewModel: FeedViewModel = viewModel {
-                FeedViewModel(feedRepository = feedEngine, userDataRepository = userRepo)
+                FeedViewModel(
+                    feedRepository = feedEngine,
+                    userDataRepository = userRepo,
+                    passageRepository = passageRepo
+                )
             }
 
             val libraryViewModel: LibraryViewModel = viewModel {

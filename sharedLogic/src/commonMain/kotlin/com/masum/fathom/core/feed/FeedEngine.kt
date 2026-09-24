@@ -48,14 +48,20 @@ class FeedEngine(
         batchSize: Int,
         seenPassageIds: Set<String>
     ): List<Passage> {
-        val traditionKeys = config.selectedTraditions.map { it.key }
-        if (traditionKeys.isEmpty()) return emptyList()
-
         val candidateLimit = (batchSize * 3L).coerceAtLeast(30L)
-        val candidates = contentQueries.selectCandidatePassages(
-            tradition_ids = traditionKeys,
-            limit = candidateLimit
-        ).executeAsList()
+        val candidates = if (config.selectedBookId != null) {
+            contentQueries.selectCandidatePassagesForBook(
+                book_id = config.selectedBookId,
+                limit = candidateLimit
+            ).executeAsList()
+        } else {
+            val traditionKeys = config.selectedTraditions.map { it.key }
+            if (traditionKeys.isEmpty()) return emptyList()
+            contentQueries.selectCandidatePassages(
+                tradition_ids = traditionKeys,
+                limit = candidateLimit
+            ).executeAsList()
+        }
 
         val unseen = candidates.filter { it.id !in seenPassageIds }
         val pool = if (unseen.size >= batchSize) unseen else candidates

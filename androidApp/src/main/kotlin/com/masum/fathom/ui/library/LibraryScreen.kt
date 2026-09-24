@@ -62,22 +62,11 @@ fun LibraryScreen(
                 .padding(top = 10.dp, bottom = 12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
-                Text(
-                    text = "LIBRARY",
-                    style = FathomTheme.typography.brandTitle,
-                    color = FathomTheme.colors.textPrimary
-                )
-                Box(
-                    modifier = Modifier
-                        .size(5.dp)
-                        .clip(CircleShape)
-                        .background(FathomTheme.colors.accentGold)
-                )
-            }
+            Text(
+                text = "Library",
+                style = FathomTheme.typography.brandTitle,
+                color = FathomTheme.colors.textPrimary
+            )
         }
 
         when (state) {

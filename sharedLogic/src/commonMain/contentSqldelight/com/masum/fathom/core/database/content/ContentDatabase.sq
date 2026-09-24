@@ -120,9 +120,16 @@ WHERE tradition_id IN :tradition_ids
 ORDER BY RANDOM()
 LIMIT :limit;
 
+selectCandidatePassagesForBook:
+SELECT * FROM passage_entity
+WHERE book_id = :book_id
+ORDER BY RANDOM()
+LIMIT :limit;
+
 selectCandidatePassagesByThemes:
 SELECT DISTINCT p.* FROM passage_entity p
 JOIN passage_theme_cross_ref ref ON p.id = ref.passage_id
 WHERE ref.theme_id IN :theme_ids
 ORDER BY RANDOM()
 LIMIT :limit;
+

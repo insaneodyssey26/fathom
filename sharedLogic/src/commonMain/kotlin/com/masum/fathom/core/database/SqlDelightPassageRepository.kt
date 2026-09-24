@@ -101,6 +101,28 @@ class SqlDelightPassageRepository(
         }
     }
 
+    override suspend fun getAllBooks(): FathomResult<List<com.masum.fathom.core.model.Book>, DataError.Local> =
+        withContext(ioDispatcher) {
+            try {
+                val entities = queries.selectAllBooks().executeAsList()
+                val books = entities.map { entity ->
+                    val traditionId = TraditionId.fromKeyOrNull(entity.tradition_id) ?: TraditionId.HINDUISM
+                    com.masum.fathom.core.model.Book(
+                        id = entity.id,
+                        traditionId = traditionId,
+                        title = entity.title,
+                        author = entity.author,
+                        language = entity.language,
+                        totalPassages = entity.total_passages.toInt(),
+                        isBundled = entity.is_bundled == 1L
+                    )
+                }
+                FathomResult.Success(books)
+            } catch (_: Throwable) {
+                FathomResult.Failure(DataError.Local.CORRUPTED_DATABASE)
+            }
+        }
+
     override fun observePassage(id: String): Flow<FathomResult<Passage, DataError.Local>> {
         return queries.selectPassageById(id)
             .asFlow()

@@ -20,6 +20,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -40,6 +42,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.masum.fathom.core.model.TraditionId
@@ -52,24 +55,30 @@ import com.masum.fathom.ui.theme.ReadingTheme
 @Composable
 fun TraditionFilterSheet(
     selectedTraditions: Set<TraditionId>,
+    availableBooks: List<com.masum.fathom.core.model.Book> = emptyList(),
+    selectedBookId: String? = null,
     activeMode: FeedMode,
     activeTheme: ReadingTheme,
     onToggleTradition: (TraditionId) -> Unit,
+    onSelectBook: (String?) -> Unit = {},
     onChangeMode: (FeedMode) -> Unit,
     onChangeTheme: (ReadingTheme) -> Unit,
     onDismiss: () -> Unit
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val maxHeight = (LocalConfiguration.current.screenHeightDp * 0.78f).dp
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
         containerColor = FathomTheme.colors.surface,
-        shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp)
+        shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
+                .heightIn(max = maxHeight)
+                .navigationBarsPadding()
                 .padding(horizontal = 24.dp)
                 .padding(bottom = 36.dp)
                 .verticalScroll(rememberScrollState())
@@ -88,6 +97,73 @@ fun TraditionFilterSheet(
                     isSelected = isSelected,
                     onToggle = { onToggleTradition(tradition) }
                 )
+            }
+
+            if (availableBooks.isNotEmpty()) {
+                SacredDivider(modifier = Modifier.padding(vertical = 16.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "SCRIPTURE FOCUS",
+                        style = FathomTheme.typography.canonicalHeader,
+                        color = FathomTheme.colors.accentGold
+                    )
+                    if (selectedBookId != null) {
+                        Text(
+                            text = "Reset to All",
+                            style = FathomTheme.typography.caption,
+                            color = FathomTheme.colors.accentGold,
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(4.dp))
+                                .clickable { onSelectBook(null) }
+                                .padding(horizontal = 6.dp, vertical = 2.dp)
+                        )
+                    }
+                }
+                Spacer(modifier = Modifier.height(10.dp))
+
+                val filteredBooks = availableBooks.filter { it.traditionId in selectedTraditions }
+                filteredBooks.forEach { book ->
+                    val isBookSelected = book.id == selectedBookId
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(if (isBookSelected) FathomTheme.colors.surfaceElevated else androidx.compose.ui.graphics.Color.Transparent)
+                            .clickable {
+                                onSelectBook(if (isBookSelected) null else book.id)
+                            }
+                            .padding(vertical = 9.dp, horizontal = 8.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column {
+                            Text(
+                                text = book.title,
+                                style = FathomTheme.typography.commentaryBody.copy(fontSize = 14.sp),
+                                color = if (isBookSelected) FathomTheme.colors.accentGold else FathomTheme.colors.textSecondary
+                            )
+                            Text(
+                                text = "${book.traditionId.displayName} • ${book.totalPassages} passages",
+                                style = FathomTheme.typography.caption.copy(fontSize = 11.sp),
+                                color = FathomTheme.colors.textTertiary
+                            )
+                        }
+
+                        if (isBookSelected) {
+                            Icon(
+                                imageVector = PhosphorIcons.Bold.Check,
+                                contentDescription = "Selected",
+                                tint = FathomTheme.colors.accentGold,
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
+                    }
+                }
             }
 
             SacredDivider(modifier = Modifier.padding(vertical = 16.dp))

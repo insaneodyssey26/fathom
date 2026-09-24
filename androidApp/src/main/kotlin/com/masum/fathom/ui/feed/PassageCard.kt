@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
@@ -20,6 +19,8 @@ import com.adamglin.phosphoricons.Fill
 import com.adamglin.phosphoricons.Regular
 import com.adamglin.phosphoricons.fill.BookmarkSimple as BookmarkSimpleFill
 import com.adamglin.phosphoricons.regular.BookmarkSimple
+import com.adamglin.phosphoricons.regular.CaretDown
+import com.adamglin.phosphoricons.regular.CaretUp
 import com.adamglin.phosphoricons.regular.Info
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -40,8 +41,14 @@ fun PassageCard(
     isBookmarked: Boolean,
     onToggleBookmark: () -> Unit,
     onOpenContext: () -> Unit,
+    onScrollPrevious: (() -> Unit)? = null,
+    onScrollNext: (() -> Unit)? = null,
+    hasPrevious: Boolean = true,
+    hasNext: Boolean = true,
     modifier: Modifier = Modifier
 ) {
+    val scrollState = rememberScrollState()
+
     Box(
         modifier = modifier
             .fillMaxSize()
@@ -53,8 +60,7 @@ fun PassageCard(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .widthIn(max = 620.dp)
-                .verticalScroll(rememberScrollState()),
+                .widthIn(max = 620.dp),
             verticalArrangement = Arrangement.SpaceBetween
         ) {
             Column(modifier = Modifier.fillMaxWidth()) {
@@ -72,30 +78,45 @@ fun PassageCard(
                     )
                 }
 
-                Spacer(modifier = Modifier.height(24.dp))
+                SacredDivider(modifier = Modifier.padding(top = 12.dp, bottom = 4.dp))
+            }
 
-                if (!passage.originalText.isNullOrBlank()) {
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth(),
+                contentAlignment = Alignment.CenterStart
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .verticalScroll(scrollState)
+                        .padding(vertical = 12.dp),
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    if (!passage.originalText.isNullOrBlank()) {
+                        Text(
+                            text = passage.originalText ?: "",
+                            style = FathomTheme.typography.verseOriginal,
+                            color = FathomTheme.colors.textTertiary
+                        )
+                        SacredDivider(modifier = Modifier.padding(vertical = 14.dp))
+                    }
+
                     Text(
-                        text = passage.originalText ?: "",
-                        style = FathomTheme.typography.verseOriginal,
-                        color = FathomTheme.colors.textTertiary
+                        text = passage.translation,
+                        style = FathomTheme.typography.verseDisplay,
+                        color = FathomTheme.colors.textPrimary
                     )
-                    SacredDivider(modifier = Modifier.padding(vertical = 16.dp))
                 }
-
-                Text(
-                    text = passage.translation,
-                    style = FathomTheme.typography.verseDisplay,
-                    color = FathomTheme.colors.textPrimary
-                )
             }
 
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 28.dp, bottom = 8.dp)
+                    .padding(top = 4.dp, bottom = 4.dp)
             ) {
-                SacredDivider(modifier = Modifier.padding(vertical = 12.dp))
+                SacredDivider(modifier = Modifier.padding(vertical = 10.dp))
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -113,7 +134,39 @@ fun PassageCard(
                         Spacer(modifier = Modifier.size(1.dp))
                     }
 
-                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        IconButton(
+                            onClick = { onScrollPrevious?.invoke() },
+                            enabled = hasPrevious,
+                            modifier = Modifier
+                                .clip(CircleShape)
+                                .background(FathomTheme.colors.surfaceElevated)
+                                .size(40.dp)
+                        ) {
+                            Icon(
+                                imageVector = PhosphorIcons.Regular.CaretUp,
+                                contentDescription = "Previous Verse",
+                                tint = if (hasPrevious) FathomTheme.colors.textSecondary else FathomTheme.colors.textTertiary.copy(alpha = 0.35f),
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+
+                        IconButton(
+                            onClick = { onScrollNext?.invoke() },
+                            enabled = hasNext,
+                            modifier = Modifier
+                                .clip(CircleShape)
+                                .background(FathomTheme.colors.surfaceElevated)
+                                .size(40.dp)
+                        ) {
+                            Icon(
+                                imageVector = PhosphorIcons.Regular.CaretDown,
+                                contentDescription = "Next Verse",
+                                tint = if (hasNext) FathomTheme.colors.textSecondary else FathomTheme.colors.textTertiary.copy(alpha = 0.35f),
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+
                         IconButton(
                             onClick = onOpenContext,
                             modifier = Modifier
@@ -149,5 +202,3 @@ fun PassageCard(
         }
     }
 }
-
-

@@ -3,11 +3,13 @@ package com.masum.fathom.ui.feed
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.masum.fathom.core.common.result.FathomResult
+import com.masum.fathom.core.model.Book
 import com.masum.fathom.core.model.Passage
 import com.masum.fathom.core.model.user.Bookmark
 import com.masum.fathom.core.model.user.FeedConfig
 import com.masum.fathom.core.model.user.FeedMode
 import com.masum.fathom.core.repository.FeedRepository
+import com.masum.fathom.core.repository.PassageRepository
 import com.masum.fathom.core.repository.UserDataRepository
 import com.masum.fathom.ui.theme.ReadingTheme
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -20,13 +22,15 @@ import kotlinx.coroutines.launch
 
 class FeedViewModel(
     private val feedRepository: FeedRepository,
-    private val userDataRepository: UserDataRepository
+    private val userDataRepository: UserDataRepository,
+    private val passageRepository: PassageRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<FeedUiState>(FeedUiState.Loading)
     val uiState: StateFlow<FeedUiState> = _uiState.asStateFlow()
 
     private var currentConfig = FeedConfig()
+    private var availableBooks: List<Book> = emptyList()
 
     init {
         observeBookmarks()
@@ -42,6 +46,7 @@ class FeedViewModel(
             is FeedUiEvent.OnChangeTheme -> handleChangeTheme(event.theme)
             is FeedUiEvent.OnToggleTradition -> handleToggleTradition(event.traditionId)
             is FeedUiEvent.OnChangeMode -> handleChangeMode(event.mode)
+            is FeedUiEvent.OnSelectBook -> handleSelectBook(event.bookId)
         }
     }
 
@@ -63,6 +68,11 @@ class FeedViewModel(
     private fun loadInitialFeed() {
         viewModelScope.launch {
             _uiState.value = FeedUiState.Loading
+            when (val booksResult = passageRepository.getAllBooks()) {
+                is FathomResult.Success -> availableBooks = booksResult.data
+                is FathomResult.Failure -> Unit
+            }
+
             when (val result = feedRepository.getFeedBatch(currentConfig, batchSize = 10)) {
                 is FathomResult.Success -> {
                     if (result.data.isEmpty()) {
@@ -71,6 +81,8 @@ class FeedViewModel(
                         _uiState.value = FeedUiState.Success(
                             passages = result.data,
                             currentIndex = 0,
+                            availableBooks = availableBooks,
+                            selectedBookId = currentConfig.selectedBookId,
                             activeMode = currentConfig.mode,
                             selectedTraditions = currentConfig.selectedTraditions
                         )
@@ -147,8 +159,19 @@ class FeedViewModel(
     }
 
     private fun handleOpenContext(passage: Passage) {
-        _uiState.update { state ->
-            if (state is FeedUiState.Success) state.copy(selectedPassageForContext = passage) else state
+        viewModelScope.launch {
+            when (val result = passageRepository.getPassage(passage.id)) {
+                is FathomResult.Success -> {
+                    _uiState.update { state ->
+                        if (state is FeedUiState.Success) state.copy(selectedPassageForContext = result.data) else state
+                    }
+                }
+                is FathomResult.Failure -> {
+                    _uiState.update { state ->
+                        if (state is FeedUiState.Success) state.copy(selectedPassageForContext = passage) else state
+                    }
+                }
+            }
         }
     }
 
@@ -164,6 +187,14 @@ class FeedViewModel(
         }
     }
 
+    private fun handleSelectBook(bookId: String?) {
+        currentConfig = currentConfig.copy(selectedBookId = bookId)
+        _uiState.update { state ->
+            if (state is FeedUiState.Success) state.copy(selectedBookId = bookId) else state
+        }
+        refreshFeedPreservingState()
+    }
+
     private fun handleToggleTradition(traditionId: com.masum.fathom.core.model.TraditionId) {
         val currentState = _uiState.value as? FeedUiState.Success ?: return
         val updatedTraditions = if (traditionId in currentState.selectedTraditions) {
@@ -176,9 +207,17 @@ class FeedViewModel(
             currentState.selectedTraditions + traditionId
         }
 
-        currentConfig = currentConfig.copy(selectedTraditions = updatedTraditions)
+        currentConfig = currentConfig.copy(
+            selectedTraditions = updatedTraditions,
+            selectedBookId = null
+        )
         _uiState.update { state ->
-            if (state is FeedUiState.Success) state.copy(selectedTraditions = updatedTraditions) else state
+            if (state is FeedUiState.Success) {
+                state.copy(
+                    selectedTraditions = updatedTraditions,
+                    selectedBookId = null
+                )
+            } else state
         }
 
         refreshFeedPreservingState()
@@ -200,7 +239,9 @@ class FeedViewModel(
                         if (state is FeedUiState.Success) {
                             state.copy(
                                 passages = if (result.data.isNotEmpty()) result.data else state.passages,
-                                currentIndex = 0
+                                currentIndex = 0,
+                                availableBooks = availableBooks,
+                                selectedBookId = currentConfig.selectedBookId
                             )
                         } else state
                     }

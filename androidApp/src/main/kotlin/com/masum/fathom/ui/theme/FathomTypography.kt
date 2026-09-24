@@ -58,29 +58,25 @@ val ItalianaFontFamily = FontFamily(
 @Immutable
 data class FathomTypography(
     val brandTitle: TextStyle = TextStyle(
-        fontFamily = CinzelDecorativeFontFamily,
+        fontFamily = SyneFontFamily,
         fontWeight = FontWeight.Bold,
         fontSize = 22.sp,
-        lineHeight = 28.sp,
-        letterSpacing = 2.2.sp
+        lineHeight = 26.sp,
+        letterSpacing = (-0.5).sp
     ),
     val verseDisplay: TextStyle = TextStyle(
-
-
-
-        fontFamily = CormorantFontFamily,
+        fontFamily = JakartaFontFamily,
         fontWeight = FontWeight.Medium,
-        fontSize = 28.sp,
-        lineHeight = 44.sp,
-        letterSpacing = 0.2.sp
+        fontSize = 20.sp,
+        lineHeight = 34.sp,
+        letterSpacing = 0.25.sp
     ),
     val verseOriginal: TextStyle = TextStyle(
-        fontFamily = CormorantFontFamily,
+        fontFamily = JakartaFontFamily,
         fontWeight = FontWeight.Normal,
-        fontStyle = FontStyle.Italic,
-        fontSize = 19.sp,
-        lineHeight = 30.sp,
-        letterSpacing = 0.4.sp
+        fontSize = 17.sp,
+        lineHeight = 28.sp,
+        letterSpacing = 0.3.sp
     ),
 
     val canonicalHeader: TextStyle = TextStyle(

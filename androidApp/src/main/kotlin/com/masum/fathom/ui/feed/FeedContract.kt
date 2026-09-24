@@ -1,6 +1,7 @@
 package com.masum.fathom.ui.feed
 
 import androidx.compose.runtime.Immutable
+import com.masum.fathom.core.model.Book
 import com.masum.fathom.core.model.Passage
 import com.masum.fathom.core.model.TraditionId
 import com.masum.fathom.core.model.user.FeedMode
@@ -13,6 +14,8 @@ sealed interface FeedUiState {
     data class Success(
         val passages: List<Passage>,
         val currentIndex: Int = 0,
+        val availableBooks: List<Book> = emptyList(),
+        val selectedBookId: String? = null,
         val bookmarkedPassageIds: Set<String> = emptySet(),
         val activeTheme: ReadingTheme = ReadingTheme.OBSIDIAN,
         val activeMode: FeedMode = FeedMode.EXPLORATION_DISCOVERY,
@@ -34,4 +37,6 @@ sealed interface FeedUiEvent {
     data class OnChangeTheme(val theme: ReadingTheme) : FeedUiEvent
     data class OnToggleTradition(val traditionId: TraditionId) : FeedUiEvent
     data class OnChangeMode(val mode: FeedMode) : FeedUiEvent
+    data class OnSelectBook(val bookId: String?) : FeedUiEvent
 }
+
