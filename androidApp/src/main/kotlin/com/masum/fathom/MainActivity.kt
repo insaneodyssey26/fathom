@@ -128,6 +128,12 @@ class MainActivity : ComponentActivity() {
 
             var selectedNav by remember { mutableStateOf(NavigationItem.FEED) }
 
+            if (selectedNav != NavigationItem.FEED) {
+                androidx.activity.compose.BackHandler {
+                    selectedNav = NavigationItem.FEED
+                }
+            }
+
             FathomTheme(readingTheme = activeTheme) {
                 Scaffold(
                     modifier = Modifier.fillMaxSize(),

@@ -134,6 +134,16 @@ fun LibraryScreen(
             }
 
             is LibraryUiState.Success -> {
+                if (state.selectedPassageForShare != null) {
+                    androidx.activity.compose.BackHandler { onEvent(LibraryUiEvent.OnCloseShare) }
+                } else if (state.selectedPassageForContext != null) {
+                    androidx.activity.compose.BackHandler { onEvent(LibraryUiEvent.OnCloseContext) }
+                } else if (state.selectedPassageForNote != null) {
+                    androidx.activity.compose.BackHandler { onEvent(LibraryUiEvent.OnCloseNoteDialog) }
+                } else if (state.searchQuery.isNotEmpty()) {
+                    androidx.activity.compose.BackHandler { onEvent(LibraryUiEvent.OnSearchQueryChanged("")) }
+                }
+
                 val coroutineScope = rememberCoroutineScope()
                 val pagerState = rememberPagerState(
                     initialPage = state.selectedTab.ordinal,

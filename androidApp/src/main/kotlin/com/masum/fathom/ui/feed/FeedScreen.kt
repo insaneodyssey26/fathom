@@ -58,6 +58,18 @@ fun FeedScreen(
     var showFilterSheet by remember { mutableStateOf(false) }
     var showScriptureSheet by remember { mutableStateOf(false) }
 
+    if (state is FeedUiState.Success) {
+        if (state.selectedPassageForShare != null) {
+            androidx.activity.compose.BackHandler { onEvent(FeedUiEvent.OnCloseShare) }
+        } else if (state.selectedPassageForContext != null) {
+            androidx.activity.compose.BackHandler { onEvent(FeedUiEvent.OnCloseContext) }
+        } else if (showScriptureSheet) {
+            androidx.activity.compose.BackHandler { showScriptureSheet = false }
+        } else if (showFilterSheet) {
+            androidx.activity.compose.BackHandler { showFilterSheet = false }
+        }
+    }
+
     when (state) {
         is FeedUiState.Loading -> {
             Box(
