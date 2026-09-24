@@ -100,17 +100,23 @@ class SearchViewModel(
     }
 
     private fun handleSelectBook(book: Book?) {
-        _uiState.update {
-            it.copy(
-                selectedBook = book,
-                selectedChapter = null,
-                availableChapters = emptyList(),
-                chapterPassages = emptyList(),
-                chapterPassagesMap = emptyMap()
-            )
+        if (book == null) {
+            _uiState.update { it.copy(selectedBook = null) }
+            return
         }
 
-        if (book != null) {
+        val isSameBook = _uiState.value.selectedBook?.id == book.id
+        if (!isSameBook) {
+            _uiState.update {
+                it.copy(
+                    selectedBook = book,
+                    selectedChapter = null,
+                    availableChapters = emptyList(),
+                    chapterPassages = emptyList(),
+                    chapterPassagesMap = emptyMap()
+                )
+            }
+
             viewModelScope.launch {
                 when (val result = passageRepository.getChaptersForBook(book.id)) {
                     is FathomResult.Success -> {
@@ -123,6 +129,8 @@ class SearchViewModel(
                     is FathomResult.Failure -> Unit
                 }
             }
+        } else {
+            _uiState.update { it.copy(selectedBook = book) }
         }
     }
 

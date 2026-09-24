@@ -165,16 +165,49 @@ def build_gita(cursor):
 
 
 def build_upanishads(cursor):
-    print("Ingesting Principal Upanishads (Isa, Katha, Kena)...")
+    print("Ingesting Principal Upanishads (Isa, Katha, Kena) with original Sanskrit Devanagari & English...")
     url = "https://www.gutenberg.org/cache/epub/3283/pg3283.txt"
     raw = fetch_url(url, "upanishads.txt")
     
+    url_isa_sanskrit = "https://raw.githubusercontent.com/hrgupta/indian-scriptures/master/data/processed/upanishads/isavasya_upanishad.csv"
+    raw_isa_csv = fetch_url(url_isa_sanskrit, "isavasya_upanishad.csv")
+    isa_sanskrit_map = {}
+    if raw_isa_csv:
+        import csv, io
+        reader = csv.DictReader(io.StringIO(raw_isa_csv))
+        for idx, row in enumerate(reader):
+            m = row.get("mantra", "").strip()
+            m = re.sub(r'^[0-9\s]*[^\w\s]*\s*ईशावास्य उपनिषद्[,\s]*', '', m).strip()
+            if m:
+                isa_sanskrit_map[idx + 1] = m
+
+    url_katha_sanskrit = "https://raw.githubusercontent.com/hrgupta/indian-scriptures/master/data/processed/upanishads/katha_upanishad.csv"
+    raw_katha_csv = fetch_url(url_katha_sanskrit, "katha_upanishad.csv")
+    katha_sanskrit_map = {}
+    if raw_katha_csv:
+        import csv, io
+        reader = csv.DictReader(io.StringIO(raw_katha_csv))
+        for idx, row in enumerate(reader):
+            m = row.get("mantra", "").strip()
+            if m:
+                katha_sanskrit_map[idx + 1] = m
+
+    url_kena_sanskrit = "https://raw.githubusercontent.com/hrgupta/indian-scriptures/master/data/processed/upanishads/kena_upanishad.csv"
+    raw_kena_csv = fetch_url(url_kena_sanskrit, "kena_upanishad.csv")
+    kena_sanskrit_map = {}
+    if raw_kena_csv:
+        import csv, io
+        reader = csv.DictReader(io.StringIO(raw_kena_csv))
+        for idx, row in enumerate(reader):
+            m = row.get("mantra", "").strip()
+            if m:
+                kena_sanskrit_map[idx + 1] = m
+
     pos_isa = raw.find('Isa-Upanishad\n')
     pos_katha = raw.find('Katha-Upanishad\n', pos_isa + 100)
     pos_kena = raw.find('Kena-Upanishad\n', pos_katha + 100)
     pos_end = raw.find('*** END OF THE PROJECT GUTENBERG')
     
-    # 1. Isa Upanishad
     isa_text = raw[pos_isa:pos_katha]
     isa_splits = list(re.finditer(r'\n\s*([IVXLCDM]+|[0-9]+)\s*\n', isa_text))
     isa_count = 0
@@ -188,11 +221,12 @@ def build_upanishads(cursor):
         if len(text) < 10:
             continue
         
+        orig_sanskrit = isa_sanskrit_map.get(v_num)
         passage_id = f"isa_upanishad_{v_num}"
         ref = f"Isa Upanishad {v_num}"
         cursor.execute(
             "INSERT OR REPLACE INTO passage_entity VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-            (passage_id, "isa_upanishad", "hinduism", ref, None, text, v_num, 1, v_num)
+            (passage_id, "isa_upanishad", "hinduism", ref, orig_sanskrit, text, v_num, 1, v_num)
         )
         isa_count += 1
         
@@ -200,9 +234,8 @@ def build_upanishads(cursor):
         "INSERT OR REPLACE INTO book_entity VALUES (?, ?, ?, ?, ?, ?, ?)",
         ("isa_upanishad", "hinduism", "Isha Upanishad", "Vedic Sages", "Sanskrit", isa_count, 1)
     )
-    print(f"Isha Upanishad complete: {isa_count} verses ingested.")
+    print(f"Isha Upanishad complete: {isa_count} verses ingested with Sanskrit.")
 
-    # 2. Katha Upanishad
     katha_text = raw[pos_katha:pos_kena]
     k_parts = list(re.finditer(r'\n\s*Part\s+([A-Za-z]+)\s*\n', katha_text))
     katha_count = 0
@@ -225,11 +258,12 @@ def build_upanishads(cursor):
             if len(v_text) < 10:
                 continue
                 
+            orig_sanskrit = katha_sanskrit_map.get(katha_order)
             passage_id = f"katha_upanishad_{part_num}_{v_num}"
             ref = f"Katha Upanishad {part_num}.{v_num}"
             cursor.execute(
                 "INSERT OR REPLACE INTO passage_entity VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                (passage_id, "katha_upanishad", "hinduism", ref, None, v_text, katha_order, part_num, v_num)
+                (passage_id, "katha_upanishad", "hinduism", ref, orig_sanskrit, v_text, katha_order, part_num, v_num)
             )
             katha_order += 1
             katha_count += 1
@@ -238,9 +272,8 @@ def build_upanishads(cursor):
         "INSERT OR REPLACE INTO book_entity VALUES (?, ?, ?, ?, ?, ?, ?)",
         ("katha_upanishad", "hinduism", "Katha Upanishad", "Vedic Sages", "Sanskrit", katha_count, 1)
     )
-    print(f"Katha Upanishad complete: {katha_count} verses ingested.")
+    print(f"Katha Upanishad complete: {katha_count} verses ingested with Sanskrit.")
 
-    # 3. Kena Upanishad
     kena_text = raw[pos_kena:pos_end]
     kena_parts = list(re.finditer(r'\n\s*Part\s+([A-Za-z]+)\s*\n', kena_text, flags=re.IGNORECASE))
     kena_count = 0
@@ -263,11 +296,12 @@ def build_upanishads(cursor):
             if len(v_text) < 10:
                 continue
                 
+            orig_sanskrit = kena_sanskrit_map.get(kena_order)
             passage_id = f"kena_upanishad_{part_num}_{v_num}"
             ref = f"Kena Upanishad {part_num}.{v_num}"
             cursor.execute(
                 "INSERT OR REPLACE INTO passage_entity VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                (passage_id, "kena_upanishad", "hinduism", ref, None, v_text, kena_order, part_num, v_num)
+                (passage_id, "kena_upanishad", "hinduism", ref, orig_sanskrit, v_text, kena_order, part_num, v_num)
             )
             kena_order += 1
             kena_count += 1
@@ -276,7 +310,7 @@ def build_upanishads(cursor):
         "INSERT OR REPLACE INTO book_entity VALUES (?, ?, ?, ?, ?, ?, ?)",
         ("kena_upanishad", "hinduism", "Kena Upanishad", "Vedic Sages", "Sanskrit", kena_count, 1)
     )
-    print(f"Kena Upanishad complete: {kena_count} verses ingested.")
+    print(f"Kena Upanishad complete: {kena_count} verses ingested with Sanskrit.")
 
 def build_tao_te_ching(cursor):
     print("Ingesting Tao Te Ching (81 Chapters with Classical Chinese & English Translation)...")
@@ -396,6 +430,7 @@ def build_dhammapada(cursor):
     order_idx = 1
     if len(chapters) > 1:
         for i in range(1, len(chapters), 3):
+            chap_num = (i // 3) + 1
             chap_body = chapters[i+2]
             if "*** END" in chap_body:
                 chap_body = chap_body.split("*** END")[0]
@@ -414,12 +449,11 @@ def build_dhammapada(cursor):
                 passage_id = f"dhammapada_{ref_label}"
                 ref = f"Dhammapada {ref_label}"
                 
-                # First verse number for sorting
                 primary_num = int(label.split(',')[0])
                 
                 cursor.execute(
                     "INSERT OR REPLACE INTO passage_entity VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                    (passage_id, "dhammapada", "buddhism", ref, None, verse_text, order_idx, None, primary_num)
+                    (passage_id, "dhammapada", "buddhism", ref, None, verse_text, order_idx, chap_num, primary_num)
                 )
                 order_idx += 1
                 count += 1

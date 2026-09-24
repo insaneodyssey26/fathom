@@ -60,12 +60,15 @@ fun FathomBottomNavBar(
                 brush = Brush.verticalGradient(
                     colors = listOf(
                         Color.Transparent,
-                        FathomTheme.colors.background.copy(alpha = 0.72f),
-                        FathomTheme.colors.background.copy(alpha = 0.95f),
+                        FathomTheme.colors.background.copy(alpha = 0.20f),
+                        FathomTheme.colors.background.copy(alpha = 0.60f),
+                        FathomTheme.colors.background.copy(alpha = 0.90f),
+                        FathomTheme.colors.background.copy(alpha = 0.98f),
                         FathomTheme.colors.background
                     )
                 )
             )
+            .padding(top = 40.dp)
             .navigationBarsPadding()
             .padding(horizontal = 20.dp, vertical = 8.dp),
         contentAlignment = Alignment.Center
