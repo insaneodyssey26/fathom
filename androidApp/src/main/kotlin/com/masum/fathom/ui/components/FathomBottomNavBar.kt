@@ -26,6 +26,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import com.adamglin.PhosphorIcons
 import com.adamglin.phosphoricons.Regular
 import com.adamglin.phosphoricons.regular.BookBookmark
+import com.adamglin.phosphoricons.regular.MagnifyingGlass
 import com.adamglin.phosphoricons.regular.Sparkle
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -53,12 +54,12 @@ fun FathomBottomNavBar(
         modifier = modifier
             .fillMaxWidth()
             .navigationBarsPadding()
-            .padding(horizontal = 24.dp, vertical = 6.dp),
+            .padding(horizontal = 20.dp, vertical = 6.dp),
         contentAlignment = Alignment.Center
     ) {
         BoxWithConstraints(
             modifier = Modifier
-                .widthIn(max = 280.dp)
+                .widthIn(max = 360.dp)
                 .fillMaxWidth()
                 .height(48.dp)
                 .clip(RoundedCornerShape(26.dp))
@@ -70,8 +71,12 @@ fun FathomBottomNavBar(
                 )
                 .padding(3.dp)
         ) {
-            val segmentWidth = maxWidth / 2
-            val targetOffset = if (selectedItem == NavigationItem.FEED) 0.dp else segmentWidth
+            val segmentWidth = maxWidth / 3
+            val targetOffset = when (selectedItem) {
+                NavigationItem.FEED -> 0.dp
+                NavigationItem.SEARCH -> segmentWidth
+                NavigationItem.LIBRARY -> segmentWidth * 2
+            }
 
             val indicatorOffset by animateDpAsState(
                 targetValue = targetOffset,
@@ -102,6 +107,14 @@ fun FathomBottomNavBar(
                     icon = PhosphorIcons.Regular.Sparkle,
                     isSelected = selectedItem == NavigationItem.FEED,
                     onClick = { onItemSelected(NavigationItem.FEED) },
+                    modifier = Modifier.weight(1f)
+                )
+
+                NavBarItem(
+                    label = "Explore",
+                    icon = PhosphorIcons.Regular.MagnifyingGlass,
+                    isSelected = selectedItem == NavigationItem.SEARCH,
+                    onClick = { onItemSelected(NavigationItem.SEARCH) },
                     modifier = Modifier.weight(1f)
                 )
 

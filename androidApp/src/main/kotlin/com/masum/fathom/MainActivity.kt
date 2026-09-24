@@ -37,8 +37,12 @@ import com.masum.fathom.ui.library.LibraryViewModel
 import com.masum.fathom.ui.theme.FathomTheme
 import com.masum.fathom.ui.theme.ReadingTheme
 
+import com.masum.fathom.ui.search.SearchScreen
+import com.masum.fathom.ui.search.SearchViewModel
+
 enum class NavigationItem {
     FEED,
+    SEARCH,
     LIBRARY
 }
 
@@ -55,8 +59,6 @@ class MainActivity : ComponentActivity() {
             )
         )
         super.onCreate(savedInstanceState)
-
-
 
         setContent {
             val context = LocalContext.current
@@ -107,11 +109,19 @@ class MainActivity : ComponentActivity() {
                 )
             }
 
+            val searchViewModel: SearchViewModel = viewModel {
+                SearchViewModel(
+                    passageRepository = passageRepo,
+                    userDataRepository = userRepo
+                )
+            }
+
             val libraryViewModel: LibraryViewModel = viewModel {
                 LibraryViewModel(userDataRepository = userRepo, passageRepository = passageRepo)
             }
 
             val feedUiState by feedViewModel.uiState.collectAsStateWithLifecycle()
+            val searchUiState by searchViewModel.uiState.collectAsStateWithLifecycle()
             val libraryUiState by libraryViewModel.uiState.collectAsStateWithLifecycle()
 
             val activeTheme = (feedUiState as? com.masum.fathom.ui.feed.FeedUiState.Success)?.activeTheme ?: ReadingTheme.OBSIDIAN
@@ -139,25 +149,12 @@ class MainActivity : ComponentActivity() {
                         androidx.compose.animation.AnimatedContent(
                             targetState = selectedNav,
                             transitionSpec = {
-                                if (targetState == NavigationItem.LIBRARY) {
-                                    (androidx.compose.animation.slideInHorizontally(androidx.compose.animation.core.tween(320)) { width -> (width * 0.12f).toInt() } +
-                                        androidx.compose.animation.fadeIn(androidx.compose.animation.core.tween(320)) +
-                                        androidx.compose.animation.scaleIn(initialScale = 0.98f, animationSpec = androidx.compose.animation.core.tween(320)))
-                                        .togetherWith(
-                                            androidx.compose.animation.slideOutHorizontally(androidx.compose.animation.core.tween(280)) { width -> (-width * 0.12f).toInt() } +
-                                                androidx.compose.animation.fadeOut(androidx.compose.animation.core.tween(250)) +
-                                                androidx.compose.animation.scaleOut(targetScale = 0.98f, animationSpec = androidx.compose.animation.core.tween(280))
-                                        )
-                                } else {
-                                    (androidx.compose.animation.slideInHorizontally(androidx.compose.animation.core.tween(320)) { width -> (-width * 0.12f).toInt() } +
-                                        androidx.compose.animation.fadeIn(androidx.compose.animation.core.tween(320)) +
-                                        androidx.compose.animation.scaleIn(initialScale = 0.98f, animationSpec = androidx.compose.animation.core.tween(320)))
-                                        .togetherWith(
-                                            androidx.compose.animation.slideOutHorizontally(androidx.compose.animation.core.tween(280)) { width -> (width * 0.12f).toInt() } +
-                                                androidx.compose.animation.fadeOut(androidx.compose.animation.core.tween(250)) +
-                                                androidx.compose.animation.scaleOut(targetScale = 0.98f, animationSpec = androidx.compose.animation.core.tween(280))
-                                        )
-                                }
+                                (androidx.compose.animation.fadeIn(androidx.compose.animation.core.tween(240)) +
+                                    androidx.compose.animation.scaleIn(initialScale = 0.98f, animationSpec = androidx.compose.animation.core.tween(240)))
+                                    .togetherWith(
+                                        androidx.compose.animation.fadeOut(androidx.compose.animation.core.tween(200)) +
+                                            androidx.compose.animation.scaleOut(targetScale = 0.98f, animationSpec = androidx.compose.animation.core.tween(200))
+                                    )
                             },
                             label = "screen_nav_transition",
                             modifier = Modifier.fillMaxSize()
@@ -167,6 +164,10 @@ class MainActivity : ComponentActivity() {
                                     state = feedUiState,
                                     onEvent = feedViewModel::onEvent
                                 )
+                                NavigationItem.SEARCH -> SearchScreen(
+                                    state = searchUiState,
+                                    onEvent = searchViewModel::onEvent
+                                )
                                 NavigationItem.LIBRARY -> LibraryScreen(
                                     state = libraryUiState,
                                     onEvent = libraryViewModel::onEvent
@@ -175,7 +176,6 @@ class MainActivity : ComponentActivity() {
                         }
                     }
                 }
-
             }
         }
     }

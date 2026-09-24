@@ -133,3 +133,36 @@ WHERE ref.theme_id IN :theme_ids
 ORDER BY RANDOM()
 LIMIT :limit;
 
+searchPassages:
+SELECT * FROM passage_entity
+WHERE translation LIKE ('%' || :query || '%')
+   OR canonical_reference LIKE ('%' || :query || '%')
+   OR (original_text IS NOT NULL AND original_text LIKE ('%' || :query || '%'))
+ORDER BY order_index ASC
+LIMIT :limit OFFSET :offset;
+
+searchPassagesByTradition:
+SELECT * FROM passage_entity
+WHERE tradition_id = :tradition_id
+  AND (translation LIKE ('%' || :query || '%')
+   OR canonical_reference LIKE ('%' || :query || '%')
+   OR (original_text IS NOT NULL AND original_text LIKE ('%' || :query || '%')))
+ORDER BY order_index ASC
+LIMIT :limit OFFSET :offset;
+
+selectChaptersForBook:
+SELECT DISTINCT chapter FROM passage_entity
+WHERE book_id = :book_id AND chapter IS NOT NULL
+ORDER BY chapter ASC;
+
+selectPassagesForBookChapter:
+SELECT * FROM passage_entity
+WHERE book_id = :book_id AND chapter = :chapter
+ORDER BY verse_number ASC, order_index ASC;
+
+selectBooksForTradition:
+SELECT * FROM book_entity
+WHERE tradition_id = :tradition_id
+ORDER BY title ASC;
+
+

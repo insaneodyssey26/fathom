@@ -123,6 +123,115 @@ class SqlDelightPassageRepository(
             }
         }
 
+    override suspend fun getBooksForTradition(traditionId: TraditionId): FathomResult<List<com.masum.fathom.core.model.Book>, DataError.Local> =
+        withContext(ioDispatcher) {
+            try {
+                val entities = queries.selectBooksForTradition(traditionId.key).executeAsList()
+                val books = entities.map { entity ->
+                    com.masum.fathom.core.model.Book(
+                        id = entity.id,
+                        traditionId = traditionId,
+                        title = entity.title,
+                        author = entity.author,
+                        language = entity.language,
+                        totalPassages = entity.total_passages.toInt(),
+                        isBundled = entity.is_bundled == 1L
+                    )
+                }
+                FathomResult.Success(books)
+            } catch (_: Throwable) {
+                FathomResult.Failure(DataError.Local.CORRUPTED_DATABASE)
+            }
+        }
+
+    override suspend fun searchPassages(
+        query: String,
+        traditionId: TraditionId?,
+        offset: Int,
+        limit: Int
+    ): FathomResult<List<Passage>, DataError.Local> = withContext(ioDispatcher) {
+        try {
+            val entities = if (traditionId != null) {
+                queries.searchPassagesByTradition(
+                    tradition_id = traditionId.key,
+                    query = query,
+                    limit = limit.toLong(),
+                    offset = offset.toLong()
+                ).executeAsList()
+            } else {
+                queries.searchPassages(
+                    query = query,
+                    limit = limit.toLong(),
+                    offset = offset.toLong()
+                ).executeAsList()
+            }
+
+            val passages = entities.map { entity ->
+                val tradId = TraditionId.fromKeyOrNull(entity.tradition_id) ?: TraditionId.HINDUISM
+                Passage(
+                    id = entity.id,
+                    bookId = entity.book_id,
+                    traditionId = tradId,
+                    canonicalReference = entity.canonical_reference,
+                    originalText = entity.original_text,
+                    translation = entity.translation,
+                    orderIndex = entity.order_index.toInt(),
+                    chapter = entity.chapter?.toInt(),
+                    verseNumber = entity.verse_number?.toInt(),
+                    themes = emptyList(),
+                    explanations = emptyList()
+                )
+            }
+
+            FathomResult.Success(passages)
+        } catch (_: Throwable) {
+            FathomResult.Failure(DataError.Local.CORRUPTED_DATABASE)
+        }
+    }
+
+    override suspend fun getChaptersForBook(bookId: String): FathomResult<List<Int>, DataError.Local> =
+        withContext(ioDispatcher) {
+            try {
+                val chapters = queries.selectChaptersForBook(bookId).executeAsList().mapNotNull { it?.toInt() }
+                FathomResult.Success(chapters)
+            } catch (_: Throwable) {
+                FathomResult.Failure(DataError.Local.CORRUPTED_DATABASE)
+            }
+        }
+
+    override suspend fun getPassagesForBookChapter(
+        bookId: String,
+        chapter: Int
+    ): FathomResult<List<Passage>, DataError.Local> = withContext(ioDispatcher) {
+        try {
+            val entities = queries.selectPassagesForBookChapter(
+                book_id = bookId,
+                chapter = chapter.toLong()
+            ).executeAsList()
+
+            val passages = entities.map { entity ->
+                val tradId = TraditionId.fromKeyOrNull(entity.tradition_id) ?: TraditionId.HINDUISM
+                Passage(
+                    id = entity.id,
+                    bookId = entity.book_id,
+                    traditionId = tradId,
+                    canonicalReference = entity.canonical_reference,
+                    originalText = entity.original_text,
+                    translation = entity.translation,
+                    orderIndex = entity.order_index.toInt(),
+                    chapter = entity.chapter?.toInt(),
+                    verseNumber = entity.verse_number?.toInt(),
+                    themes = emptyList(),
+                    explanations = emptyList()
+                )
+            }
+
+            FathomResult.Success(passages)
+        } catch (_: Throwable) {
+            FathomResult.Failure(DataError.Local.CORRUPTED_DATABASE)
+        }
+    }
+
     override fun observePassage(id: String): Flow<FathomResult<Passage, DataError.Local>> {
         return queries.selectPassageById(id)
             .asFlow()
