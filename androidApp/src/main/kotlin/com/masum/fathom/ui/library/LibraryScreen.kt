@@ -33,6 +33,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
@@ -69,12 +70,14 @@ import com.adamglin.phosphoricons.regular.Copy
 import com.adamglin.phosphoricons.regular.MagnifyingGlass
 import com.adamglin.phosphoricons.regular.NotePencil
 import com.adamglin.phosphoricons.regular.ShareNetwork
+import com.adamglin.phosphoricons.regular.Sliders
 import com.adamglin.phosphoricons.regular.Sparkle
 import com.adamglin.phosphoricons.regular.Tag
 import com.adamglin.phosphoricons.regular.TrashSimple
 import com.adamglin.phosphoricons.regular.X
 import com.masum.fathom.core.model.Passage
 import com.masum.fathom.core.model.TraditionId
+import com.masum.fathom.core.sanctuary.LocalOpenSanctuary
 import com.masum.fathom.ui.components.QuoteCardModal
 import com.masum.fathom.ui.components.SacredDivider
 import com.masum.fathom.ui.components.TraditionBadge
@@ -90,6 +93,8 @@ fun LibraryScreen(
     onEvent: (LibraryUiEvent) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val openSanctuary = LocalOpenSanctuary.current
+
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -109,6 +114,21 @@ fun LibraryScreen(
                 style = FathomTheme.typography.brandTitle,
                 color = FathomTheme.colors.textPrimary
             )
+
+            IconButton(
+                onClick = openSanctuary,
+                modifier = Modifier
+                    .clip(CircleShape)
+                    .background(FathomTheme.colors.surfaceElevated)
+                    .size(38.dp)
+            ) {
+                Icon(
+                    imageVector = PhosphorIcons.Regular.Sliders,
+                    contentDescription = "Sanctuary Settings",
+                    tint = FathomTheme.colors.textSecondary,
+                    modifier = Modifier.size(18.dp)
+                )
+            }
         }
 
         when (state) {

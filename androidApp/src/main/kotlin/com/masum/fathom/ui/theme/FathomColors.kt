@@ -53,4 +53,16 @@ val SlateColors = FathomColors(
     isDark = true
 )
 
+val ForestColors = FathomColors(
+    background = Color(0xFF0A120D),
+    surface = Color(0xFF111D15),
+    surfaceElevated = Color(0xFF1A2A20),
+    textPrimary = Color(0xFFF2F8F4),
+    textSecondary = Color(0xFF9EBAA8),
+    textTertiary = Color(0xFF6B8774),
+    accentGold = Color(0xFFD4AF37),
+    borderSubtle = Color(0xFF233B2C),
+    isDark = true
+)
+
 val LocalFathomColors = staticCompositionLocalOf { ObsidianColors }

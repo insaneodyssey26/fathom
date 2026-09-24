@@ -64,7 +64,7 @@ fun PassageCard(
             .fillMaxSize()
             .background(FathomTheme.colors.background)
             .padding(horizontal = 24.dp)
-            .padding(top = 8.dp, bottom = 76.dp),
+            .padding(top = 8.dp, bottom = 96.dp),
         contentAlignment = Alignment.Center
     ) {
         Column(

@@ -292,6 +292,7 @@ private fun ThemeOptionButton(
                     ReadingTheme.OBSIDIAN -> com.masum.fathom.ui.theme.ObsidianColors.background
                     ReadingTheme.SEPIA -> com.masum.fathom.ui.theme.SepiaColors.background
                     ReadingTheme.SLATE -> com.masum.fathom.ui.theme.SlateColors.background
+                    ReadingTheme.FOREST -> com.masum.fathom.ui.theme.ForestColors.background
                 }
             )
             .clickable(
@@ -310,6 +311,7 @@ private fun ThemeOptionButton(
                 ReadingTheme.OBSIDIAN -> com.masum.fathom.ui.theme.ObsidianColors.textPrimary
                 ReadingTheme.SEPIA -> com.masum.fathom.ui.theme.SepiaColors.textPrimary
                 ReadingTheme.SLATE -> com.masum.fathom.ui.theme.SlateColors.textPrimary
+                ReadingTheme.FOREST -> com.masum.fathom.ui.theme.ForestColors.textPrimary
             }
         )
     }

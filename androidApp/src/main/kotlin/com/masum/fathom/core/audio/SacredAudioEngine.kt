@@ -16,9 +16,9 @@ import kotlinx.coroutines.launch
 import java.util.Locale
 
 enum class RecitationMode {
-    FULL,
+    TRANSLATION_ONLY,
     ORIGINAL_ONLY,
-    TRANSLATION_ONLY
+    FULL
 }
 
 sealed interface SacredAudioState {
@@ -26,12 +26,18 @@ sealed interface SacredAudioState {
     data class Playing(
         val passage: Passage,
         val isOriginalPart: Boolean,
-        val mode: RecitationMode
+        val mode: RecitationMode,
+        val progress: Float = 0f,
+        val currentChar: Int = 0,
+        val speed: Float = 1.0f
     ) : SacredAudioState
     data class Paused(
         val passage: Passage,
         val isOriginalPart: Boolean,
-        val mode: RecitationMode
+        val mode: RecitationMode,
+        val progress: Float = 0f,
+        val currentChar: Int = 0,
+        val speed: Float = 1.0f
     ) : SacredAudioState
 }
 
@@ -41,6 +47,9 @@ class SacredAudioEngine(private val context: Context) {
     private var tts: TextToSpeech? = null
     private var isTtsInitialized = false
     private var pendingPlayAction: (() -> Unit)? = null
+    private var currentTextBeingSpoken: String = ""
+    private var currentOffset: Int = 0
+    private var currentSpeed: Float = 1.0f
 
     private val _playbackState = MutableStateFlow<SacredAudioState>(SacredAudioState.Idle)
     val playbackState: StateFlow<SacredAudioState> = _playbackState.asStateFlow()
@@ -68,13 +77,28 @@ class SacredAudioEngine(private val context: Context) {
                 }
             }
 
+            override fun onRangeStart(utteranceId: String?, start: Int, end: Int, frame: Int) {
+                val current = _playbackState.value
+                if (current is SacredAudioState.Playing) {
+                    val fullLength = currentTextBeingSpoken.length
+                    val totalChar = (currentOffset + start).coerceIn(0, fullLength)
+                    val prog = if (fullLength > 0) (totalChar.toFloat() / fullLength).coerceIn(0f, 1f) else 0f
+                    scope.launch {
+                        _playbackState.value = current.copy(
+                            progress = prog,
+                            currentChar = totalChar
+                        )
+                    }
+                }
+            }
+
             override fun onDone(utteranceId: String?) {
                 scope.launch {
                     val current = _playbackState.value
                     if (current is SacredAudioState.Playing) {
                         if (utteranceId?.startsWith("ORIGINAL_") == true) {
                             if (current.mode == RecitationMode.FULL) {
-                                playTranslationPart(current.passage, current.mode)
+                                playTranslationPart(current.passage, current.mode, 0)
                             } else {
                                 _playbackState.value = SacredAudioState.Idle
                             }
@@ -91,6 +115,7 @@ class SacredAudioEngine(private val context: Context) {
                 }
             }
 
+            @Deprecated("Deprecated in Java")
             override fun onError(utteranceId: String?, errorCode: Int) {
                 scope.launch {
                     _playbackState.value = SacredAudioState.Idle
@@ -99,114 +124,232 @@ class SacredAudioEngine(private val context: Context) {
         })
     }
 
-    fun play(passage: Passage, mode: RecitationMode = RecitationMode.FULL) {
+    fun play(passage: Passage, mode: RecitationMode = RecitationMode.TRANSLATION_ONLY, fromCharOffset: Int = 0) {
         if (!isTtsInitialized) {
-            pendingPlayAction = { play(passage, mode) }
+            pendingPlayAction = { play(passage, mode, fromCharOffset) }
             return
         }
 
-        stop()
+        stopInternal()
 
         val hasOriginal = !passage.originalText.isNullOrBlank() && passage.originalText != passage.translation
-        val targetMode = if (!hasOriginal && mode == RecitationMode.ORIGINAL_ONLY) RecitationMode.TRANSLATION_ONLY else mode
+        val targetMode = if (!hasOriginal && mode != RecitationMode.TRANSLATION_ONLY) RecitationMode.TRANSLATION_ONLY else mode
 
         when (targetMode) {
+            RecitationMode.TRANSLATION_ONLY -> {
+                playTranslationPart(passage, targetMode, fromCharOffset)
+            }
             RecitationMode.ORIGINAL_ONLY -> {
                 if (hasOriginal) {
-                    _playbackState.value = SacredAudioState.Playing(passage, isOriginalPart = true, mode = targetMode)
-                    playOriginalPart(passage)
+                    playOriginalPart(passage, targetMode, fromCharOffset)
                 } else {
-                    _playbackState.value = SacredAudioState.Playing(passage, isOriginalPart = false, mode = targetMode)
-                    playTranslationPart(passage, targetMode)
+                    playTranslationPart(passage, targetMode, fromCharOffset)
                 }
-            }
-            RecitationMode.TRANSLATION_ONLY -> {
-                _playbackState.value = SacredAudioState.Playing(passage, isOriginalPart = false, mode = targetMode)
-                playTranslationPart(passage, targetMode)
             }
             RecitationMode.FULL -> {
                 if (hasOriginal) {
-                    _playbackState.value = SacredAudioState.Playing(passage, isOriginalPart = true, mode = targetMode)
-                    playOriginalPart(passage)
+                    playOriginalPart(passage, targetMode, fromCharOffset)
                 } else {
-                    _playbackState.value = SacredAudioState.Playing(passage, isOriginalPart = false, mode = targetMode)
-                    playTranslationPart(passage, targetMode)
+                    playTranslationPart(passage, targetMode, fromCharOffset)
                 }
             }
         }
     }
 
-    private fun playOriginalPart(passage: Passage) {
+    private fun playOriginalPart(passage: Passage, mode: RecitationMode, fromCharOffset: Int = 0) {
         val targetLocale = getOriginalLocale(passage.traditionId)
-        configureVoice(targetLocale, rate = 0.82f, pitch = 0.92f)
+        configureVoice(targetLocale, rate = currentSpeed * 0.92f, pitch = 1.0f)
 
-        val textToSpeak = cleanPhonetics(passage.originalText ?: passage.translation)
+        currentTextBeingSpoken = cleanPhonetics(passage.originalText ?: passage.translation)
+        currentOffset = fromCharOffset.coerceIn(0, currentTextBeingSpoken.length)
+        val initialProgress = if (currentTextBeingSpoken.isNotEmpty()) (currentOffset.toFloat() / currentTextBeingSpoken.length).coerceIn(0f, 1f) else 0f
+        _playbackState.value = SacredAudioState.Playing(
+            passage = passage,
+            isOriginalPart = true,
+            mode = mode,
+            progress = initialProgress,
+            currentChar = currentOffset,
+            speed = currentSpeed
+        )
+        val textToSpeak = if (currentOffset < currentTextBeingSpoken.length) {
+            currentTextBeingSpoken.substring(currentOffset)
+        } else {
+            currentTextBeingSpoken
+        }
+
         val params = Bundle().apply {
             putString(TextToSpeech.Engine.KEY_PARAM_UTTERANCE_ID, "ORIGINAL_${passage.id}")
         }
         tts?.speak(textToSpeak, TextToSpeech.QUEUE_FLUSH, params, "ORIGINAL_${passage.id}")
     }
 
-    private fun playTranslationPart(passage: Passage, mode: RecitationMode) {
-        _playbackState.value = SacredAudioState.Playing(passage, isOriginalPart = false, mode = mode)
-        configureVoice(Locale.US, rate = 0.86f, pitch = 0.95f)
+    private fun playTranslationPart(passage: Passage, mode: RecitationMode, fromCharOffset: Int = 0) {
+        configureVoice(Locale.US, rate = currentSpeed, pitch = 1.0f)
+
+        currentTextBeingSpoken = sanitizeText(passage.translation)
+        currentOffset = fromCharOffset.coerceIn(0, currentTextBeingSpoken.length)
+        val initialProgress = if (currentTextBeingSpoken.isNotEmpty()) (currentOffset.toFloat() / currentTextBeingSpoken.length).coerceIn(0f, 1f) else 0f
+        _playbackState.value = SacredAudioState.Playing(
+            passage = passage,
+            isOriginalPart = false,
+            mode = mode,
+            progress = initialProgress,
+            currentChar = currentOffset,
+            speed = currentSpeed
+        )
+        val cleanTranslation = if (currentOffset < currentTextBeingSpoken.length) {
+            currentTextBeingSpoken.substring(currentOffset)
+        } else {
+            currentTextBeingSpoken
+        }
 
         val params = Bundle().apply {
             putString(TextToSpeech.Engine.KEY_PARAM_UTTERANCE_ID, "TRANSLATION_${passage.id}")
         }
-        tts?.speak(passage.translation, TextToSpeech.QUEUE_FLUSH, params, "TRANSLATION_${passage.id}")
+        tts?.speak(cleanTranslation, TextToSpeech.QUEUE_FLUSH, params, "TRANSLATION_${passage.id}")
     }
 
     private fun configureVoice(preferredLocale: Locale, rate: Float, pitch: Float) {
         val engine = tts ?: return
-        val avail = engine.isLanguageAvailable(preferredLocale)
-        if (avail >= TextToSpeech.LANG_AVAILABLE) {
-            engine.language = preferredLocale
-        } else {
-            val fallback = if (preferredLocale.language == "hi" || preferredLocale.language == "sa") {
-                Locale("hi", "IN")
-            } else if (preferredLocale.language == "ar") {
-                Locale("ar")
-            } else if (preferredLocale.language == "zh") {
-                Locale.SIMPLIFIED_CHINESE
-            } else {
-                Locale.US
-            }
-            if (engine.isLanguageAvailable(fallback) >= TextToSpeech.LANG_AVAILABLE) {
-                engine.language = fallback
+        try {
+            val avail = engine.isLanguageAvailable(preferredLocale)
+            if (avail >= TextToSpeech.LANG_AVAILABLE) {
+                engine.language = preferredLocale
             } else {
                 engine.language = Locale.US
             }
+
+            val voices = engine.voices
+            val matchedVoice = voices?.filter {
+                it.locale.language == engine.language.language && !it.isNetworkConnectionRequired
+            }?.maxByOrNull { it.quality }
+
+            if (matchedVoice != null) {
+                engine.voice = matchedVoice
+            }
+        } catch (e: Exception) {
+            engine.language = Locale.US
         }
+
         engine.setSpeechRate(rate)
         engine.setPitch(pitch)
     }
 
     private fun getOriginalLocale(traditionId: TraditionId): Locale {
         return when (traditionId) {
-            TraditionId.HINDUISM -> Locale("hi", "IN")
-            TraditionId.ISLAM -> Locale("ar", "SA")
+            TraditionId.HINDUISM, TraditionId.BUDDHISM -> Locale.Builder().setLanguage("hi").setRegion("IN").build()
+            TraditionId.ISLAM -> Locale.Builder().setLanguage("ar").setRegion("SA").build()
             TraditionId.TAOISM -> Locale.SIMPLIFIED_CHINESE
-            TraditionId.BUDDHISM -> Locale("hi", "IN")
-            TraditionId.JUDAISM -> Locale("he", "IL")
+            TraditionId.JUDAISM -> Locale.Builder().setLanguage("he").setRegion("IL").build()
             TraditionId.CHRISTIANITY, TraditionId.STOICISM -> Locale.US
         }
     }
 
     private fun cleanPhonetics(raw: String): String {
         val parts = raw.split("\n\n")
-        return parts.firstOrNull { it.isNotBlank() } ?: raw
+        val clean = parts.firstOrNull { it.isNotBlank() } ?: raw
+        return sanitizeText(clean)
+    }
+
+    private fun sanitizeText(text: String): String {
+        return text.replace(Regex("\\[\\d+\\]"), "")
+            .replace(Regex("\\(\\d+\\)"), "")
+            .replace(Regex("—.*"), "")
+            .trim()
+    }
+
+    fun seekTo(fraction: Float) {
+        val current = _playbackState.value
+        val passage = when (current) {
+            is SacredAudioState.Playing -> current.passage
+            is SacredAudioState.Paused -> current.passage
+            is SacredAudioState.Idle -> return
+        }
+        val isOriginal = when (current) {
+            is SacredAudioState.Playing -> current.isOriginalPart
+            is SacredAudioState.Paused -> current.isOriginalPart
+            is SacredAudioState.Idle -> false
+        }
+        val mode = when (current) {
+            is SacredAudioState.Playing -> current.mode
+            is SacredAudioState.Paused -> current.mode
+            is SacredAudioState.Idle -> RecitationMode.TRANSLATION_ONLY
+        }
+
+        val totalLen = currentTextBeingSpoken.length
+        val targetChar = (totalLen * fraction.coerceIn(0f, 1f)).toInt()
+        val nearestWordBoundary = findNearestWordBoundary(currentTextBeingSpoken, targetChar)
+
+        play(passage, mode, nearestWordBoundary)
+    }
+
+    private fun findNearestWordBoundary(text: String, charIndex: Int): Int {
+        if (text.isEmpty() || charIndex <= 0) return 0
+        if (charIndex >= text.length) return text.length
+        var i = charIndex
+        while (i > 0 && !text[i - 1].isWhitespace()) {
+            i--
+        }
+        return i
+    }
+
+    fun setSpeed(speed: Float) {
+        currentSpeed = speed
+        val current = _playbackState.value
+        if (current is SacredAudioState.Playing) {
+            play(current.passage, current.mode, current.currentChar)
+        } else if (current is SacredAudioState.Paused) {
+            _playbackState.value = current.copy(speed = speed)
+        }
+    }
+
+    fun setMode(mode: RecitationMode) {
+        val current = _playbackState.value
+        val passage = when (current) {
+            is SacredAudioState.Playing -> current.passage
+            is SacredAudioState.Paused -> current.passage
+            is SacredAudioState.Idle -> return
+        }
+        play(passage, mode, 0)
+    }
+
+    fun pause() {
+        val current = _playbackState.value
+        if (current is SacredAudioState.Playing) {
+            tts?.stop()
+            _playbackState.value = SacredAudioState.Paused(
+                passage = current.passage,
+                isOriginalPart = current.isOriginalPart,
+                mode = current.mode,
+                progress = current.progress,
+                currentChar = current.currentChar,
+                speed = current.speed
+            )
+        }
+    }
+
+    fun resume() {
+        val current = _playbackState.value
+        if (current is SacredAudioState.Paused) {
+            play(current.passage, current.mode, current.currentChar)
+        }
     }
 
     fun stop() {
-        tts?.stop()
+        stopInternal()
         _playbackState.value = SacredAudioState.Idle
     }
 
-    fun toggle(passage: Passage, mode: RecitationMode = RecitationMode.FULL) {
+    private fun stopInternal() {
+        tts?.stop()
+    }
+
+    fun toggle(passage: Passage, mode: RecitationMode = RecitationMode.TRANSLATION_ONLY) {
         val current = _playbackState.value
         if (current is SacredAudioState.Playing && current.passage.id == passage.id) {
-            stop()
+            pause()
+        } else if (current is SacredAudioState.Paused && current.passage.id == passage.id) {
+            resume()
         } else {
             play(passage, mode)
         }

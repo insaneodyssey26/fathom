@@ -16,8 +16,8 @@ import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -127,8 +127,13 @@ class MainActivity : ComponentActivity() {
             val searchUiState by searchViewModel.uiState.collectAsStateWithLifecycle()
             val libraryUiState by libraryViewModel.uiState.collectAsStateWithLifecycle()
 
-            val activeTheme = (feedUiState as? com.masum.fathom.ui.feed.FeedUiState.Success)?.activeTheme ?: ReadingTheme.OBSIDIAN
+            val sanctuaryPreferences = remember { com.masum.fathom.core.sanctuary.SanctuaryPreferences(context) }
+            val sanctuaryDataEngine = remember { com.masum.fathom.core.sanctuary.SanctuaryDataEngine(context, userRepo, passageRepo) }
+            val sanctuarySettings by sanctuaryPreferences.settings.collectAsState()
 
+            val activeTheme = sanctuarySettings.theme
+
+            var showSanctuaryModal by remember { mutableStateOf(false) }
             var selectedNav by remember { mutableStateOf(NavigationItem.FEED) }
 
             if (selectedNav != NavigationItem.FEED) {
@@ -145,7 +150,10 @@ class MainActivity : ComponentActivity() {
             }
 
             androidx.compose.runtime.CompositionLocalProvider(
-                com.masum.fathom.core.audio.LocalSacredAudioEngine provides audioEngine
+                com.masum.fathom.core.audio.LocalSacredAudioEngine provides audioEngine,
+                com.masum.fathom.core.sanctuary.LocalSanctuaryPreferences provides sanctuaryPreferences,
+                com.masum.fathom.core.sanctuary.LocalSanctuaryDataEngine provides sanctuaryDataEngine,
+                com.masum.fathom.core.sanctuary.LocalOpenSanctuary provides { showSanctuaryModal = true }
             ) {
                 FathomTheme(readingTheme = activeTheme) {
                     Box(
@@ -191,6 +199,14 @@ class MainActivity : ComponentActivity() {
                             com.masum.fathom.ui.components.FathomBottomNavBar(
                                 selectedItem = selectedNav,
                                 onItemSelected = { selectedNav = it }
+                            )
+                        }
+
+                        if (showSanctuaryModal) {
+                            com.masum.fathom.ui.sanctuary.SanctuaryModal(
+                                preferences = sanctuaryPreferences,
+                                dataEngine = sanctuaryDataEngine,
+                                onDismiss = { showSanctuaryModal = false }
                             )
                         }
                     }

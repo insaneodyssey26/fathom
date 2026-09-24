@@ -12,10 +12,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
-enum class ReadingTheme {
-    OBSIDIAN,
-    SEPIA,
-    SLATE
+enum class ReadingTheme(val displayName: String) {
+    OBSIDIAN("Obsidian Gold"),
+    SEPIA("Parchment Cream"),
+    SLATE("Midnight Slate"),
+    FOREST("Forest Zen")
 }
 
 object FathomTheme {
@@ -40,6 +41,7 @@ fun FathomTheme(
         ReadingTheme.OBSIDIAN -> ObsidianColors
         ReadingTheme.SEPIA -> SepiaColors
         ReadingTheme.SLATE -> SlateColors
+        ReadingTheme.FOREST -> ForestColors
     }
 
     val animSpec = tween<Color>(durationMillis = 350)
