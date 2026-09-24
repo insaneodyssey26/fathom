@@ -15,10 +15,12 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Bookmark
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.outlined.BookmarkBorder
+import com.adamglin.PhosphorIcons
+import com.adamglin.phosphoricons.Fill
+import com.adamglin.phosphoricons.Regular
+import com.adamglin.phosphoricons.fill.BookmarkSimple as BookmarkSimpleFill
+import com.adamglin.phosphoricons.regular.BookmarkSimple
+import com.adamglin.phosphoricons.regular.Info
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
@@ -120,7 +122,7 @@ fun PassageCard(
                                 .size(40.dp)
                         ) {
                             Icon(
-                                imageVector = Icons.Default.Info,
+                                imageVector = PhosphorIcons.Regular.Info,
                                 contentDescription = "Context & Commentary",
                                 tint = FathomTheme.colors.textSecondary,
                                 modifier = Modifier.size(18.dp)
@@ -135,7 +137,7 @@ fun PassageCard(
                                 .size(40.dp)
                         ) {
                             Icon(
-                                imageVector = if (isBookmarked) Icons.Filled.Bookmark else Icons.Outlined.BookmarkBorder,
+                                imageVector = if (isBookmarked) PhosphorIcons.Fill.BookmarkSimpleFill else PhosphorIcons.Regular.BookmarkSimple,
                                 contentDescription = "Bookmark",
                                 tint = if (isBookmarked) FathomTheme.colors.accentGold else FathomTheme.colors.textSecondary,
                                 modifier = Modifier.size(18.dp)

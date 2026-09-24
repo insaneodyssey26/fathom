@@ -18,8 +18,9 @@ import androidx.compose.foundation.pager.PagerDefaults
 import androidx.compose.foundation.pager.VerticalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Tune
+import com.adamglin.PhosphorIcons
+import com.adamglin.phosphoricons.Regular
+import com.adamglin.phosphoricons.regular.Sliders
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -154,7 +155,7 @@ fun FeedScreen(
                             .size(38.dp)
                     ) {
                         Icon(
-                            imageVector = Icons.Default.Tune,
+                            imageVector = PhosphorIcons.Regular.Sliders,
                             contentDescription = "Tradition and Theme Filters",
                             tint = FathomTheme.colors.textSecondary,
                             modifier = Modifier.size(18.dp)

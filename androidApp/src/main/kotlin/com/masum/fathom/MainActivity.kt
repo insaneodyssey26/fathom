@@ -10,10 +10,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AutoAwesome
-import androidx.compose.material.icons.filled.Bookmarks
-import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
@@ -65,13 +61,31 @@ class MainActivity : ComponentActivity() {
         setContent {
             val context = LocalContext.current
             val (feedEngine, userRepo, passageRepo) = remember {
+                val dbFile = context.getDatabasePath("starter_content.db")
+                var needsExtraction = !dbFile.exists() || dbFile.length() < 100_000L
+                if (needsExtraction) {
+                    dbFile.parentFile?.mkdirs()
+                    if (dbFile.exists()) dbFile.delete()
+                    context.assets.open("starter_content.db").use { input ->
+                        java.io.FileOutputStream(dbFile).use { output ->
+                            input.copyTo(output)
+                        }
+                    }
+                }
+
                 val userDriver = AndroidSqliteDriver(FathomUserDatabase.Schema, context, "app_user_data.db")
-                val contentDriver = AndroidSqliteDriver(FathomContentDatabase.Schema, context, "starter_content.db")
+                val contentDriver = AndroidSqliteDriver(
+                    schema = object : app.cash.sqldelight.db.SqlSchema<app.cash.sqldelight.db.QueryResult.Value<Unit>> {
+                        override val version: Long get() = 1L
+                        override fun create(driver: app.cash.sqldelight.db.SqlDriver): app.cash.sqldelight.db.QueryResult.Value<Unit> = app.cash.sqldelight.db.QueryResult.Unit
+                        override fun migrate(driver: app.cash.sqldelight.db.SqlDriver, oldVersion: Long, newVersion: Long, vararg callbacks: app.cash.sqldelight.db.AfterVersion): app.cash.sqldelight.db.QueryResult.Value<Unit> = app.cash.sqldelight.db.QueryResult.Unit
+                    },
+                    context = context,
+                    name = "starter_content.db"
+                )
 
                 val userDb = FathomUserDatabase(userDriver)
                 val contentDb = FathomContentDatabase(contentDriver)
-
-                seedInitialWisdomIfEmpty(contentDb)
 
                 val feed = FeedEngine(contentDb, userDb)
                 val user = SqlDelightUserDataRepository(userDb)
@@ -155,86 +169,5 @@ class MainActivity : ComponentActivity() {
 
             }
         }
-    }
-}
-
-private fun seedInitialWisdomIfEmpty(database: FathomContentDatabase) {
-    val cq = database.contentDatabaseQueries
-    if (cq.countPassages().executeAsOne() == 0L) {
-        cq.insertTradition("hinduism", "Hinduism", "Ancient Vedic and Upanishadic wisdom")
-        cq.insertTradition("stoicism", "Stoicism", "Hellenistic philosophy of virtue and resilience")
-        cq.insertTradition("buddhism", "Buddhism", "The path of mindfulness, compassion, and liberation")
-        cq.insertTradition("taoism", "Taoism", "The natural way and effortless action")
-
-        cq.insertBook("bhagavad_gita", "hinduism", "Bhagavad Gita", "Vyasa", "Sanskrit", 700L, 1L)
-        cq.insertBook("meditations", "stoicism", "Meditations", "Marcus Aurelius", "Greek", 400L, 1L)
-        cq.insertBook("dhammapada", "buddhism", "Dhammapada", "Buddha", "Pali", 423L, 1L)
-        cq.insertBook("tao_te_ching", "taoism", "Tao Te Ching", "Lao Tzu", "Classical Chinese", 81L, 1L)
-
-        cq.insertPassage(
-            id = "gita_2_20",
-            book_id = "bhagavad_gita",
-            tradition_id = "hinduism",
-            canonical_reference = "Bhagavad Gita 2.20",
-            original_text = "न जायते म्रियते वा कदाचिन्...",
-            translation = "The soul is never born nor does it die at any time. It has not come to be, does not come to be, and will not come to be. It is unborn, eternal, ever-existing, and primeval.",
-            order_index = 20L,
-            chapter = 2L,
-            verse_number = 20L
-        )
-
-        cq.insertPassage(
-            id = "meditations_4_3",
-            book_id = "meditations",
-            tradition_id = "stoicism",
-            canonical_reference = "Meditations 4.3",
-            original_text = "Οὐδαμοῦ γὰρ οὔτε ἡσυχιώτερον οὔτε ἀπραγμονέστερον ἄνθρωπος ἀναχωρεῖ ἢ εἰς τὴν ἑαυτοῦ ψυχήν...",
-            translation = "Nowhere can man find a quieter or more untroubled retreat than in his own soul. Constantly then give to yourself this retreat, and renew yourself.",
-            order_index = 3L,
-            chapter = 4L,
-            verse_number = 3L
-        )
-
-        cq.insertPassage(
-            id = "dhammapada_1",
-            book_id = "dhammapada",
-            tradition_id = "buddhism",
-            canonical_reference = "Dhammapada 1.1",
-            original_text = "मनोपुब्बङ्गमा धम्मा मनोसेट्ठा मनोमया...",
-            translation = "Mind is the forerunner of all states. Mind is their chief; mind-made are they. If one speaks or acts with a pure mind, happiness follows as a shadow that never departs.",
-            order_index = 1L,
-            chapter = 1L,
-            verse_number = 1L
-        )
-
-        cq.insertPassage(
-            id = "tao_te_ching_8",
-            book_id = "tao_te_ching",
-            tradition_id = "taoism",
-            canonical_reference = "Tao Te Ching 8",
-            original_text = "上善若水。水善利萬物而不爭，處衆人之所惡，故幾於道。",
-            translation = "The highest goodness is like water. Water benefits all things and does not compete with them. It stays in the low places which others despise. Therefore it is near to the Tao.",
-            order_index = 8L,
-            chapter = 8L,
-            verse_number = 1L
-        )
-
-        cq.insertExplanation(
-            id = "exp_gita_2_20",
-            passage_id = "gita_2_20",
-            title = "The Nature of Consciousness",
-            body = "This foundational verse establishes the distinction between the transient physical vessel and unchanging witness consciousness.",
-            author = "Traditional Commentary",
-            source = "Sanskrit Philosophical Corpus"
-        )
-
-        cq.insertExplanation(
-            id = "exp_med_4_3",
-            passage_id = "meditations_4_3",
-            title = "The Inner Citadel",
-            body = "Marcus Aurelius reminds himself that true tranquility does not require physical isolation or countryside retreats, but the quiet command of one's own governing mind.",
-            author = "Pierre Hadot",
-            source = "Philosophy as a Way of Life"
-        )
     }
 }

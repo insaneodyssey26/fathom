@@ -23,9 +23,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AutoAwesome
-import androidx.compose.material.icons.filled.Bookmarks
+import com.adamglin.PhosphorIcons
+import com.adamglin.phosphoricons.Regular
+import com.adamglin.phosphoricons.regular.BookBookmark
+import com.adamglin.phosphoricons.regular.Sparkle
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -98,7 +99,7 @@ fun FathomBottomNavBar(
             ) {
                 NavBarItem(
                     label = "Discover",
-                    icon = Icons.Default.AutoAwesome,
+                    icon = PhosphorIcons.Regular.Sparkle,
                     isSelected = selectedItem == NavigationItem.FEED,
                     onClick = { onItemSelected(NavigationItem.FEED) },
                     modifier = Modifier.weight(1f)
@@ -106,7 +107,7 @@ fun FathomBottomNavBar(
 
                 NavBarItem(
                     label = "Library",
-                    icon = Icons.Default.Bookmarks,
+                    icon = PhosphorIcons.Regular.BookBookmark,
                     isSelected = selectedItem == NavigationItem.LIBRARY,
                     onClick = { onItemSelected(NavigationItem.LIBRARY) },
                     modifier = Modifier.weight(1f)

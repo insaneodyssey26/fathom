@@ -18,8 +18,9 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.DeleteOutline
+import com.adamglin.PhosphorIcons
+import com.adamglin.phosphoricons.Regular
+import com.adamglin.phosphoricons.regular.TrashSimple
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -218,9 +219,10 @@ private fun BookmarksList(
                             modifier = Modifier.size(32.dp)
                         ) {
                             Icon(
-                                imageVector = Icons.Default.DeleteOutline,
+                                imageVector = PhosphorIcons.Regular.TrashSimple,
                                 contentDescription = "Remove Bookmark",
-                                tint = FathomTheme.colors.textTertiary
+                                tint = FathomTheme.colors.textTertiary,
+                                modifier = Modifier.size(18.dp)
                             )
                         }
                     }
