@@ -4,6 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.masum.fathom.core.common.result.asSuccessOrNull
 import com.masum.fathom.core.model.Passage
+import com.masum.fathom.core.model.TraditionId
+import com.masum.fathom.core.model.user.Bookmark
 import com.masum.fathom.core.model.user.UserNote
 import com.masum.fathom.core.repository.PassageRepository
 import com.masum.fathom.core.repository.UserDataRepository
@@ -26,6 +28,10 @@ class LibraryViewModel(
 
     private val _selectedTab = MutableStateFlow(LibraryTab.BOOKMARKS)
     private val _selectedPassageForNote = MutableStateFlow<Passage?>(null)
+    private val _selectedPassageForContext = MutableStateFlow<Passage?>(null)
+    private val _selectedTraditionFilter = MutableStateFlow<TraditionId?>(null)
+    private val _selectedTagFilter = MutableStateFlow<String?>(null)
+    private val _searchQuery = MutableStateFlow("")
 
     init {
         observeLibraryData()
@@ -35,42 +41,104 @@ class LibraryViewModel(
         when (event) {
             is LibraryUiEvent.OnSelectTab -> _selectedTab.value = event.tab
             is LibraryUiEvent.OnRemoveBookmark -> removeBookmark(event.passageId)
+            is LibraryUiEvent.OnUpdateBookmarkTags -> updateBookmarkTags(event.passageId, event.tags)
+            is LibraryUiEvent.OnOpenContext -> _selectedPassageForContext.value = event.passage
+            is LibraryUiEvent.OnCloseContext -> _selectedPassageForContext.value = null
             is LibraryUiEvent.OnOpenNoteDialog -> _selectedPassageForNote.value = event.passage
             is LibraryUiEvent.OnCloseNoteDialog -> _selectedPassageForNote.value = null
             is LibraryUiEvent.OnSaveNote -> saveNote(event.passageId, event.content)
             is LibraryUiEvent.OnDeleteNote -> deleteNote(event.noteId)
+            is LibraryUiEvent.OnFilterTradition -> _selectedTraditionFilter.value = event.traditionId
+            is LibraryUiEvent.OnFilterTag -> _selectedTagFilter.value = event.tag
+            is LibraryUiEvent.OnSearchQueryChanged -> _searchQuery.value = event.query
         }
     }
 
     private fun observeLibraryData() {
+        val filterFlow = combine(
+            _selectedTraditionFilter,
+            _selectedTagFilter,
+            _searchQuery
+        ) { traditionFilter, tagFilter, query ->
+            Triple(traditionFilter, tagFilter, query)
+        }
+
+        val uiControlsFlow = combine(
+            _selectedTab,
+            _selectedPassageForNote,
+            _selectedPassageForContext
+        ) { tab, notePassage, contextPassage ->
+            Triple(tab, notePassage, contextPassage)
+        }
+
         combine(
             userDataRepository.observeBookmarks(),
+            userDataRepository.observeAllNotes(),
             userDataRepository.observeReadingHistory(),
-            _selectedTab,
-            _selectedPassageForNote
-        ) { bookmarks, history, tab, notePassage ->
+            filterFlow,
+            uiControlsFlow
+        ) { bookmarks, notes, history, (traditionFilter, tagFilter, query), (tab, notePassage, contextPassage) ->
             val bookmarkItems = bookmarks.map { bookmark ->
                 val passage = passageRepository.getPassage(bookmark.passageId).asSuccessOrNull()
                 BookmarkWithPassage(bookmark, passage)
+            }
+
+            val noteItems = notes.map { note ->
+                val passage = passageRepository.getPassage(note.passageId).asSuccessOrNull()
+                NoteWithPassage(note, passage)
+            }
+
+            val filteredBookmarks = bookmarkItems.filter { item ->
+                val matchesTradition = traditionFilter == null || item.passage?.traditionId == traditionFilter
+                val matchesTag = tagFilter == null || tagFilter in item.bookmark.tags
+                val matchesQuery = query.isBlank() || (item.passage?.translation?.contains(query, ignoreCase = true) == true ||
+                        item.passage?.canonicalReference?.contains(query, ignoreCase = true) == true)
+                matchesTradition && matchesTag && matchesQuery
+            }
+
+            val filteredNotes = noteItems.filter { item ->
+                val matchesTradition = traditionFilter == null || item.passage?.traditionId == traditionFilter
+                val matchesQuery = query.isBlank() || (item.note.content.contains(query, ignoreCase = true) ||
+                        item.passage?.canonicalReference?.contains(query, ignoreCase = true) == true ||
+                        item.passage?.translation?.contains(query, ignoreCase = true) == true)
+                matchesTradition && matchesQuery
             }
 
             val totalReads = history.sumOf { it.readCount }
 
             LibraryUiState.Success(
                 selectedTab = tab,
-                bookmarks = bookmarkItems,
+                bookmarks = filteredBookmarks,
+                notes = filteredNotes,
                 history = history,
                 totalReadCount = totalReads,
-                selectedPassageForNote = notePassage
+                selectedPassageForNote = notePassage,
+                selectedPassageForContext = contextPassage,
+                selectedTraditionFilter = traditionFilter,
+                selectedTagFilter = tagFilter,
+                searchQuery = query
             )
         }.onEach { state ->
             _uiState.value = state
         }.launchIn(viewModelScope)
     }
 
+
     private fun removeBookmark(passageId: String) {
         viewModelScope.launch {
             userDataRepository.removeBookmark(passageId)
+        }
+    }
+
+    private fun updateBookmarkTags(passageId: String, tags: List<String>) {
+        viewModelScope.launch {
+            val bookmark = Bookmark(
+                id = "bm_${passageId}",
+                passageId = passageId,
+                createdAtEpochMs = System.currentTimeMillis(),
+                tags = tags
+            )
+            userDataRepository.saveBookmark(bookmark)
         }
     }
 
@@ -95,3 +163,4 @@ class LibraryViewModel(
         }
     }
 }
+

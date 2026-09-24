@@ -106,6 +106,23 @@ class SqlDelightUserDataRepository(
             }
     }
 
+    override fun observeAllNotes(): Flow<List<UserNote>> {
+        return queries.selectAllNotes()
+            .asFlow()
+            .mapToList(ioDispatcher)
+            .map { list ->
+                list.map { entity ->
+                    UserNote(
+                        id = entity.id,
+                        passageId = entity.passage_id,
+                        content = entity.content,
+                        createdAtEpochMs = entity.created_at_epoch_ms,
+                        updatedAtEpochMs = entity.updated_at_epoch_ms
+                    )
+                }
+            }
+    }
+
     override suspend fun recordReading(passageId: String, bookId: String): FathomResult<Unit, DataError.Local> =
         withContext(ioDispatcher) {
             try {

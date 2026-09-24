@@ -5,38 +5,12 @@ import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import com.masum.fathom.R
 
-val PlayfairFontFamily = FontFamily(
-    Font(R.font.playfair_bold, FontWeight.Bold),
-    Font(R.font.playfair_italic, FontWeight.Bold, FontStyle.Italic)
-)
-
-val InstrumentSerifFontFamily = FontFamily(
-    Font(R.font.instrument_serif_regular, FontWeight.Normal),
-    Font(R.font.instrument_serif_italic, FontWeight.Normal, FontStyle.Italic)
-)
-
-val CinzelDecorativeFontFamily = FontFamily(
-    Font(R.font.cinzel_decorative_bold, FontWeight.Bold)
-)
-
-val BodoniFontFamily = FontFamily(
-    Font(R.font.bodoni_bold, FontWeight.Bold),
-    Font(R.font.bodoni_italic, FontWeight.Bold, FontStyle.Italic)
-)
-
 val SyneFontFamily = FontFamily(
     Font(R.font.syne_bold, FontWeight.Bold)
-)
-
-val CormorantFontFamily = FontFamily(
-    Font(R.font.cormorant_medium, FontWeight.Medium),
-    Font(R.font.cormorant_bold, FontWeight.Bold),
-    Font(R.font.cormorant_italic, FontWeight.Medium, FontStyle.Italic)
 )
 
 val JakartaFontFamily = FontFamily(
@@ -45,15 +19,6 @@ val JakartaFontFamily = FontFamily(
     Font(R.font.jakarta_semibold, FontWeight.SemiBold),
     Font(R.font.jakarta_bold, FontWeight.Bold)
 )
-
-val CinzelFontFamily = FontFamily(
-    Font(R.font.cinzel_bold, FontWeight.Bold)
-)
-
-val ItalianaFontFamily = FontFamily(
-    Font(R.font.italiana_regular, FontWeight.Normal)
-)
-
 
 @Immutable
 data class FathomTypography(
@@ -78,7 +43,6 @@ data class FathomTypography(
         lineHeight = 28.sp,
         letterSpacing = 0.3.sp
     ),
-
     val canonicalHeader: TextStyle = TextStyle(
         fontFamily = JakartaFontFamily,
         fontWeight = FontWeight.SemiBold,
@@ -94,11 +58,11 @@ data class FathomTypography(
         letterSpacing = 1.0.sp
     ),
     val commentaryTitle: TextStyle = TextStyle(
-        fontFamily = PlayfairFontFamily,
+        fontFamily = JakartaFontFamily,
         fontWeight = FontWeight.Bold,
-        fontSize = 20.sp,
-        lineHeight = 26.sp,
-        letterSpacing = 0.1.sp
+        fontSize = 18.sp,
+        lineHeight = 25.sp,
+        letterSpacing = (-0.2).sp
     ),
     val commentaryBody: TextStyle = TextStyle(
         fontFamily = JakartaFontFamily,
@@ -117,4 +81,5 @@ data class FathomTypography(
 )
 
 val LocalFathomTypography = staticCompositionLocalOf { FathomTypography() }
+
 

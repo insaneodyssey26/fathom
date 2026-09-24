@@ -2,6 +2,7 @@ package com.masum.fathom.ui.library
 
 import androidx.compose.runtime.Immutable
 import com.masum.fathom.core.model.Passage
+import com.masum.fathom.core.model.TraditionId
 import com.masum.fathom.core.model.user.Bookmark
 import com.masum.fathom.core.model.user.ReadingRecord
 import com.masum.fathom.core.model.user.UserNote
@@ -32,7 +33,11 @@ sealed interface LibraryUiState {
         val notes: List<NoteWithPassage> = emptyList(),
         val history: List<ReadingRecord> = emptyList(),
         val totalReadCount: Int = 0,
-        val selectedPassageForNote: Passage? = null
+        val selectedPassageForNote: Passage? = null,
+        val selectedPassageForContext: Passage? = null,
+        val selectedTraditionFilter: TraditionId? = null,
+        val selectedTagFilter: String? = null,
+        val searchQuery: String = ""
     ) : LibraryUiState
 
     data class Error(val message: String) : LibraryUiState
@@ -41,8 +46,15 @@ sealed interface LibraryUiState {
 sealed interface LibraryUiEvent {
     data class OnSelectTab(val tab: LibraryTab) : LibraryUiEvent
     data class OnRemoveBookmark(val passageId: String) : LibraryUiEvent
+    data class OnUpdateBookmarkTags(val passageId: String, val tags: List<String>) : LibraryUiEvent
+    data class OnOpenContext(val passage: Passage) : LibraryUiEvent
+    data object OnCloseContext : LibraryUiEvent
     data class OnOpenNoteDialog(val passage: Passage) : LibraryUiEvent
     data object OnCloseNoteDialog : LibraryUiEvent
     data class OnSaveNote(val passageId: String, val content: String) : LibraryUiEvent
     data class OnDeleteNote(val noteId: String) : LibraryUiEvent
+    data class OnFilterTradition(val traditionId: TraditionId?) : LibraryUiEvent
+    data class OnFilterTag(val tag: String?) : LibraryUiEvent
+    data class OnSearchQueryChanged(val query: String) : LibraryUiEvent
 }
+

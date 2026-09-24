@@ -41,6 +41,9 @@ class FakeUserDataRepository : UserDataRepository {
     override fun observeNotesForPassage(passageId: String) =
         notesFlow.asStateFlow().map { map -> map.values.filter { it.passageId == passageId } }
 
+    override fun observeAllNotes() =
+        notesFlow.asStateFlow().map { map -> map.values.toList() }
+
     override suspend fun recordReading(passageId: String, bookId: String): FathomResult<Unit, DataError.Local> {
         val existing = readingFlow.value[passageId]
         val now = 1000L
