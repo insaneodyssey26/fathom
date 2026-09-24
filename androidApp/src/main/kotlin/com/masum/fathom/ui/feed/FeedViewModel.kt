@@ -43,6 +43,8 @@ class FeedViewModel(
             is FeedUiEvent.OnToggleBookmark -> handleToggleBookmark(event.passage)
             is FeedUiEvent.OnOpenContext -> handleOpenContext(event.passage)
             is FeedUiEvent.OnCloseContext -> handleCloseContext()
+            is FeedUiEvent.OnOpenShare -> handleOpenShare(event.passage)
+            is FeedUiEvent.OnCloseShare -> handleCloseShare()
             is FeedUiEvent.OnChangeTheme -> handleChangeTheme(event.theme)
             is FeedUiEvent.OnToggleTradition -> handleToggleTradition(event.traditionId)
             is FeedUiEvent.OnChangeMode -> handleChangeMode(event.mode)
@@ -178,6 +180,18 @@ class FeedViewModel(
     private fun handleCloseContext() {
         _uiState.update { state ->
             if (state is FeedUiState.Success) state.copy(selectedPassageForContext = null) else state
+        }
+    }
+
+    private fun handleOpenShare(passage: Passage) {
+        _uiState.update { state ->
+            if (state is FeedUiState.Success) state.copy(selectedPassageForShare = passage) else state
+        }
+    }
+
+    private fun handleCloseShare() {
+        _uiState.update { state ->
+            if (state is FeedUiState.Success) state.copy(selectedPassageForShare = null) else state
         }
     }
 

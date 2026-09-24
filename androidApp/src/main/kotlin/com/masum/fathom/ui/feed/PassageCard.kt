@@ -22,6 +22,7 @@ import com.adamglin.phosphoricons.regular.BookmarkSimple
 import com.adamglin.phosphoricons.regular.CaretDown
 import com.adamglin.phosphoricons.regular.CaretUp
 import com.adamglin.phosphoricons.regular.Info
+import com.adamglin.phosphoricons.regular.ShareNetwork
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
@@ -41,6 +42,7 @@ fun PassageCard(
     isBookmarked: Boolean,
     onToggleBookmark: () -> Unit,
     onOpenContext: () -> Unit,
+    onShare: () -> Unit,
     onScrollPrevious: (() -> Unit)? = null,
     onScrollNext: (() -> Unit)? = null,
     hasPrevious: Boolean = true,
@@ -163,6 +165,21 @@ fun PassageCard(
                                 imageVector = PhosphorIcons.Regular.CaretDown,
                                 contentDescription = "Next Verse",
                                 tint = if (hasNext) FathomTheme.colors.textSecondary else FathomTheme.colors.textTertiary.copy(alpha = 0.35f),
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+
+                        IconButton(
+                            onClick = onShare,
+                            modifier = Modifier
+                                .clip(CircleShape)
+                                .background(FathomTheme.colors.surfaceElevated)
+                                .size(40.dp)
+                        ) {
+                            Icon(
+                                imageVector = PhosphorIcons.Regular.ShareNetwork,
+                                contentDescription = "Share Quote Card",
+                                tint = FathomTheme.colors.textSecondary,
                                 modifier = Modifier.size(18.dp)
                             )
                         }

@@ -29,6 +29,7 @@ class LibraryViewModel(
     private val _selectedTab = MutableStateFlow(LibraryTab.BOOKMARKS)
     private val _selectedPassageForNote = MutableStateFlow<Passage?>(null)
     private val _selectedPassageForContext = MutableStateFlow<Passage?>(null)
+    private val _selectedPassageForShare = MutableStateFlow<Passage?>(null)
     private val _selectedTraditionFilter = MutableStateFlow<TraditionId?>(null)
     private val _selectedTagFilter = MutableStateFlow<String?>(null)
     private val _searchQuery = MutableStateFlow("")
@@ -44,6 +45,8 @@ class LibraryViewModel(
             is LibraryUiEvent.OnUpdateBookmarkTags -> updateBookmarkTags(event.passageId, event.tags)
             is LibraryUiEvent.OnOpenContext -> _selectedPassageForContext.value = event.passage
             is LibraryUiEvent.OnCloseContext -> _selectedPassageForContext.value = null
+            is LibraryUiEvent.OnOpenShare -> _selectedPassageForShare.value = event.passage
+            is LibraryUiEvent.OnCloseShare -> _selectedPassageForShare.value = null
             is LibraryUiEvent.OnOpenNoteDialog -> _selectedPassageForNote.value = event.passage
             is LibraryUiEvent.OnCloseNoteDialog -> _selectedPassageForNote.value = null
             is LibraryUiEvent.OnSaveNote -> saveNote(event.passageId, event.content)
@@ -66,9 +69,10 @@ class LibraryViewModel(
         val uiControlsFlow = combine(
             _selectedTab,
             _selectedPassageForNote,
-            _selectedPassageForContext
-        ) { tab, notePassage, contextPassage ->
-            Triple(tab, notePassage, contextPassage)
+            _selectedPassageForContext,
+            _selectedPassageForShare
+        ) { tab, notePassage, contextPassage, sharePassage ->
+            listOf(tab, notePassage, contextPassage, sharePassage)
         }
 
         combine(
@@ -77,7 +81,12 @@ class LibraryViewModel(
             userDataRepository.observeReadingHistory(),
             filterFlow,
             uiControlsFlow
-        ) { bookmarks, notes, history, (traditionFilter, tagFilter, query), (tab, notePassage, contextPassage) ->
+        ) { bookmarks, notes, history, (traditionFilter, tagFilter, query), uiControls ->
+            val tab = uiControls[0] as LibraryTab
+            val notePassage = uiControls[1] as? Passage
+            val contextPassage = uiControls[2] as? Passage
+            val sharePassage = uiControls[3] as? Passage
+
             val bookmarkItems = bookmarks.map { bookmark ->
                 val passage = passageRepository.getPassage(bookmark.passageId).asSuccessOrNull()
                 BookmarkWithPassage(bookmark, passage)
@@ -114,6 +123,7 @@ class LibraryViewModel(
                 totalReadCount = totalReads,
                 selectedPassageForNote = notePassage,
                 selectedPassageForContext = contextPassage,
+                selectedPassageForShare = sharePassage,
                 selectedTraditionFilter = traditionFilter,
                 selectedTagFilter = tagFilter,
                 searchQuery = query

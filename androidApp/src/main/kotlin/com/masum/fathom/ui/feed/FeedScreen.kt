@@ -249,6 +249,7 @@ fun FeedScreen(
                             isBookmarked = passage.id in state.bookmarkedPassageIds,
                             onToggleBookmark = { onEvent(FeedUiEvent.OnToggleBookmark(passage)) },
                             onOpenContext = { onEvent(FeedUiEvent.OnOpenContext(passage)) },
+                            onShare = { onEvent(FeedUiEvent.OnOpenShare(passage)) },
                             onScrollPrevious = if (page > 0) {
                                 {
                                     coroutineScope.launch {
@@ -274,6 +275,13 @@ fun FeedScreen(
                 PassageContextSheet(
                     passage = contextPassage,
                     onDismiss = { onEvent(FeedUiEvent.OnCloseContext) }
+                )
+            }
+
+            state.selectedPassageForShare?.let { sharePassage ->
+                com.masum.fathom.ui.components.QuoteCardModal(
+                    passage = sharePassage,
+                    onDismiss = { onEvent(FeedUiEvent.OnCloseShare) }
                 )
             }
 

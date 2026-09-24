@@ -21,6 +21,7 @@ sealed interface FeedUiState {
         val activeMode: FeedMode = FeedMode.EXPLORATION_DISCOVERY,
         val selectedTraditions: Set<TraditionId> = TraditionId.entries.toSet(),
         val selectedPassageForContext: Passage? = null,
+        val selectedPassageForShare: Passage? = null,
         val isLoadingMore: Boolean = false
     ) : FeedUiState
 
@@ -34,6 +35,8 @@ sealed interface FeedUiEvent {
     data class OnToggleBookmark(val passage: Passage) : FeedUiEvent
     data class OnOpenContext(val passage: Passage) : FeedUiEvent
     data object OnCloseContext : FeedUiEvent
+    data class OnOpenShare(val passage: Passage) : FeedUiEvent
+    data object OnCloseShare : FeedUiEvent
     data class OnChangeTheme(val theme: ReadingTheme) : FeedUiEvent
     data class OnToggleTradition(val traditionId: TraditionId) : FeedUiEvent
     data class OnChangeMode(val mode: FeedMode) : FeedUiEvent

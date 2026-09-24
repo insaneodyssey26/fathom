@@ -226,6 +226,13 @@ fun LibraryScreen(
                         }
                     )
                 }
+
+                state.selectedPassageForShare?.let { sharePassage ->
+                    com.masum.fathom.ui.components.QuoteCardModal(
+                        passage = sharePassage,
+                        onDismiss = { onEvent(LibraryUiEvent.OnCloseShare) }
+                    )
+                }
             }
         }
     }
@@ -518,14 +525,14 @@ private fun BookmarksList(
                             IconButton(
                                 onClick = {
                                     passage?.let {
-                                        shareQuote(context, it)
+                                        onEvent(LibraryUiEvent.OnOpenShare(it))
                                     }
                                 },
                                 modifier = Modifier.size(32.dp)
                             ) {
                                 Icon(
                                     imageVector = PhosphorIcons.Regular.ShareNetwork,
-                                    contentDescription = "Share Quote",
+                                    contentDescription = "Share Quote Card",
                                     tint = FathomTheme.colors.textSecondary,
                                     modifier = Modifier.size(16.dp)
                                 )
@@ -1012,15 +1019,5 @@ private fun copyToClipboard(context: Context, text: String) {
     val clip = ClipData.newPlainText("Fathom Wisdom", text)
     clipboard?.setPrimaryClip(clip)
     Toast.makeText(context, "Passage copied to clipboard", Toast.LENGTH_SHORT).show()
-}
-
-private fun shareQuote(context: Context, passage: Passage) {
-    val sendIntent = Intent().apply {
-        action = Intent.ACTION_SEND
-        putExtra(Intent.EXTRA_TEXT, "“${passage.translation}”\n\n— ${passage.canonicalReference}\nvia Fathom")
-        type = "text/plain"
-    }
-    val shareIntent = Intent.createChooser(sendIntent, "Share Sacred Wisdom")
-    context.startActivity(shareIntent)
 }
 

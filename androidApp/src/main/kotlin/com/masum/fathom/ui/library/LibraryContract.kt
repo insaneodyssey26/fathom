@@ -35,6 +35,7 @@ sealed interface LibraryUiState {
         val totalReadCount: Int = 0,
         val selectedPassageForNote: Passage? = null,
         val selectedPassageForContext: Passage? = null,
+        val selectedPassageForShare: Passage? = null,
         val selectedTraditionFilter: TraditionId? = null,
         val selectedTagFilter: String? = null,
         val searchQuery: String = ""
@@ -49,6 +50,8 @@ sealed interface LibraryUiEvent {
     data class OnUpdateBookmarkTags(val passageId: String, val tags: List<String>) : LibraryUiEvent
     data class OnOpenContext(val passage: Passage) : LibraryUiEvent
     data object OnCloseContext : LibraryUiEvent
+    data class OnOpenShare(val passage: Passage) : LibraryUiEvent
+    data object OnCloseShare : LibraryUiEvent
     data class OnOpenNoteDialog(val passage: Passage) : LibraryUiEvent
     data object OnCloseNoteDialog : LibraryUiEvent
     data class OnSaveNote(val passageId: String, val content: String) : LibraryUiEvent
