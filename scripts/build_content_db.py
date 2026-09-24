@@ -112,37 +112,57 @@ def fetch_url(url, cache_filename):
             time.sleep(2)
 
 def build_gita(cursor):
-    print("Ingesting Bhagavad Gita (700 Verses)...")
-    url = "https://raw.githubusercontent.com/gita/gita/master/data/verse.json"
-    raw = fetch_url(url, "gita.json")
-    data = json.loads(raw)
-    
+    print("Ingesting Bhagavad Gita (700 Verses with Sanskrit + Transliteration + English Meaning)...")
+    url_verses = "https://raw.githubusercontent.com/gita/gita/master/data/verse.json"
+    raw_verses = fetch_url(url_verses, "gita.json")
+    verses_data = json.loads(raw_verses)
+
+    url_trans = "https://raw.githubusercontent.com/gita/gita/master/data/translation.json"
+    raw_trans = fetch_url(url_trans, "gita_translations.json")
+    trans_data = json.loads(raw_trans)
+
+    sivananda_map = {}
+    gambir_map = {}
+    for t in trans_data:
+        v_id = t.get("verse_id")
+        if t.get("authorName") == "Swami Sivananda":
+            sivananda_map[v_id] = t.get("description", "").strip()
+        elif t.get("authorName") == "Swami Gambirananda":
+            gambir_map[v_id] = t.get("description", "").strip()
+
     count = 0
-    for v in data:
+    for v in verses_data:
         chap = int(v.get("chapter_number", 1))
         verse_num = int(v.get("verse_number", 1))
         order_idx = int(v.get("verse_order", count + 1))
-        text_orig = v.get("text", "").strip()
-        trans = v.get("meaning", "").strip()
-        if not trans:
-            trans = v.get("transliteration", "").strip()
-        
-        trans = re.sub(r'\s+', ' ', trans).strip()
-        
+        v_id = v.get("id")
+
+        sanskrit_text = v.get("text", "").strip()
+        translit_text = v.get("transliteration", "").strip()
+
+        if translit_text:
+            original_field = f"{sanskrit_text}\n\n{translit_text}"
+        else:
+            original_field = sanskrit_text if sanskrit_text else None
+
+        english_meaning = sivananda_map.get(v_id) or gambir_map.get(v_id) or translit_text
+        english_meaning = re.sub(r'\s+', ' ', english_meaning).strip()
+
         passage_id = f"gita_{chap}_{verse_num}"
         ref = f"Bhagavad Gita {chap}.{verse_num}"
-        
+
         cursor.execute(
             "INSERT OR REPLACE INTO passage_entity VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-            (passage_id, "bhagavad_gita", "hinduism", ref, text_orig, trans, order_idx, chap, verse_num)
+            (passage_id, "bhagavad_gita", "hinduism", ref, original_field, english_meaning, order_idx, chap, verse_num)
         )
         count += 1
-    
+
     cursor.execute(
         "INSERT OR REPLACE INTO book_entity VALUES (?, ?, ?, ?, ?, ?, ?)",
         ("bhagavad_gita", "hinduism", "Bhagavad Gita", "Vyasa", "Sanskrit", count, 1)
     )
-    print(f"Bhagavad Gita complete: {count} verses ingested.")
+    print(f"Bhagavad Gita complete: {count} verses ingested with Sanskrit, Transliteration, and English meaning.")
+
 
 def build_upanishads(cursor):
     print("Ingesting Principal Upanishads (Isa, Katha, Kena)...")
@@ -259,18 +279,27 @@ def build_upanishads(cursor):
     print(f"Kena Upanishad complete: {kena_count} verses ingested.")
 
 def build_tao_te_ching(cursor):
-    print("Ingesting Tao Te Ching (81 Chapters)...")
-    url = "https://www.gutenberg.org/cache/epub/216/pg216.txt"
-    raw = fetch_url(url, "tao_te_ching.txt")
-    
-    start_pos = raw.find('PART 1.')
-    end_pos = raw.find('*** END OF THE PROJECT GUTENBERG')
-    content = raw[start_pos:end_pos]
-    
+    print("Ingesting Tao Te Ching (81 Chapters with Classical Chinese & English Translation)...")
+    url_eng = "https://www.gutenberg.org/cache/epub/216/pg216.txt"
+    raw_eng = fetch_url(url_eng, "tao_te_ching.txt")
+
+    url_zh = "https://raw.githubusercontent.com/openbilly/daodejing_json/master/daodejing.json"
+    raw_zh = fetch_url(url_zh, "daodejing_zh.json")
+    data_zh = json.loads(raw_zh)
+    paragraphs_zh = []
+    for item in data_zh:
+        if len(item.get("paragraphs", [])) == 81:
+            paragraphs_zh = item["paragraphs"]
+            break
+
+    start_pos = raw_eng.find('PART 1.')
+    end_pos = raw_eng.find('*** END OF THE PROJECT GUTENBERG')
+    content = raw_eng[start_pos:end_pos]
+
     chaps = {}
     current_chap = None
     curr_lines = []
-    
+
     for line in content.split('\n'):
         m = re.match(r'^(?:Ch\.\s+)?(\d+)\.\s*(?:1\.\s+)?(.*)', line.strip())
         if m and 1 <= int(m.group(1)) <= 81:
@@ -283,27 +312,30 @@ def build_tao_te_ching(cursor):
                 continue
         if current_chap is not None:
             curr_lines.append(line.strip())
-            
+
     if current_chap is not None:
         chaps[current_chap] = ' '.join(curr_lines).strip()
-    
+
     count = 0
     for chap_num in sorted(chaps.keys()):
-        text = re.sub(r'\s+', ' ', chaps[chap_num]).strip()
+        text_eng = re.sub(r'\s+', ' ', chaps[chap_num]).strip()
+        zh_text = paragraphs_zh[chap_num - 1].strip() if chap_num - 1 < len(paragraphs_zh) else None
+
         passage_id = f"tao_te_ching_{chap_num}"
         ref = f"Tao Te Ching {chap_num}"
-        
+
         cursor.execute(
             "INSERT OR REPLACE INTO passage_entity VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-            (passage_id, "tao_te_ching", "taoism", ref, None, text, chap_num, chap_num, 1)
+            (passage_id, "tao_te_ching", "taoism", ref, zh_text, text_eng, chap_num, chap_num, 1)
         )
         count += 1
-            
+
     cursor.execute(
         "INSERT OR REPLACE INTO book_entity VALUES (?, ?, ?, ?, ?, ?, ?)",
         ("tao_te_ching", "taoism", "Tao Te Ching", "Lao Tzu", "Classical Chinese", count, 1)
     )
-    print(f"Tao Te Ching complete: {count} chapters ingested.")
+    print(f"Tao Te Ching complete: {count} chapters ingested with Classical Chinese and English translation.")
+
 
 def build_meditations(cursor):
     print("Ingesting Meditations by Marcus Aurelius (12 Books)...")
@@ -478,41 +510,74 @@ def build_bible_books(cursor):
         print(f"{book_name} complete: {count} verses ingested.")
 
 def build_quran(cursor):
-    print("Ingesting The Holy Quran (en.sahih translation)...")
-    url = "https://api.alquran.cloud/v1/quran/en.sahih"
-    raw = fetch_url(url, "quran_en_sahih.json")
-    data = json.loads(raw)
-    
-    surahs = data.get("data", {}).get("surahs", [])
+    print("Ingesting The Holy Quran (Arabic Uthmani + en.transliteration + en.sahih translation)...")
+    url_translation = "https://api.alquran.cloud/v1/quran/en.sahih"
+    raw_translation = fetch_url(url_translation, "quran_en_sahih.json")
+    data_translation = json.loads(raw_translation)
+
+    url_arabic = "https://api.alquran.cloud/v1/quran/quran-uthmani"
+    raw_arabic = fetch_url(url_arabic, "quran_uthmani.json")
+    data_arabic = json.loads(raw_arabic)
+
+    url_translit = "https://api.alquran.cloud/v1/quran/en.transliteration"
+    raw_translit = fetch_url(url_translit, "quran_transliteration.json")
+    data_translit = json.loads(raw_translit)
+
+    surahs_trans = data_translation.get("data", {}).get("surahs", [])
+    surahs_arab = data_arabic.get("data", {}).get("surahs", [])
+    surahs_tr = data_translit.get("data", {}).get("surahs", [])
+
+    arabic_map = {}
+    for s in surahs_arab:
+        s_num = int(s.get("number", 1))
+        for a in s.get("ayahs", []):
+            arabic_map[(s_num, int(a.get("numberInSurah", 1)))] = a.get("text", "").strip()
+
+    translit_map = {}
+    for s in surahs_tr:
+        s_num = int(s.get("number", 1))
+        for a in s.get("ayahs", []):
+            translit_map[(s_num, int(a.get("numberInSurah", 1)))] = a.get("text", "").strip()
+
     count = 0
     order_idx = 1
-    
+
     cursor.execute(
         "INSERT OR REPLACE INTO book_entity VALUES (?, ?, ?, ?, ?, ?, ?)",
         ("the_holy_quran", "islam", "The Holy Quran", "Divine Revelation", "Arabic", 6236, 1)
     )
-    
-    for surah in surahs:
+
+    for surah in surahs_trans:
         surah_num = int(surah.get("number", 1))
         surah_name = surah.get("englishName", "")
         ayahs = surah.get("ayahs", [])
-        
+
         for ayah in ayahs:
             ayah_num = int(ayah.get("numberInSurah", 1))
-            text = ayah.get("text", "").strip()
-            text = re.sub(r'\s+', ' ', text)
-            
+            translation_text = ayah.get("text", "").strip()
+            translation_text = re.sub(r'\s+', ' ', translation_text)
+
+            arab_text = arabic_map.get((surah_num, ayah_num), "")
+            arab_text = arab_text.lstrip('\ufeff').strip()
+            tr_text = translit_map.get((surah_num, ayah_num), "")
+
+            if tr_text:
+                original_field = f"{arab_text}\n\n{tr_text}"
+            else:
+                original_field = arab_text if arab_text else None
+
             passage_id = f"quran_{surah_num}_{ayah_num}"
             ref = f"Surah {surah_name} {surah_num}:{ayah_num}"
-            
+
             cursor.execute(
                 "INSERT OR REPLACE INTO passage_entity VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                (passage_id, "the_holy_quran", "islam", ref, None, text, order_idx, surah_num, ayah_num)
+                (passage_id, "the_holy_quran", "islam", ref, original_field, translation_text, order_idx, surah_num, ayah_num)
             )
             order_idx += 1
             count += 1
-            
-    print(f"The Holy Quran complete: {count} ayahs across 114 surahs ingested.")
+
+    print(f"The Holy Quran complete: {count} ayahs across 114 surahs ingested with Arabic & transliteration.")
+
 
 def seed_traditions(cursor):
     traditions = [
