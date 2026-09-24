@@ -164,8 +164,74 @@ def build_gita(cursor):
     print(f"Bhagavad Gita complete: {count} verses ingested with Sanskrit, Transliteration, and English meaning.")
 
 
+def devanagari_to_iast(text):
+    if not text:
+        return ""
+    
+    vowels = {
+        'अ': 'a', 'आ': 'ā', 'इ': 'i', 'ई': 'ī', 'उ': 'u', 'ऊ': 'ū',
+        'ऋ': 'ṛ', 'ॠ': 'ṝ', 'ऌ': 'ḷ', 'ॡ': 'ḹ', 'ए': 'e', 'ऐ': 'ai',
+        'ओ': 'o', 'औ': 'au'
+    }
+    
+    matras = {
+        'ा': 'ā', 'ि': 'i', 'ी': 'ī', 'ु': 'u', 'ू': 'ū',
+        'ृ': 'ṛ', 'ॄ': 'ṝ', 'ॢ': 'ḷ', 'ॣ': 'ḹ', 'े': 'e', 'ै': 'ai',
+        'ो': 'o', 'ौ': 'au'
+    }
+    
+    consonants = {
+        'क': 'k', 'ख': 'kh', 'ग': 'g', 'घ': 'gh', 'ङ': 'ṅ',
+        'च': 'c', 'छ': 'ch', 'ज': 'j', 'झ': 'jh', 'ञ': 'ñ',
+        'ट': 'ṭ', 'ठ': 'ṭh', 'ड': 'ḍ', 'ढ': 'ḍh', 'ण': 'ṇ',
+        'त': 't', 'थ': 'th', 'द': 'd', 'ध': 'dh', 'न': 'n',
+        'प': 'p', 'फ': 'ph', 'ब': 'b', 'भ': 'bh', 'म': 'm',
+        'य': 'y', 'र': 'r', 'ल': 'l', 'व': 'v',
+        'श': 'ś', 'ष': 'ṣ', 'स': 's', 'ह': 'h'
+    }
+    
+    specials = {
+        'ं': 'ṃ', 'ँ': 'm̐', 'ः': 'ḥ', 'ऽ': "'", '।': '|', '॥': '||', '०': '0',
+        '१': '1', '२': '2', '३': '3', '४': '4', '५': '5', '६': '6', '७': '7', '८': '8', '९': '9'
+    }
+    
+    virama = '्'
+    result = []
+    i = 0
+    n = len(text)
+    
+    while i < n:
+        char = text[i]
+        if char in consonants:
+            c_trans = consonants[char]
+            if i + 1 < n and text[i+1] == virama:
+                result.append(c_trans)
+                i += 2
+            elif i + 1 < n and text[i+1] in matras:
+                result.append(c_trans + matras[text[i+1]])
+                i += 2
+            else:
+                result.append(c_trans + 'a')
+                i += 1
+        elif char in vowels:
+            result.append(vowels[char])
+            i += 1
+        elif char in matras:
+            result.append(matras[char])
+            i += 1
+        elif char in specials:
+            result.append(specials[char])
+            i += 1
+        elif char == virama:
+            i += 1
+        else:
+            result.append(char)
+            i += 1
+            
+    return ''.join(result)
+
 def build_upanishads(cursor):
-    print("Ingesting Principal Upanishads (Isa, Katha, Kena) with original Sanskrit Devanagari & English...")
+    print("Ingesting Principal Upanishads (Isa, Katha, Kena) with Sanskrit Devanagari & IAST pronunciation...")
     url = "https://www.gutenberg.org/cache/epub/3283/pg3283.txt"
     raw = fetch_url(url, "upanishads.txt")
     
@@ -222,11 +288,16 @@ def build_upanishads(cursor):
             continue
         
         orig_sanskrit = isa_sanskrit_map.get(v_num)
+        if orig_sanskrit:
+            orig_field = f"{orig_sanskrit}\n\n{devanagari_to_iast(orig_sanskrit)}"
+        else:
+            orig_field = None
+
         passage_id = f"isa_upanishad_{v_num}"
         ref = f"Isa Upanishad {v_num}"
         cursor.execute(
             "INSERT OR REPLACE INTO passage_entity VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-            (passage_id, "isa_upanishad", "hinduism", ref, orig_sanskrit, text, v_num, 1, v_num)
+            (passage_id, "isa_upanishad", "hinduism", ref, orig_field, text, v_num, 1, v_num)
         )
         isa_count += 1
         
@@ -234,7 +305,7 @@ def build_upanishads(cursor):
         "INSERT OR REPLACE INTO book_entity VALUES (?, ?, ?, ?, ?, ?, ?)",
         ("isa_upanishad", "hinduism", "Isha Upanishad", "Vedic Sages", "Sanskrit", isa_count, 1)
     )
-    print(f"Isha Upanishad complete: {isa_count} verses ingested with Sanskrit.")
+    print(f"Isha Upanishad complete: {isa_count} verses ingested with Sanskrit & pronunciation.")
 
     katha_text = raw[pos_katha:pos_kena]
     k_parts = list(re.finditer(r'\n\s*Part\s+([A-Za-z]+)\s*\n', katha_text))
@@ -259,11 +330,16 @@ def build_upanishads(cursor):
                 continue
                 
             orig_sanskrit = katha_sanskrit_map.get(katha_order)
+            if orig_sanskrit:
+                orig_field = f"{orig_sanskrit}\n\n{devanagari_to_iast(orig_sanskrit)}"
+            else:
+                orig_field = None
+
             passage_id = f"katha_upanishad_{part_num}_{v_num}"
             ref = f"Katha Upanishad {part_num}.{v_num}"
             cursor.execute(
                 "INSERT OR REPLACE INTO passage_entity VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                (passage_id, "katha_upanishad", "hinduism", ref, orig_sanskrit, v_text, katha_order, part_num, v_num)
+                (passage_id, "katha_upanishad", "hinduism", ref, orig_field, v_text, katha_order, part_num, v_num)
             )
             katha_order += 1
             katha_count += 1
@@ -272,7 +348,7 @@ def build_upanishads(cursor):
         "INSERT OR REPLACE INTO book_entity VALUES (?, ?, ?, ?, ?, ?, ?)",
         ("katha_upanishad", "hinduism", "Katha Upanishad", "Vedic Sages", "Sanskrit", katha_count, 1)
     )
-    print(f"Katha Upanishad complete: {katha_count} verses ingested with Sanskrit.")
+    print(f"Katha Upanishad complete: {katha_count} verses ingested with Sanskrit & pronunciation.")
 
     kena_text = raw[pos_kena:pos_end]
     kena_parts = list(re.finditer(r'\n\s*Part\s+([A-Za-z]+)\s*\n', kena_text, flags=re.IGNORECASE))
@@ -297,11 +373,16 @@ def build_upanishads(cursor):
                 continue
                 
             orig_sanskrit = kena_sanskrit_map.get(kena_order)
+            if orig_sanskrit:
+                orig_field = f"{orig_sanskrit}\n\n{devanagari_to_iast(orig_sanskrit)}"
+            else:
+                orig_field = None
+
             passage_id = f"kena_upanishad_{part_num}_{v_num}"
             ref = f"Kena Upanishad {part_num}.{v_num}"
             cursor.execute(
                 "INSERT OR REPLACE INTO passage_entity VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                (passage_id, "kena_upanishad", "hinduism", ref, orig_sanskrit, v_text, kena_order, part_num, v_num)
+                (passage_id, "kena_upanishad", "hinduism", ref, orig_field, v_text, kena_order, part_num, v_num)
             )
             kena_order += 1
             kena_count += 1
@@ -310,7 +391,7 @@ def build_upanishads(cursor):
         "INSERT OR REPLACE INTO book_entity VALUES (?, ?, ?, ?, ?, ?, ?)",
         ("kena_upanishad", "hinduism", "Kena Upanishad", "Vedic Sages", "Sanskrit", kena_count, 1)
     )
-    print(f"Kena Upanishad complete: {kena_count} verses ingested with Sanskrit.")
+    print(f"Kena Upanishad complete: {kena_count} verses ingested with Sanskrit & pronunciation.")
 
 def build_tao_te_ching(cursor):
     print("Ingesting Tao Te Ching (81 Chapters with Classical Chinese & English Translation)...")

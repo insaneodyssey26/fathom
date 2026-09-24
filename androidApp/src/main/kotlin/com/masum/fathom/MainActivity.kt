@@ -67,7 +67,7 @@ class MainActivity : ComponentActivity() {
                 val dbFile = context.getDatabasePath("starter_content.db")
                 val prefs = context.getSharedPreferences("fathom_content_prefs", android.content.Context.MODE_PRIVATE)
                 val currentVersion = prefs.getInt("db_asset_version", 0)
-                val TARGET_VERSION = 8
+                val TARGET_VERSION = 9
                 val needsExtraction = !dbFile.exists() || dbFile.length() < 100_000L || currentVersion < TARGET_VERSION
 
                 if (needsExtraction) {
