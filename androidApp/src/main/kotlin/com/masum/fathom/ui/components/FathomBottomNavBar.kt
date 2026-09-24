@@ -23,11 +23,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
-import com.adamglin.PhosphorIcons
-import com.adamglin.phosphoricons.Regular
-import com.adamglin.phosphoricons.regular.BookBookmark
-import com.adamglin.phosphoricons.regular.MagnifyingGlass
-import com.adamglin.phosphoricons.regular.Sparkle
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -37,10 +32,17 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.adamglin.PhosphorIcons
+import com.adamglin.phosphoricons.Regular
+import com.adamglin.phosphoricons.regular.BookBookmark
+import com.adamglin.phosphoricons.regular.MagnifyingGlass
+import com.adamglin.phosphoricons.regular.Sparkle
 import com.masum.fathom.NavigationItem
 import com.masum.fathom.ui.theme.FathomTheme
 
@@ -53,20 +55,29 @@ fun FathomBottomNavBar(
     Box(
         modifier = modifier
             .fillMaxWidth()
+            .background(
+                brush = Brush.verticalGradient(
+                    colors = listOf(
+                        Color.Transparent,
+                        FathomTheme.colors.background.copy(alpha = 0.7f),
+                        FathomTheme.colors.background
+                    )
+                )
+            )
             .navigationBarsPadding()
-            .padding(horizontal = 20.dp, vertical = 6.dp),
+            .padding(horizontal = 20.dp, vertical = 8.dp),
         contentAlignment = Alignment.Center
     ) {
         BoxWithConstraints(
             modifier = Modifier
                 .widthIn(max = 360.dp)
                 .fillMaxWidth()
-                .height(48.dp)
+                .height(50.dp)
                 .clip(RoundedCornerShape(26.dp))
-                .background(FathomTheme.colors.surface)
+                .background(FathomTheme.colors.surface.copy(alpha = 0.88f))
                 .border(
                     width = 1.dp,
-                    color = FathomTheme.colors.borderSubtle,
+                    color = FathomTheme.colors.borderSubtle.copy(alpha = 0.75f),
                     shape = RoundedCornerShape(26.dp)
                 )
                 .padding(3.dp)
@@ -93,7 +104,12 @@ fun FathomBottomNavBar(
                     .width(segmentWidth)
                     .fillMaxHeight()
                     .clip(RoundedCornerShape(23.dp))
-                    .background(FathomTheme.colors.surfaceElevated)
+                    .background(FathomTheme.colors.surfaceElevated.copy(alpha = 0.95f))
+                    .border(
+                        width = 1.dp,
+                        color = FathomTheme.colors.accentGold.copy(alpha = 0.18f),
+                        shape = RoundedCornerShape(23.dp)
+                    )
             )
 
             Row(
@@ -177,7 +193,7 @@ private fun NavBarItem(
             Text(
                 text = label.uppercase(),
                 style = FathomTheme.typography.traditionBadge.copy(
-                    fontSize = 12.5.sp,
+                    fontSize = 12.sp,
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 0.8.sp
                 ),

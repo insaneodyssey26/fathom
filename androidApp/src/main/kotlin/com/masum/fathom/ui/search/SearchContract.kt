@@ -15,7 +15,7 @@ data class SearchUiState(
     val selectedBook: Book? = null,
     val availableChapters: List<Int> = emptyList(),
     val selectedChapter: Int? = null,
-    val chapterPassages: List<Passage> = emptyList(),
+    val chapterPassagesMap: Map<Int, List<Passage>> = emptyMap(),
     val isLoadingChapter: Boolean = false,
     val selectedPassageForContext: Passage? = null,
     val selectedPassageForShare: Passage? = null,

@@ -105,7 +105,7 @@ class SearchViewModel(
                 selectedBook = book,
                 selectedChapter = null,
                 availableChapters = emptyList(),
-                chapterPassages = emptyList()
+                chapterPassagesMap = emptyMap()
             )
         }
 
@@ -116,7 +116,11 @@ class SearchViewModel(
                         val chapters = result.data
                         _uiState.update { it.copy(availableChapters = chapters) }
                         if (chapters.isNotEmpty()) {
-                            handleSelectChapter(chapters.first())
+                            val firstChapter = chapters.first()
+                            handleSelectChapter(firstChapter)
+                            if (chapters.size > 1) {
+                                prefetchChapter(book.id, chapters[1])
+                            }
                         }
                     }
                     is FathomResult.Failure -> Unit
@@ -127,31 +131,56 @@ class SearchViewModel(
 
     private fun handleSelectChapter(chapter: Int?) {
         val currentBook = _uiState.value.selectedBook ?: return
-        _uiState.update { it.copy(selectedChapter = chapter, isLoadingChapter = true) }
+        _uiState.update { it.copy(selectedChapter = chapter) }
 
         if (chapter != null) {
+            if (_uiState.value.chapterPassagesMap.containsKey(chapter)) {
+                prefetchNeighbours(currentBook.id, chapter)
+                return
+            }
+
+            _uiState.update { it.copy(isLoadingChapter = true) }
             viewModelScope.launch {
                 when (val result = passageRepository.getPassagesForBookChapter(currentBook.id, chapter)) {
                     is FathomResult.Success -> {
                         _uiState.update {
                             it.copy(
-                                chapterPassages = result.data,
+                                chapterPassagesMap = it.chapterPassagesMap + (chapter to result.data),
                                 isLoadingChapter = false
                             )
                         }
+                        prefetchNeighbours(currentBook.id, chapter)
                     }
                     is FathomResult.Failure -> {
-                        _uiState.update {
-                            it.copy(
-                                chapterPassages = emptyList(),
-                                isLoadingChapter = false
-                            )
-                        }
+                        _uiState.update { it.copy(isLoadingChapter = false) }
                     }
                 }
             }
-        } else {
-            _uiState.update { it.copy(chapterPassages = emptyList(), isLoadingChapter = false) }
+        }
+    }
+
+    private fun prefetchNeighbours(bookId: String, currentChapter: Int) {
+        val chapters = _uiState.value.availableChapters
+        val currentIndex = chapters.indexOf(currentChapter)
+        if (currentIndex > 0) {
+            prefetchChapter(bookId, chapters[currentIndex - 1])
+        }
+        if (currentIndex >= 0 && currentIndex < chapters.lastIndex) {
+            prefetchChapter(bookId, chapters[currentIndex + 1])
+        }
+    }
+
+    private fun prefetchChapter(bookId: String, chapter: Int) {
+        if (_uiState.value.chapterPassagesMap.containsKey(chapter)) return
+        viewModelScope.launch {
+            when (val result = passageRepository.getPassagesForBookChapter(bookId, chapter)) {
+                is FathomResult.Success -> {
+                    _uiState.update {
+                        it.copy(chapterPassagesMap = it.chapterPassagesMap + (chapter to result.data))
+                    }
+                }
+                is FathomResult.Failure -> Unit
+            }
         }
     }
 
