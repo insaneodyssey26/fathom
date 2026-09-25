@@ -42,6 +42,7 @@ import androidx.compose.ui.unit.sp
 import com.adamglin.PhosphorIcons
 import com.adamglin.phosphoricons.Regular
 import com.adamglin.phosphoricons.regular.BookBookmark
+import com.adamglin.phosphoricons.regular.Compass
 import com.adamglin.phosphoricons.regular.MagnifyingGlass
 import com.adamglin.phosphoricons.regular.Sparkle
 import com.masum.fathom.NavigationItem
@@ -70,12 +71,12 @@ fun FathomBottomNavBar(
             )
             .padding(top = 40.dp)
             .navigationBarsPadding()
-            .padding(horizontal = 20.dp, vertical = 8.dp),
+            .padding(horizontal = 16.dp, vertical = 8.dp),
         contentAlignment = Alignment.Center
     ) {
         BoxWithConstraints(
             modifier = Modifier
-                .widthIn(max = 360.dp)
+                .widthIn(max = 380.dp)
                 .fillMaxWidth()
                 .height(52.dp)
                 .shadow(
@@ -93,11 +94,12 @@ fun FathomBottomNavBar(
                 )
                 .padding(4.dp)
         ) {
-            val segmentWidth = maxWidth / 3
+            val segmentWidth = maxWidth / 4
             val targetOffset = when (selectedItem) {
                 NavigationItem.FEED -> 0.dp
-                NavigationItem.SEARCH -> segmentWidth
-                NavigationItem.LIBRARY -> segmentWidth * 2
+                NavigationItem.PATHWAYS -> segmentWidth
+                NavigationItem.SEARCH -> segmentWidth * 2
+                NavigationItem.LIBRARY -> segmentWidth * 3
             }
 
             val indicatorOffset by animateDpAsState(
@@ -130,7 +132,7 @@ fun FathomBottomNavBar(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 NavBarItem(
-                    label = "Discover",
+                    label = "Feed",
                     icon = PhosphorIcons.Regular.Sparkle,
                     isSelected = selectedItem == NavigationItem.FEED,
                     onClick = { onItemSelected(NavigationItem.FEED) },
@@ -138,7 +140,15 @@ fun FathomBottomNavBar(
                 )
 
                 NavBarItem(
-                    label = "Explore",
+                    label = "Path",
+                    icon = PhosphorIcons.Regular.Compass,
+                    isSelected = selectedItem == NavigationItem.PATHWAYS,
+                    onClick = { onItemSelected(NavigationItem.PATHWAYS) },
+                    modifier = Modifier.weight(1f)
+                )
+
+                NavBarItem(
+                    label = "Search",
                     icon = PhosphorIcons.Regular.MagnifyingGlass,
                     isSelected = selectedItem == NavigationItem.SEARCH,
                     onClick = { onItemSelected(NavigationItem.SEARCH) },
@@ -204,10 +214,11 @@ private fun NavBarItem(
             Text(
                 text = label.uppercase(),
                 style = FathomTheme.typography.traditionBadge.copy(
-                    fontSize = 12.sp,
+                    fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
-                    letterSpacing = 0.8.sp
+                    letterSpacing = 0.5.sp
                 ),
+                maxLines = 1,
                 color = contentColor
             )
         }

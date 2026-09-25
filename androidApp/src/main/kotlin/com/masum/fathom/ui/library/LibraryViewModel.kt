@@ -9,14 +9,40 @@ import com.masum.fathom.core.model.user.Bookmark
 import com.masum.fathom.core.model.user.UserNote
 import com.masum.fathom.core.repository.PassageRepository
 import com.masum.fathom.core.repository.UserDataRepository
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+
+private data class RawLibraryData(
+    val bookmarkItems: List<BookmarkWithPassage>,
+    val noteItems: List<NoteWithPassage>,
+    val historyItems: List<HistoryWithPassage>,
+    val totalReads: Int,
+    val currentStreak: Int,
+    val weeklyHeatmap: List<HeatmapDay>,
+    val badges: List<MilestoneBadge>
+)
+
+private data class FilteredLibraryData(
+    val bookmarks: List<BookmarkWithPassage>,
+    val notes: List<NoteWithPassage>,
+    val history: List<HistoryWithPassage>,
+    val totalReads: Int,
+    val currentStreak: Int,
+    val weeklyHeatmap: List<HeatmapDay>,
+    val badges: List<MilestoneBadge>,
+    val traditionFilter: TraditionId?,
+    val tagFilter: String?,
+    val searchQuery: String
+)
 
 class LibraryViewModel(
     private val userDataRepository: UserDataRepository,
@@ -66,27 +92,11 @@ class LibraryViewModel(
             Triple(traditionFilter, tagFilter, query)
         }
 
-        val uiControlsFlow = combine(
-            _selectedTab,
-            _selectedPassageForNote,
-            _selectedPassageForContext,
-            _selectedPassageForShare
-        ) { tab, notePassage, contextPassage, sharePassage ->
-            listOf(tab, notePassage, contextPassage, sharePassage)
-        }
-
-        combine(
+        val rawDataFlow: Flow<RawLibraryData> = combine(
             userDataRepository.observeBookmarks(),
             userDataRepository.observeAllNotes(),
-            userDataRepository.observeReadingHistory(),
-            filterFlow,
-            uiControlsFlow
-        ) { bookmarks, notes, history, (traditionFilter, tagFilter, query), uiControls ->
-            val tab = uiControls[0] as LibraryTab
-            val notePassage = uiControls[1] as? Passage
-            val contextPassage = uiControls[2] as? Passage
-            val sharePassage = uiControls[3] as? Passage
-
+            userDataRepository.observeReadingHistory()
+        ) { bookmarks, notes, history ->
             val bookmarkItems = bookmarks.map { bookmark ->
                 val passage = passageRepository.getPassage(bookmark.passageId).asSuccessOrNull()
                 BookmarkWithPassage(bookmark, passage)
@@ -102,7 +112,30 @@ class LibraryViewModel(
                 HistoryWithPassage(record, passage)
             }
 
-            val filteredBookmarks = bookmarkItems.filter { item ->
+            val totalReads = history.sumOf { it.readCount }
+            val (currentStreak, weeklyHeatmap) = calculateStreakAndHeatmap(history)
+            val badges = calculateMilestoneBadges(history, totalReads, currentStreak)
+
+            RawLibraryData(
+                bookmarkItems = bookmarkItems,
+                noteItems = noteItems,
+                historyItems = historyItems,
+                totalReads = totalReads,
+                currentStreak = currentStreak,
+                weeklyHeatmap = weeklyHeatmap,
+                badges = badges
+            )
+        }.flowOn(Dispatchers.Default)
+
+        val filteredDataFlow: Flow<FilteredLibraryData> = combine(
+            rawDataFlow,
+            filterFlow
+        ) { rawData, filters ->
+            val traditionFilter = filters.first
+            val tagFilter = filters.second
+            val query = filters.third
+
+            val filteredBookmarks = rawData.bookmarkItems.filter { item ->
                 val matchesTradition = traditionFilter == null || item.passage?.traditionId == traditionFilter
                 val matchesTag = tagFilter == null || tagFilter in item.bookmark.tags
                 val matchesQuery = query.isBlank() || (item.passage?.translation?.contains(query, ignoreCase = true) == true ||
@@ -110,7 +143,7 @@ class LibraryViewModel(
                 matchesTradition && matchesTag && matchesQuery
             }
 
-            val filteredNotes = noteItems.filter { item ->
+            val filteredNotes = rawData.noteItems.filter { item ->
                 val matchesTradition = traditionFilter == null || item.passage?.traditionId == traditionFilter
                 val matchesQuery = query.isBlank() || (item.note.content.contains(query, ignoreCase = true) ||
                         item.passage?.canonicalReference?.contains(query, ignoreCase = true) == true ||
@@ -118,24 +151,204 @@ class LibraryViewModel(
                 matchesTradition && matchesQuery
             }
 
-            val totalReads = history.sumOf { it.readCount }
+            FilteredLibraryData(
+                bookmarks = filteredBookmarks,
+                notes = filteredNotes,
+                history = rawData.historyItems,
+                totalReads = rawData.totalReads,
+                currentStreak = rawData.currentStreak,
+                weeklyHeatmap = rawData.weeklyHeatmap,
+                badges = rawData.badges,
+                traditionFilter = traditionFilter,
+                tagFilter = tagFilter,
+                searchQuery = query
+            )
+        }.flowOn(Dispatchers.Default)
+
+        val uiControlsFlow = combine(
+            _selectedTab,
+            _selectedPassageForNote,
+            _selectedPassageForContext,
+            _selectedPassageForShare
+        ) { tab, notePassage, contextPassage, sharePassage ->
+            listOf(tab, notePassage, contextPassage, sharePassage)
+        }
+
+        combine(
+            filteredDataFlow,
+            uiControlsFlow
+        ) { filteredData, uiControls ->
+            val tab = uiControls[0] as LibraryTab
+            val notePassage = uiControls[1] as? Passage
+            val contextPassage = uiControls[2] as? Passage
+            val sharePassage = uiControls[3] as? Passage
 
             LibraryUiState.Success(
                 selectedTab = tab,
-                bookmarks = filteredBookmarks,
-                notes = filteredNotes,
-                history = historyItems,
-                totalReadCount = totalReads,
+                bookmarks = filteredData.bookmarks,
+                notes = filteredData.notes,
+                history = filteredData.history,
+                totalReadCount = filteredData.totalReads,
+                currentStreakDays = filteredData.currentStreak,
+                weeklyHeatmap = filteredData.weeklyHeatmap,
+                milestoneBadges = filteredData.badges,
                 selectedPassageForNote = notePassage,
                 selectedPassageForContext = contextPassage,
                 selectedPassageForShare = sharePassage,
-                selectedTraditionFilter = traditionFilter,
-                selectedTagFilter = tagFilter,
-                searchQuery = query
+                selectedTraditionFilter = filteredData.traditionFilter,
+                selectedTagFilter = filteredData.tagFilter,
+                searchQuery = filteredData.searchQuery
             )
         }.onEach { state ->
             _uiState.value = state
         }.launchIn(viewModelScope)
+    }
+
+    private fun calculateStreakAndHeatmap(history: List<com.masum.fathom.core.model.user.ReadingRecord>): Pair<Int, List<HeatmapDay>> {
+        val calendar = java.util.Calendar.getInstance()
+        val nowMs = System.currentTimeMillis()
+        calendar.timeInMillis = nowMs
+
+        val todayYear = calendar.get(java.util.Calendar.YEAR)
+        val todayDayOfYear = calendar.get(java.util.Calendar.DAY_OF_YEAR)
+
+        val daysWithReads = mutableMapOf<String, Int>()
+        val dayKeyFormatter = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US)
+
+        history.forEach { record ->
+            val d = java.util.Date(record.lastSeenAtEpochMs)
+            val key = dayKeyFormatter.format(d)
+            daysWithReads[key] = (daysWithReads[key] ?: 0) + record.readCount
+        }
+
+        var streak = 0
+        val checkCal = java.util.Calendar.getInstance()
+        checkCal.timeInMillis = nowMs
+
+        val todayKey = dayKeyFormatter.format(checkCal.time)
+        val hasReadToday = (daysWithReads[todayKey] ?: 0) > 0
+
+        if (hasReadToday) {
+            streak++
+            checkCal.add(java.util.Calendar.DAY_OF_YEAR, -1)
+        } else {
+            checkCal.add(java.util.Calendar.DAY_OF_YEAR, -1)
+            val yesterdayKey = dayKeyFormatter.format(checkCal.time)
+            if ((daysWithReads[yesterdayKey] ?: 0) > 0) {
+                streak++
+                checkCal.add(java.util.Calendar.DAY_OF_YEAR, -1)
+            }
+        }
+
+        while (true) {
+            val key = dayKeyFormatter.format(checkCal.time)
+            if ((daysWithReads[key] ?: 0) > 0) {
+                streak++
+                checkCal.add(java.util.Calendar.DAY_OF_YEAR, -1)
+            } else {
+                break
+            }
+        }
+
+        val heatmapList = mutableListOf<HeatmapDay>()
+        val heatmapCal = java.util.Calendar.getInstance()
+        heatmapCal.timeInMillis = nowMs
+        heatmapCal.add(java.util.Calendar.DAY_OF_YEAR, -6)
+
+        val dayLabels = arrayOf("Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat")
+
+        for (i in 0..6) {
+            val key = dayKeyFormatter.format(heatmapCal.time)
+            val count = daysWithReads[key] ?: 0
+            val dayOfWeek = heatmapCal.get(java.util.Calendar.DAY_OF_WEEK) - 1
+            val dayOfMonth = heatmapCal.get(java.util.Calendar.DAY_OF_MONTH)
+            val isToday = heatmapCal.get(java.util.Calendar.YEAR) == todayYear && heatmapCal.get(java.util.Calendar.DAY_OF_YEAR) == todayDayOfYear
+
+            heatmapList.add(
+                HeatmapDay(
+                    dayOfWeekLabel = dayLabels.getOrElse(dayOfWeek) { "D" },
+                    dayOfMonth = dayOfMonth,
+                    dateString = key,
+                    readCount = count,
+                    isToday = isToday
+                )
+            )
+            heatmapCal.add(java.util.Calendar.DAY_OF_YEAR, 1)
+        }
+
+        return Pair(streak, heatmapList)
+    }
+
+    private fun calculateMilestoneBadges(
+        history: List<com.masum.fathom.core.model.user.ReadingRecord>,
+        totalReads: Int,
+        streakDays: Int
+    ): List<MilestoneBadge> {
+        val uniquePassageCount = history.size
+        val uniqueBooksCount = history.map { it.bookId }.distinct().size
+
+        return listOf(
+            MilestoneBadge(
+                id = "first_step",
+                title = "Initiate of Wisdom",
+                traditionId = null,
+                description = "Complete your first sacred contemplation.",
+                requiredCount = 1,
+                currentCount = totalReads.coerceAtMost(1),
+                isUnlocked = totalReads >= 1,
+                tierName = "Bronze Tier"
+            ),
+            MilestoneBadge(
+                id = "streak_3",
+                title = "Kindled Flame",
+                traditionId = null,
+                description = "Maintain a 3-day daily wisdom streak.",
+                requiredCount = 3,
+                currentCount = streakDays.coerceAtMost(3),
+                isUnlocked = streakDays >= 3,
+                tierName = "Silver Tier"
+            ),
+            MilestoneBadge(
+                id = "streak_7",
+                title = "Disciplined Mind",
+                traditionId = null,
+                description = "Reach an unbroken 7-day contemplative practice.",
+                requiredCount = 7,
+                currentCount = streakDays.coerceAtMost(7),
+                isUnlocked = streakDays >= 7,
+                tierName = "Gold Tier"
+            ),
+            MilestoneBadge(
+                id = "passages_25",
+                title = "Seeker of Truth",
+                traditionId = null,
+                description = "Contemplate 25 distinct verses across scriptures.",
+                requiredCount = 25,
+                currentCount = uniquePassageCount.coerceAtMost(25),
+                isUnlocked = uniquePassageCount >= 25,
+                tierName = "Silver Tier"
+            ),
+            MilestoneBadge(
+                id = "passages_100",
+                title = "Deep Scholar",
+                traditionId = null,
+                description = "Explore and contemplate 100 unique passages.",
+                requiredCount = 100,
+                currentCount = uniquePassageCount.coerceAtMost(100),
+                isUnlocked = uniquePassageCount >= 100,
+                tierName = "Platinum Tier"
+            ),
+            MilestoneBadge(
+                id = "cross_tradition",
+                title = "Universal Seeker",
+                traditionId = null,
+                description = "Study verses from at least 4 different sacred canons.",
+                requiredCount = 4,
+                currentCount = uniqueBooksCount.coerceAtMost(4),
+                isUnlocked = uniqueBooksCount >= 4,
+                tierName = "Gold Tier"
+            )
+        )
     }
 
 

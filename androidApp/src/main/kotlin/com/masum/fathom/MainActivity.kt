@@ -37,14 +37,16 @@ import com.masum.fathom.ui.feed.FeedScreen
 import com.masum.fathom.ui.feed.FeedViewModel
 import com.masum.fathom.ui.library.LibraryScreen
 import com.masum.fathom.ui.library.LibraryViewModel
+import com.masum.fathom.ui.pathways.PathwaysScreen
+import com.masum.fathom.ui.pathways.PathwaysViewModel
+import com.masum.fathom.ui.search.SearchScreen
+import com.masum.fathom.ui.search.SearchViewModel
 import com.masum.fathom.ui.theme.FathomTheme
 import com.masum.fathom.ui.theme.ReadingTheme
 
-import com.masum.fathom.ui.search.SearchScreen
-import com.masum.fathom.ui.search.SearchViewModel
-
 enum class NavigationItem {
     FEED,
+    PATHWAYS,
     SEARCH,
     LIBRARY
 }
@@ -123,7 +125,12 @@ class MainActivity : ComponentActivity() {
                 LibraryViewModel(userDataRepository = userRepo, passageRepository = passageRepo)
             }
 
+            val pathwaysViewModel: PathwaysViewModel = viewModel {
+                PathwaysViewModel(passageRepository = passageRepo, userDataRepository = userRepo)
+            }
+
             val feedUiState by feedViewModel.uiState.collectAsStateWithLifecycle()
+            val pathwaysUiState by pathwaysViewModel.uiState.collectAsStateWithLifecycle()
             val searchUiState by searchViewModel.uiState.collectAsStateWithLifecycle()
             val libraryUiState by libraryViewModel.uiState.collectAsStateWithLifecycle()
 
@@ -196,6 +203,10 @@ class MainActivity : ComponentActivity() {
                                     state = feedUiState,
                                     onEvent = feedViewModel::onEvent
                                 )
+                                NavigationItem.PATHWAYS -> PathwaysScreen(
+                                    state = pathwaysUiState,
+                                    onEvent = pathwaysViewModel::onEvent
+                                )
                                 NavigationItem.SEARCH -> SearchScreen(
                                     state = searchUiState,
                                     onEvent = searchViewModel::onEvent
@@ -207,16 +218,30 @@ class MainActivity : ComponentActivity() {
                             }
                         }
 
+                        val isStudyingChapter = selectedNav == NavigationItem.PATHWAYS &&
+                            (pathwaysUiState as? com.masum.fathom.ui.pathways.PathwaysUiState.Success)?.activeChapterForReading != null
+
                         androidx.compose.foundation.layout.Column(
                             modifier = Modifier
                                 .align(Alignment.BottomCenter)
                                 .fillMaxWidth()
                         ) {
-                            com.masum.fathom.ui.components.SacredAudioPlayerBar()
-                            com.masum.fathom.ui.components.FathomBottomNavBar(
-                                selectedItem = selectedNav,
-                                onItemSelected = { selectedNav = it }
+                            com.masum.fathom.ui.components.SacredAudioPlayerBar(
+                                isNavbarVisible = !isStudyingChapter
                             )
+
+                            androidx.compose.animation.AnimatedVisibility(
+                                visible = !isStudyingChapter,
+                                enter = androidx.compose.animation.fadeIn(androidx.compose.animation.core.tween(200)) +
+                                    androidx.compose.animation.slideInVertically(initialOffsetY = { it }),
+                                exit = androidx.compose.animation.fadeOut(androidx.compose.animation.core.tween(150)) +
+                                    androidx.compose.animation.slideOutVertically(targetOffsetY = { it })
+                            ) {
+                                com.masum.fathom.ui.components.FathomBottomNavBar(
+                                    selectedItem = selectedNav,
+                                    onItemSelected = { selectedNav = it }
+                                )
+                            }
                         }
 
                         com.masum.fathom.ui.components.AppUpdateBanner(

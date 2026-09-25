@@ -28,6 +28,25 @@ data class HistoryWithPassage(
     val passage: Passage?
 )
 
+data class HeatmapDay(
+    val dayOfWeekLabel: String,
+    val dayOfMonth: Int,
+    val dateString: String,
+    val readCount: Int,
+    val isToday: Boolean
+)
+
+data class MilestoneBadge(
+    val id: String,
+    val title: String,
+    val traditionId: TraditionId?,
+    val description: String,
+    val requiredCount: Int,
+    val currentCount: Int,
+    val isUnlocked: Boolean,
+    val tierName: String
+)
+
 @Immutable
 sealed interface LibraryUiState {
     data object Loading : LibraryUiState
@@ -38,6 +57,9 @@ sealed interface LibraryUiState {
         val notes: List<NoteWithPassage> = emptyList(),
         val history: List<HistoryWithPassage> = emptyList(),
         val totalReadCount: Int = 0,
+        val currentStreakDays: Int = 0,
+        val weeklyHeatmap: List<HeatmapDay> = emptyList(),
+        val milestoneBadges: List<MilestoneBadge> = emptyList(),
         val selectedPassageForNote: Passage? = null,
         val selectedPassageForContext: Passage? = null,
         val selectedPassageForShare: Passage? = null,

@@ -186,11 +186,20 @@ private fun DirectoryAndSearchRootView(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        text = "Explore & Search",
-                        style = FathomTheme.typography.brandTitle,
-                        color = FathomTheme.colors.textPrimary
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(0.dp)
+                    ) {
+                        Text(
+                            text = "explore",
+                            style = FathomTheme.typography.brandTitle,
+                            color = FathomTheme.colors.textPrimary
+                        )
+                        Text(
+                            text = ".",
+                            style = FathomTheme.typography.brandTitle.copy(color = FathomTheme.colors.accentGold)
+                        )
+                    }
                 }
 
                 Box(

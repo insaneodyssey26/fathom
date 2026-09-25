@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -61,7 +62,8 @@ import com.masum.fathom.ui.theme.SyneFontFamily
 
 @Composable
 fun SacredAudioPlayerBar(
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    isNavbarVisible: Boolean = true
 ) {
     val audioEngine = LocalSacredAudioEngine.current
     val playbackState by audioEngine.playbackState.collectAsState()
@@ -70,7 +72,7 @@ fun SacredAudioPlayerBar(
     var cachedIsOriginalPart by remember { mutableStateOf(false) }
     var cachedMode by remember { mutableStateOf(RecitationMode.TRANSLATION_ONLY) }
     var cachedProgress by remember { mutableFloatStateOf(0f) }
-    var cachedSpeed by remember { mutableFloatStateOf(0.95f) }
+    var cachedSpeed by remember { mutableFloatStateOf(1.0f) }
 
     when (val state = playbackState) {
         is SacredAudioState.Playing -> {
@@ -117,21 +119,23 @@ fun SacredAudioPlayerBar(
         val currentSpeed = cachedSpeed
         val isPlaying = playbackState is SacredAudioState.Playing
 
-        val speedSteps = listOf(0.7f, 0.8f, 1.0f, 1.2f, 1.5f, 1.7f, 2.0f)
-
         if (currentPassage != null) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 14.dp, vertical = 6.dp)
-                    .clip(RoundedCornerShape(18.dp))
-                    .background(FathomTheme.colors.surfaceElevated)
+                    .then(
+                        if (!isNavbarVisible) Modifier.navigationBarsPadding()
+                        else Modifier
+                    )
+                    .padding(horizontal = 16.dp, vertical = if (!isNavbarVisible) 12.dp else 4.dp)
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(FathomTheme.colors.surfaceElevated.copy(alpha = 0.96f))
                     .border(
                         width = 1.dp,
-                        color = FathomTheme.colors.accentGold.copy(alpha = 0.45f),
-                        shape = RoundedCornerShape(18.dp)
+                        color = FathomTheme.colors.accentGold.copy(alpha = 0.35f),
+                        shape = RoundedCornerShape(16.dp)
                     )
-                    .padding(horizontal = 14.dp, vertical = 10.dp)
+                    .padding(horizontal = 12.dp, vertical = 8.dp)
             ) {
                 Column(modifier = Modifier.fillMaxWidth()) {
                     Row(
@@ -145,20 +149,20 @@ fun SacredAudioPlayerBar(
                         ) {
                             Box(
                                 modifier = Modifier
-                                    .size(36.dp)
+                                    .size(32.dp)
                                     .clip(CircleShape)
-                                    .background(FathomTheme.colors.accentGold.copy(alpha = 0.16f)),
+                                    .background(FathomTheme.colors.accentGold.copy(alpha = 0.14f)),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Icon(
                                     imageVector = PhosphorIcons.Regular.SpeakerHigh,
-                                    contentDescription = "Sacred Audio",
+                                    contentDescription = "Audio Recitation",
                                     tint = FathomTheme.colors.accentGold,
-                                    modifier = Modifier.size(18.dp)
+                                    modifier = Modifier.size(16.dp)
                                 )
                             }
 
-                            Spacer(modifier = Modifier.width(10.dp))
+                            Spacer(modifier = Modifier.width(9.dp))
 
                             Column(modifier = Modifier.weight(1f)) {
                                 Row(
@@ -169,7 +173,7 @@ fun SacredAudioPlayerBar(
                                         text = currentPassage.canonicalReference,
                                         fontFamily = SyneFontFamily,
                                         fontWeight = FontWeight.Bold,
-                                        fontSize = 13.5.sp,
+                                        fontSize = 12.5.sp,
                                         color = FathomTheme.colors.textPrimary,
                                         maxLines = 1,
                                         overflow = TextOverflow.Ellipsis
@@ -178,7 +182,7 @@ fun SacredAudioPlayerBar(
                                     Box(
                                         modifier = Modifier
                                             .clip(RoundedCornerShape(4.dp))
-                                            .background(FathomTheme.colors.accentGold.copy(alpha = 0.15f))
+                                            .background(FathomTheme.colors.accentGold.copy(alpha = 0.12f))
                                             .clickable {
                                                 val nextMode = when (currentMode) {
                                                     RecitationMode.TRANSLATION_ONLY -> RecitationMode.ORIGINAL_ONLY
@@ -187,25 +191,23 @@ fun SacredAudioPlayerBar(
                                                 }
                                                 audioEngine.setMode(nextMode)
                                             }
-                                            .padding(horizontal = 5.dp, vertical = 2.dp)
+                                            .padding(horizontal = 5.dp, vertical = 1.5.dp)
                                     ) {
                                         Text(
                                             text = if (isOriginalPart) "ORIGINAL" else "ENGLISH",
                                             fontFamily = JakartaFontFamily,
                                             fontWeight = FontWeight.Bold,
-                                            fontSize = 8.5.sp,
-                                            letterSpacing = 0.5.sp,
+                                            fontSize = 8.sp,
+                                            letterSpacing = 0.4.sp,
                                             color = FathomTheme.colors.accentGold
                                         )
                                     }
                                 }
 
-                                Spacer(modifier = Modifier.height(2.dp))
-
                                 Text(
                                     text = (if (isOriginalPart) currentPassage.originalText else currentPassage.translation) ?: currentPassage.translation,
                                     fontFamily = JakartaFontFamily,
-                                    fontSize = 11.5.sp,
+                                    fontSize = 11.sp,
                                     color = FathomTheme.colors.textSecondary,
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis
@@ -213,44 +215,69 @@ fun SacredAudioPlayerBar(
                             }
                         }
 
-                        Spacer(modifier = Modifier.width(8.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
 
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(3.dp)
+                            horizontalArrangement = Arrangement.spacedBy(2.dp)
                         ) {
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(6.dp))
+                                    .background(FathomTheme.colors.surface)
+                                    .border(1.dp, FathomTheme.colors.borderSubtle, RoundedCornerShape(6.dp))
+                                    .clickable {
+                                        val nextSpeed = when {
+                                            currentSpeed <= 0.85f -> 1.0f
+                                            currentSpeed <= 1.05f -> 1.2f
+                                            currentSpeed <= 1.25f -> 1.5f
+                                            else -> 0.8f
+                                        }
+                                        audioEngine.setSpeed(nextSpeed)
+                                    }
+                                    .padding(horizontal = 6.dp, vertical = 3.dp)
+                            ) {
+                                Text(
+                                    text = "${String.format(java.util.Locale.US, "%.1f", currentSpeed)}×",
+                                    fontFamily = JakartaFontFamily,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 9.5.sp,
+                                    color = FathomTheme.colors.accentGold
+                                )
+                            }
+
                             IconButton(
                                 onClick = {
                                     audioEngine.toggle(currentPassage, currentMode)
                                 },
                                 modifier = Modifier
                                     .clip(CircleShape)
-                                    .background(FathomTheme.colors.accentGold.copy(alpha = 0.18f))
-                                    .size(34.dp)
+                                    .background(FathomTheme.colors.accentGold.copy(alpha = 0.16f))
+                                    .size(32.dp)
                             ) {
                                 Icon(
                                     imageVector = if (isPlaying) PhosphorIcons.Regular.Pause else PhosphorIcons.Regular.Play,
                                     contentDescription = if (isPlaying) "Pause" else "Play",
                                     tint = FathomTheme.colors.accentGold,
-                                    modifier = Modifier.size(17.dp)
+                                    modifier = Modifier.size(15.dp)
                                 )
                             }
 
                             IconButton(
                                 onClick = { audioEngine.stop() },
-                                modifier = Modifier.size(28.dp)
+                                modifier = Modifier.size(26.dp)
                             ) {
                                 Icon(
                                     imageVector = PhosphorIcons.Regular.X,
                                     contentDescription = "Stop",
                                     tint = FathomTheme.colors.textTertiary,
-                                    modifier = Modifier.size(15.dp)
+                                    modifier = Modifier.size(13.dp)
                                 )
                             }
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(6.dp))
 
                     SacredInteractiveSeekbar(
                         progress = currentProgress,
@@ -258,84 +285,6 @@ fun SacredAudioPlayerBar(
                             audioEngine.seekTo(fraction)
                         }
                     )
-
-                    Spacer(modifier = Modifier.height(6.dp))
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = "${(currentProgress * 100).toInt()}% RECITED",
-                            fontFamily = JakartaFontFamily,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 9.sp,
-                            letterSpacing = 0.5.sp,
-                            color = FathomTheme.colors.textTertiary
-                        )
-
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(4.dp)
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .clip(RoundedCornerShape(6.dp))
-                                    .background(FathomTheme.colors.surface)
-                                    .border(1.dp, FathomTheme.colors.borderSubtle, RoundedCornerShape(6.dp))
-                                    .clickable(enabled = currentSpeed > 0.55f) {
-                                        val nextSpeed = ((currentSpeed - 0.1f) * 10f).let { kotlin.math.round(it) } / 10f
-                                        audioEngine.setSpeed(nextSpeed.coerceIn(0.5f, 2.5f))
-                                    }
-                                    .padding(horizontal = 7.dp, vertical = 2.dp)
-                            ) {
-                                Text(
-                                    text = "−",
-                                    fontFamily = JakartaFontFamily,
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 11.sp,
-                                    color = if (currentSpeed > 0.55f) FathomTheme.colors.textPrimary else FathomTheme.colors.textTertiary.copy(alpha = 0.4f)
-                                )
-                            }
-
-                            Box(
-                                modifier = Modifier
-                                    .clip(RoundedCornerShape(6.dp))
-                                    .background(FathomTheme.colors.accentGold.copy(alpha = 0.16f))
-                                    .border(1.dp, FathomTheme.colors.accentGold.copy(alpha = 0.4f), RoundedCornerShape(6.dp))
-                                    .padding(horizontal = 8.dp, vertical = 2.dp)
-                            ) {
-                                Text(
-                                    text = "${String.format(java.util.Locale.US, "%.1f", currentSpeed)}×",
-                                    fontFamily = JakartaFontFamily,
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 10.sp,
-                                    color = FathomTheme.colors.accentGold
-                                )
-                            }
-
-                            Box(
-                                modifier = Modifier
-                                    .clip(RoundedCornerShape(6.dp))
-                                    .background(FathomTheme.colors.surface)
-                                    .border(1.dp, FathomTheme.colors.borderSubtle, RoundedCornerShape(6.dp))
-                                    .clickable(enabled = currentSpeed < 2.45f) {
-                                        val nextSpeed = ((currentSpeed + 0.1f) * 10f).let { kotlin.math.round(it) } / 10f
-                                        audioEngine.setSpeed(nextSpeed.coerceIn(0.5f, 2.5f))
-                                    }
-                                    .padding(horizontal = 7.dp, vertical = 2.dp)
-                            ) {
-                                Text(
-                                    text = "+",
-                                    fontFamily = JakartaFontFamily,
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 11.sp,
-                                    color = if (currentSpeed < 2.45f) FathomTheme.colors.textPrimary else FathomTheme.colors.textTertiary.copy(alpha = 0.4f)
-                                )
-                            }
-                        }
-                    }
                 }
             }
         }
@@ -356,7 +305,7 @@ private fun SacredInteractiveSeekbar(
     BoxWithConstraints(
         modifier = modifier
             .fillMaxWidth()
-            .height(24.dp)
+            .height(14.dp)
             .pointerInput(Unit) {
                 detectTapGestures { offset ->
                     val fraction = if (size.width > 0) (offset.x / size.width.toFloat()).coerceIn(0f, 1f) else 0f
@@ -389,27 +338,27 @@ private fun SacredInteractiveSeekbar(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(4.dp)
-                .clip(RoundedCornerShape(2.dp))
+                .height(3.dp)
+                .clip(RoundedCornerShape(1.5.dp))
                 .background(FathomTheme.colors.borderSubtle)
         ) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth(activeFraction.coerceIn(0.001f, 1f))
-                    .height(4.dp)
-                    .clip(RoundedCornerShape(2.dp))
+                    .height(3.dp)
+                    .clip(RoundedCornerShape(1.5.dp))
                     .background(FathomTheme.colors.accentGold)
             )
         }
 
-        val thumbOffset = ((totalWidth - 11.dp) * activeFraction).coerceAtLeast(0.dp)
+        val thumbOffset = ((totalWidth - 9.dp) * activeFraction).coerceAtLeast(0.dp)
         Box(
             modifier = Modifier
                 .offset(x = thumbOffset)
-                .size(11.dp)
+                .size(9.dp)
                 .clip(CircleShape)
                 .background(FathomTheme.colors.accentGold)
-                .border(1.5.dp, FathomTheme.colors.surfaceElevated, CircleShape)
+                .border(1.dp, FathomTheme.colors.surfaceElevated, CircleShape)
         )
     }
 }

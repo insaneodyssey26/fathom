@@ -41,6 +41,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -67,6 +68,8 @@ fun PassageContextSheet(
     val exegesis = ScriptureExegesisEngine.generateExegesis(passage)
     val maxHeight = (LocalConfiguration.current.screenHeightDp * 0.82f).dp
     val bookBackground = getScriptureBackground(passage.bookId, passage.traditionId)
+    val audioEngine = LocalSacredAudioEngine.current
+    val playbackState by audioEngine.playbackState.collectAsState()
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -109,89 +112,171 @@ fun PassageContextSheet(
 
             Spacer(modifier = Modifier.height(14.dp))
 
-            Column(modifier = Modifier.fillMaxWidth()) {
-                Text(
-                    text = passage.canonicalReference,
-                    style = FathomTheme.typography.brandTitle.copy(
-                        fontFamily = SyneFontFamily,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 24.sp,
-                        lineHeight = 30.sp,
-                        letterSpacing = (-0.3).sp
-                    ),
-                    color = FathomTheme.colors.textPrimary
-                )
-
-                Spacer(modifier = Modifier.height(4.dp))
-
-                Text(
-                    text = bookBackground.title,
-                    style = FathomTheme.typography.caption.copy(
-                        fontFamily = JakartaFontFamily,
-                        fontWeight = FontWeight.Normal,
-                        fontSize = 13.sp
-                    ),
-                    color = FathomTheme.colors.textTertiary
-                )
-            }
-
-            val audioEngine = LocalSacredAudioEngine.current
-            val playbackState by audioEngine.playbackState.collectAsState()
-            val isSpeakingThis = (playbackState as? SacredAudioState.Playing)?.passage?.id == passage.id
-
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(if (isSpeakingThis) FathomTheme.colors.accentGold.copy(alpha = 0.16f) else FathomTheme.colors.surfaceElevated)
-                    .border(
-                        width = 1.dp,
-                        color = if (isSpeakingThis) FathomTheme.colors.accentGold else FathomTheme.colors.borderSubtle,
-                        shape = RoundedCornerShape(12.dp)
-                    )
-                    .clickable { audioEngine.toggle(passage) }
-                    .padding(horizontal = 14.dp, vertical = 10.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Icon(
-                        imageVector = PhosphorIcons.Regular.SpeakerHigh,
-                        contentDescription = null,
-                        tint = FathomTheme.colors.accentGold,
-                        modifier = Modifier.size(18.dp)
+                Column(modifier = Modifier.weight(1f).padding(end = 12.dp)) {
+                    Text(
+                        text = passage.canonicalReference,
+                        style = FathomTheme.typography.brandTitle.copy(
+                            fontFamily = SyneFontFamily,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 24.sp,
+                            lineHeight = 30.sp,
+                            letterSpacing = (-0.3).sp
+                        ),
+                        color = FathomTheme.colors.textPrimary
                     )
-                    Column {
+
+                    Spacer(modifier = Modifier.height(3.dp))
+
+                    Text(
+                        text = bookBackground.title,
+                        style = FathomTheme.typography.caption.copy(
+                            fontFamily = JakartaFontFamily,
+                            fontWeight = FontWeight.Normal,
+                            fontSize = 13.sp
+                        ),
+                        color = FathomTheme.colors.textTertiary
+                    )
+                }
+
+                val isSpeakingThis = (playbackState as? SacredAudioState.Playing)?.passage?.id == passage.id ||
+                    (playbackState as? SacredAudioState.Paused)?.passage?.id == passage.id
+                val isPlaying = playbackState is SacredAudioState.Playing && (playbackState as SacredAudioState.Playing).passage.id == passage.id
+
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(if (isSpeakingThis) FathomTheme.colors.accentGold else FathomTheme.colors.surfaceElevated)
+                        .border(
+                            width = 1.dp,
+                            color = if (isSpeakingThis) FathomTheme.colors.accentGold else FathomTheme.colors.borderSubtle,
+                            shape = RoundedCornerShape(16.dp)
+                        )
+                        .clickable { audioEngine.toggle(passage) }
+                        .padding(horizontal = 14.dp, vertical = 10.dp)
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Icon(
+                            imageVector = if (isPlaying) PhosphorIcons.Regular.Pause else PhosphorIcons.Regular.Play,
+                            contentDescription = if (isPlaying) "Pause Recitation" else "Listen to Recitation",
+                            tint = if (isSpeakingThis) Color.Black else FathomTheme.colors.accentGold,
+                            modifier = Modifier.size(15.dp)
+                        )
                         Text(
-                            text = if (isSpeakingThis) "RECITING PASSAGE..." else "SACRED RECITATION",
+                            text = if (isPlaying) "PAUSE" else "LISTEN",
                             fontFamily = JakartaFontFamily,
                             fontWeight = FontWeight.Bold,
                             fontSize = 11.5.sp,
-                            letterSpacing = 0.6.sp,
-                            color = FathomTheme.colors.accentGold
-                        )
-                        Text(
-                            text = "Original pronunciation & English contemplation",
-                            fontFamily = JakartaFontFamily,
-                            fontSize = 10.5.sp,
-                            color = FathomTheme.colors.textSecondary
+                            letterSpacing = 0.5.sp,
+                            color = if (isSpeakingThis) Color.Black else FathomTheme.colors.accentGold
                         )
                     }
                 }
-
-                Icon(
-                    imageVector = if (isSpeakingThis) PhosphorIcons.Regular.Pause else PhosphorIcons.Regular.Play,
-                    contentDescription = null,
-                    tint = FathomTheme.colors.accentGold,
-                    modifier = Modifier.size(16.dp)
-                )
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            val currentAudioState = playbackState
+            if ((currentAudioState is SacredAudioState.Playing && currentAudioState.passage.id == passage.id) ||
+                (currentAudioState is SacredAudioState.Paused && currentAudioState.passage.id == passage.id)
+            ) {
+                val isOriginal = (currentAudioState as? SacredAudioState.Playing)?.isOriginalPart ?: (currentAudioState as? SacredAudioState.Paused)?.isOriginalPart ?: false
+                val currentMode = (currentAudioState as? SacredAudioState.Playing)?.mode ?: (currentAudioState as? SacredAudioState.Paused)?.mode ?: com.masum.fathom.core.audio.RecitationMode.TRANSLATION_ONLY
+                val currentProg = (currentAudioState as? SacredAudioState.Playing)?.progress ?: (currentAudioState as? SacredAudioState.Paused)?.progress ?: 0f
+                val currentSpd = (currentAudioState as? SacredAudioState.Playing)?.speed ?: (currentAudioState as? SacredAudioState.Paused)?.speed ?: 1.0f
+
+                Spacer(modifier = Modifier.height(14.dp))
+
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(FathomTheme.colors.surfaceElevated)
+                        .border(1.dp, FathomTheme.colors.accentGold.copy(alpha = 0.35f), RoundedCornerShape(14.dp))
+                        .padding(14.dp)
+                ) {
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(6.dp))
+                                        .background(FathomTheme.colors.accentGold.copy(alpha = 0.15f))
+                                        .clickable {
+                                            val nextMode = when (currentMode) {
+                                                com.masum.fathom.core.audio.RecitationMode.TRANSLATION_ONLY -> com.masum.fathom.core.audio.RecitationMode.ORIGINAL_ONLY
+                                                com.masum.fathom.core.audio.RecitationMode.ORIGINAL_ONLY -> com.masum.fathom.core.audio.RecitationMode.FULL
+                                                com.masum.fathom.core.audio.RecitationMode.FULL -> com.masum.fathom.core.audio.RecitationMode.TRANSLATION_ONLY
+                                            }
+                                            audioEngine.setMode(nextMode)
+                                        }
+                                        .padding(horizontal = 6.dp, vertical = 2.dp)
+                                ) {
+                                    Text(
+                                        text = if (isOriginal) "ORIGINAL RECITATION" else "ENGLISH RECITATION",
+                                        fontFamily = JakartaFontFamily,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 9.sp,
+                                        letterSpacing = 0.4.sp,
+                                        color = FathomTheme.colors.accentGold
+                                    )
+                                }
+                            }
+
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(6.dp))
+                                    .background(FathomTheme.colors.surface)
+                                    .border(1.dp, FathomTheme.colors.borderSubtle, RoundedCornerShape(6.dp))
+                                    .clickable {
+                                        val nextSpeed = when {
+                                            currentSpd <= 0.85f -> 1.0f
+                                            currentSpd <= 1.05f -> 1.2f
+                                            currentSpd <= 1.25f -> 1.5f
+                                            else -> 0.8f
+                                        }
+                                        audioEngine.setSpeed(nextSpeed)
+                                    }
+                                    .padding(horizontal = 6.dp, vertical = 2.dp)
+                            ) {
+                                Text(
+                                    text = "${String.format(java.util.Locale.US, "%.1f", currentSpd)}×",
+                                    fontFamily = JakartaFontFamily,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 9.5.sp,
+                                    color = FathomTheme.colors.accentGold
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(10.dp))
+
+                        androidx.compose.material3.LinearProgressIndicator(
+                            progress = { currentProg },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(3.dp)
+                                .clip(RoundedCornerShape(2.dp)),
+                            color = FathomTheme.colors.accentGold,
+                            trackColor = FathomTheme.colors.surface
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(18.dp))
 
             if (!passage.originalText.isNullOrBlank()) {
                 Row(
