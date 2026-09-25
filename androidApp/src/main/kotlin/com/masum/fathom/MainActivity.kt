@@ -144,6 +144,14 @@ class MainActivity : ComponentActivity() {
             var showSanctuaryModal by remember { mutableStateOf(false) }
             var selectedNav by remember { mutableStateOf(NavigationItem.FEED) }
 
+            androidx.compose.runtime.LaunchedEffect(intent) {
+                val passageId = intent?.getStringExtra(com.masum.fathom.core.widget.DailyWisdomWidgetProvider.EXTRA_PASSAGE_ID)
+                if (!passageId.isNullOrEmpty()) {
+                    selectedNav = NavigationItem.FEED
+                    feedViewModel.loadSpecificPassage(passageId)
+                }
+            }
+
             if (selectedNav != NavigationItem.FEED) {
                 androidx.activity.compose.BackHandler {
                     selectedNav = NavigationItem.FEED
@@ -227,5 +235,10 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    override fun onNewIntent(intent: android.content.Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
     }
 }

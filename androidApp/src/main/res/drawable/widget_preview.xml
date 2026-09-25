@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="#0F0F12" />
+            <stroke
+                android:width="1.5dp"
+                android:color="#363228" />
+            <corners android:radius="20dp" />
+        </shape>
+    </item>
+    <item
+        android:top="16dp"
+        android:left="16dp"
+        android:right="16dp"
+        android:bottom="16dp">
+        <bitmap
+            android:gravity="center"
+            android:src="@drawable/widget_card_background" />
+    </item>
+</layer-list>

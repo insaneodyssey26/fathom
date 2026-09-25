@@ -267,5 +267,38 @@ class FeedViewModel(
             }
         }
     }
+
+    fun loadSpecificPassage(passageId: String) {
+        viewModelScope.launch {
+            when (val result = passageRepository.getPassage(passageId)) {
+                is FathomResult.Success -> {
+                    val targetPassage = result.data
+                    _uiState.update { state ->
+                        if (state is FeedUiState.Success) {
+                            val existingIndex = state.passages.indexOfFirst { it.id == passageId }
+                            if (existingIndex != -1) {
+                                state.copy(currentIndex = existingIndex)
+                            } else {
+                                val updatedList = listOf(targetPassage) + state.passages
+                                state.copy(passages = updatedList, currentIndex = 0)
+                            }
+                        } else {
+                            FeedUiState.Success(
+                                passages = listOf(targetPassage),
+                                currentIndex = 0,
+                                bookmarkedPassageIds = emptySet(),
+                                activeTheme = ReadingTheme.OBSIDIAN,
+                                selectedTraditions = currentConfig.selectedTraditions,
+                                selectedBookId = currentConfig.selectedBookId,
+                                availableBooks = availableBooks
+                            )
+                        }
+                    }
+                    recordCurrentReading(targetPassage)
+                }
+                is FathomResult.Failure -> Unit
+            }
+        }
+    }
 }
 

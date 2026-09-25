@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">Fathom</string>
+    <string name="widget_daily_wisdom_title">Daily Sacred Wisdom</string>
+    <string name="widget_daily_wisdom_description">Contemplative wisdom passage on your home screen with one-tap refresh.</string>
 </resources>

@@ -39,6 +39,22 @@
         <receiver
             android:name=".core.notification.DailyWisdomReceiver"
             android:exported="false" />
+
+        <receiver
+            android:name=".core.widget.DailyWisdomWidgetProvider"
+            android:label="@string/widget_daily_wisdom_title"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="com.masum.fathom.ACTION_REFRESH_WIDGET" />
+                <action android:name="android.intent.action.USER_PRESENT" />
+                <action android:name="android.intent.action.DATE_CHANGED" />
+                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_daily_wisdom_info" />
+        </receiver>
     </application>
 
 </manifest>
