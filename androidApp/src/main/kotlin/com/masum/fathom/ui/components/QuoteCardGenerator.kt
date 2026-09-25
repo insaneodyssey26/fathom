@@ -371,7 +371,7 @@ object QuoteCardRenderer {
             stream.flush()
             stream.close()
 
-            val uri = FileProvider.getUriForFile(context, "com.masum.fathom.fileprovider", file)
+            val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
 
             val shareIntent = Intent(Intent.ACTION_SEND).apply {
                 type = "image/png"

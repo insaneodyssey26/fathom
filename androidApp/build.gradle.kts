@@ -22,6 +22,7 @@ dependencies {
     implementation(libs.androidx.lifecycle.viewmodelCompose)
     implementation(libs.androidx.lifecycle.runtimeCompose)
     implementation(libs.sqldelight.android.driver)
+    implementation(libs.play.app.update)
 
     implementation(libs.compose.uiToolingPreview)
     debugImplementation(libs.compose.uiTooling)
@@ -35,8 +36,9 @@ android {
         applicationId = "com.masum.fathom"
         minSdk = libs.versions.android.minSdk.get().toInt()
         targetSdk = libs.versions.android.targetSdk.get().toInt()
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 2
+        versionName = "1.1.0"
+        manifestPlaceholders["appLabel"] = "Fathom"
     }
     packaging {
         resources {
@@ -44,9 +46,17 @@ android {
         }
     }
     buildTypes {
+        debug {
+            applicationIdSuffix = ".debug"
+            versionNameSuffix = "-debug"
+            isDebuggable = true
+            isMinifyEnabled = false
+            manifestPlaceholders["appLabel"] = "Fathom (Debug)"
+        }
         release {
             isMinifyEnabled = true
             isShrinkResources = true
+            manifestPlaceholders["appLabel"] = "Fathom"
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"

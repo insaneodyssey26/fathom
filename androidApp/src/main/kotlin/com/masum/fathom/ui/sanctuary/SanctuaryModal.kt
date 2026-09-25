@@ -1,5 +1,6 @@
 package com.masum.fathom.ui.sanctuary
 
+import android.app.Activity
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
@@ -28,6 +29,7 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.BottomSheetDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -62,8 +64,11 @@ import com.adamglin.PhosphorIcons
 import com.adamglin.phosphoricons.Bold
 import com.adamglin.phosphoricons.Regular
 import com.adamglin.phosphoricons.bold.Check
+import com.adamglin.phosphoricons.regular.ArrowsClockwise
+import com.adamglin.phosphoricons.regular.CheckCircle
 import com.adamglin.phosphoricons.regular.ClockCounterClockwise
 import com.adamglin.phosphoricons.regular.Copy
+import com.adamglin.phosphoricons.regular.DownloadSimple
 import com.adamglin.phosphoricons.regular.FloppyDisk
 import com.adamglin.phosphoricons.regular.ShareNetwork
 import com.adamglin.phosphoricons.regular.Sparkle
@@ -73,6 +78,8 @@ import com.masum.fathom.core.sanctuary.ByokProvider
 import com.masum.fathom.core.sanctuary.SanctuaryDataEngine
 import com.masum.fathom.core.sanctuary.SanctuaryPreferences
 import com.masum.fathom.core.sanctuary.SanctuaryStorageStats
+import com.masum.fathom.core.update.AppUpdateStatus
+import com.masum.fathom.core.update.LocalAppUpdateEngine
 import com.masum.fathom.ui.theme.FathomTheme
 import com.masum.fathom.ui.theme.ForestColors
 import com.masum.fathom.ui.theme.JakartaFontFamily
@@ -91,6 +98,9 @@ fun SanctuaryModal(
     onDismiss: () -> Unit
 ) {
     val context = LocalContext.current
+    val activity = context as? Activity
+    val updateEngine = LocalAppUpdateEngine.current
+    val updateStatus by updateEngine.updateStatus.collectAsState()
     val coroutineScope = rememberCoroutineScope()
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val settings by preferences.settings.collectAsState()
@@ -634,6 +644,169 @@ fun SanctuaryModal(
                             Icon(imageVector = PhosphorIcons.Regular.ClockCounterClockwise, contentDescription = null, tint = FathomTheme.colors.textPrimary, modifier = Modifier.size(15.dp))
                             Text(text = "RESTORE DATA", fontFamily = JakartaFontFamily, fontWeight = FontWeight.Bold, fontSize = 11.sp, color = FathomTheme.colors.textPrimary)
                         }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(20.dp))
+
+                Text(
+                    text = "CLOSED TESTING & UPDATES",
+                    style = FathomTheme.typography.commentaryTitle.copy(fontFamily = SyneFontFamily, fontWeight = FontWeight.Bold, fontSize = 12.sp, letterSpacing = 1.sp),
+                    color = FathomTheme.colors.accentGold
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(FathomTheme.colors.surfaceElevated)
+                        .border(1.dp, FathomTheme.colors.borderSubtle, RoundedCornerShape(14.dp))
+                        .padding(16.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            val pkgInfo = remember {
+                                try {
+                                    context.packageManager.getPackageInfo(context.packageName, 0)
+                                } catch (_: Exception) {
+                                    null
+                                }
+                            }
+                            val displayVersionName = pkgInfo?.versionName ?: "1.1.0"
+                            val displayVersionCode = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
+                                pkgInfo?.longVersionCode?.toInt() ?: 2
+                            } else {
+                                @Suppress("DEPRECATION")
+                                pkgInfo?.versionCode ?: 2
+                            }
+
+                            Text(
+                                text = "Fathom for Android",
+                                fontFamily = SyneFontFamily,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 14.sp,
+                                color = FathomTheme.colors.textPrimary
+                            )
+                            Text(
+                                text = "Version $displayVersionName (Build $displayVersionCode) • Closed Testing",
+                                fontFamily = JakartaFontFamily,
+                                fontSize = 12.sp,
+                                color = FathomTheme.colors.textSecondary
+                            )
+                        }
+
+                        when (updateStatus) {
+                            is AppUpdateStatus.Checking -> {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(20.dp),
+                                    color = FathomTheme.colors.accentGold,
+                                    strokeWidth = 2.dp
+                                )
+                            }
+                            is AppUpdateStatus.Available -> {
+                                Box(
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .background(FathomTheme.colors.accentGold)
+                                        .clickable {
+                                            if (activity != null) {
+                                                val avail = updateStatus as AppUpdateStatus.Available
+                                                updateEngine.startFlexibleUpdate(activity, avail.info)
+                                            }
+                                        }
+                                        .padding(horizontal = 12.dp, vertical = 6.dp)
+                                ) {
+                                    Text(
+                                        text = "UPDATE",
+                                        fontFamily = SyneFontFamily,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 11.sp,
+                                        color = Color.Black
+                                    )
+                                }
+                            }
+                            is AppUpdateStatus.Downloaded -> {
+                                Box(
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .background(FathomTheme.colors.accentGold)
+                                        .clickable { updateEngine.completeUpdate() }
+                                        .padding(horizontal = 12.dp, vertical = 6.dp)
+                                ) {
+                                    Text(
+                                        text = "RESTART",
+                                        fontFamily = SyneFontFamily,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 11.sp,
+                                        color = Color.Black
+                                    )
+                                }
+                            }
+                            else -> {
+                                Box(
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .background(FathomTheme.colors.surface)
+                                        .border(1.dp, FathomTheme.colors.borderSubtle, RoundedCornerShape(8.dp))
+                                        .clickable { updateEngine.checkForUpdates(manual = true) }
+                                        .padding(horizontal = 10.dp, vertical = 6.dp)
+                                ) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = PhosphorIcons.Regular.ArrowsClockwise,
+                                            contentDescription = null,
+                                            tint = FathomTheme.colors.accentGold,
+                                            modifier = Modifier.size(13.dp)
+                                        )
+                                        Text(
+                                            text = "CHECK",
+                                            fontFamily = JakartaFontFamily,
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 11.sp,
+                                            color = FathomTheme.colors.accentGold
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    if (updateStatus is AppUpdateStatus.UpToDate) {
+                        Spacer(modifier = Modifier.height(10.dp))
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Icon(
+                                imageVector = PhosphorIcons.Regular.CheckCircle,
+                                contentDescription = null,
+                                tint = FathomTheme.colors.accentGold,
+                                modifier = Modifier.size(14.dp)
+                            )
+                            Text(
+                                text = "You are on the latest sacred build.",
+                                fontFamily = JakartaFontFamily,
+                                fontSize = 11.5.sp,
+                                color = FathomTheme.colors.accentGold
+                            )
+                        }
+                    } else if (updateStatus is AppUpdateStatus.Error) {
+                        val errMsg = (updateStatus as AppUpdateStatus.Error).message
+                        Spacer(modifier = Modifier.height(10.dp))
+                        Text(
+                            text = errMsg,
+                            fontFamily = JakartaFontFamily,
+                            fontSize = 11.5.sp,
+                            color = FathomTheme.colors.textSecondary
+                        )
                     }
                 }
             }

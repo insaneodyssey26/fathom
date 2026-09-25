@@ -131,6 +131,14 @@ class MainActivity : ComponentActivity() {
             val sanctuaryDataEngine = remember { com.masum.fathom.core.sanctuary.SanctuaryDataEngine(context, userRepo, passageRepo) }
             val sanctuarySettings by sanctuaryPreferences.settings.collectAsState()
 
+            val updateEngine = remember { com.masum.fathom.core.update.AppUpdateEngine(context) }
+            androidx.compose.runtime.DisposableEffect(updateEngine) {
+                updateEngine.checkForUpdates(manual = false)
+                onDispose {
+                    updateEngine.release()
+                }
+            }
+
             val activeTheme = sanctuarySettings.theme
 
             var showSanctuaryModal by remember { mutableStateOf(false) }
@@ -153,7 +161,8 @@ class MainActivity : ComponentActivity() {
                 com.masum.fathom.core.audio.LocalSacredAudioEngine provides audioEngine,
                 com.masum.fathom.core.sanctuary.LocalSanctuaryPreferences provides sanctuaryPreferences,
                 com.masum.fathom.core.sanctuary.LocalSanctuaryDataEngine provides sanctuaryDataEngine,
-                com.masum.fathom.core.sanctuary.LocalOpenSanctuary provides { showSanctuaryModal = true }
+                com.masum.fathom.core.sanctuary.LocalOpenSanctuary provides { showSanctuaryModal = true },
+                com.masum.fathom.core.update.LocalAppUpdateEngine provides updateEngine
             ) {
                 FathomTheme(readingTheme = activeTheme) {
                     Box(
@@ -201,6 +210,11 @@ class MainActivity : ComponentActivity() {
                                 onItemSelected = { selectedNav = it }
                             )
                         }
+
+                        com.masum.fathom.ui.components.AppUpdateBanner(
+                            updateEngine = updateEngine,
+                            modifier = Modifier.align(Alignment.TopCenter)
+                        )
 
                         if (showSanctuaryModal) {
                             com.masum.fathom.ui.sanctuary.SanctuaryModal(
