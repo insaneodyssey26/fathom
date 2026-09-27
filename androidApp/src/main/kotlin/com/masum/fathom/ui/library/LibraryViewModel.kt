@@ -18,8 +18,8 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.util.concurrent.ConcurrentHashMap
 
 private data class RawLibraryData(
     val bookmarkItems: List<BookmarkWithPassage>,
@@ -49,6 +49,8 @@ class LibraryViewModel(
     private val passageRepository: PassageRepository
 ) : ViewModel() {
 
+    private val passageCache = ConcurrentHashMap<String, Passage>()
+
     private val _uiState = MutableStateFlow<LibraryUiState>(LibraryUiState.Loading)
     val uiState: StateFlow<LibraryUiState> = _uiState.asStateFlow()
 
@@ -62,6 +64,16 @@ class LibraryViewModel(
 
     init {
         observeLibraryData()
+    }
+
+    private suspend fun getCachedPassage(passageId: String): Passage? {
+        val cached = passageCache[passageId]
+        if (cached != null) return cached
+        val loaded = passageRepository.getPassage(passageId).asSuccessOrNull()
+        if (loaded != null) {
+            passageCache[passageId] = loaded
+        }
+        return loaded
     }
 
     fun onEvent(event: LibraryUiEvent) {
@@ -98,17 +110,17 @@ class LibraryViewModel(
             userDataRepository.observeReadingHistory()
         ) { bookmarks, notes, history ->
             val bookmarkItems = bookmarks.map { bookmark ->
-                val passage = passageRepository.getPassage(bookmark.passageId).asSuccessOrNull()
+                val passage = getCachedPassage(bookmark.passageId)
                 BookmarkWithPassage(bookmark, passage)
             }
 
             val noteItems = notes.map { note ->
-                val passage = passageRepository.getPassage(note.passageId).asSuccessOrNull()
+                val passage = getCachedPassage(note.passageId)
                 NoteWithPassage(note, passage)
             }
 
             val historyItems = history.map { record ->
-                val passage = passageRepository.getPassage(record.passageId).asSuccessOrNull()
+                val passage = getCachedPassage(record.passageId)
                 HistoryWithPassage(record, passage)
             }
 
@@ -351,7 +363,6 @@ class LibraryViewModel(
         )
     }
 
-
     private fun removeBookmark(passageId: String) {
         viewModelScope.launch {
             userDataRepository.removeBookmark(passageId)
@@ -391,4 +402,3 @@ class LibraryViewModel(
         }
     }
 }
-

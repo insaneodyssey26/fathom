@@ -67,6 +67,8 @@ import androidx.compose.ui.unit.sp
 import com.adamglin.PhosphorIcons
 import com.adamglin.phosphoricons.Regular
 import com.adamglin.phosphoricons.regular.ArrowLeft
+import com.adamglin.phosphoricons.regular.BookBookmark
+import com.adamglin.phosphoricons.regular.BookOpen
 import com.adamglin.phosphoricons.regular.BookmarkSimple
 import com.adamglin.phosphoricons.regular.CalendarCheck
 import com.adamglin.phosphoricons.regular.CaretRight
@@ -98,10 +100,12 @@ import com.masum.fathom.ui.theme.FathomTheme
 import com.masum.fathom.ui.theme.JakartaFontFamily
 import com.masum.fathom.ui.theme.SyneFontFamily
 
-enum class YouSubScreen {
-    HUB,
-    SAVED_PASSAGES,
-    JOURNAL_REFLECTIONS
+sealed interface YouSubScreen {
+    data object Hub : YouSubScreen
+    data object SavedPassages : YouSubScreen
+    data object JournalReflections : YouSubScreen
+    data object TimelineFull : YouSubScreen
+    data class CanonDetail(val traditionId: TraditionId) : YouSubScreen
 }
 
 @Composable
@@ -110,7 +114,7 @@ fun LibraryScreen(
     onEvent: (LibraryUiEvent) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var subScreen by remember { mutableStateOf(YouSubScreen.HUB) }
+    var subScreen by remember { mutableStateOf<YouSubScreen>(YouSubScreen.Hub) }
 
     Column(
         modifier = modifier
@@ -119,7 +123,7 @@ fun LibraryScreen(
     ) {
         when (state) {
             is LibraryUiState.Loading -> {
-                YouTopBar(subScreen = subScreen, onNavigateBack = { subScreen = YouSubScreen.HUB }, state = null)
+                YouTopBar(subScreen = subScreen, onNavigateBack = { subScreen = YouSubScreen.Hub }, state = null)
                 Box(
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center
@@ -148,12 +152,12 @@ fun LibraryScreen(
                     BackHandler { onEvent(LibraryUiEvent.OnCloseContext) }
                 } else if (state.selectedPassageForNote != null) {
                     BackHandler { onEvent(LibraryUiEvent.OnCloseNoteDialog) }
-                } else if (subScreen != YouSubScreen.HUB) {
+                } else if (subScreen != YouSubScreen.Hub) {
                     BackHandler {
                         if (state.searchQuery.isNotEmpty()) {
                             onEvent(LibraryUiEvent.OnSearchQueryChanged(""))
                         }
-                        subScreen = YouSubScreen.HUB
+                        subScreen = YouSubScreen.Hub
                     }
                 } else if (state.searchQuery.isNotEmpty()) {
                     BackHandler { onEvent(LibraryUiEvent.OnSearchQueryChanged("")) }
@@ -165,7 +169,7 @@ fun LibraryScreen(
                         if (state.searchQuery.isNotEmpty()) {
                             onEvent(LibraryUiEvent.OnSearchQueryChanged(""))
                         }
-                        subScreen = YouSubScreen.HUB
+                        subScreen = YouSubScreen.Hub
                     },
                     state = state
                 )
@@ -173,7 +177,7 @@ fun LibraryScreen(
                 AnimatedContent(
                     targetState = subScreen,
                     transitionSpec = {
-                        if (targetState != YouSubScreen.HUB) {
+                        if (targetState != YouSubScreen.Hub) {
                             (slideInHorizontally { width -> width } + fadeIn()).togetherWith(
                                 slideOutHorizontally { width -> -width / 3 } + fadeOut()
                             )
@@ -187,22 +191,28 @@ fun LibraryScreen(
                     modifier = Modifier.weight(1f).fillMaxWidth()
                 ) { currentSubScreen ->
                     when (currentSubScreen) {
-                        YouSubScreen.HUB -> {
+                        is YouSubScreen.Hub -> {
                             YouHubView(
                                 state = state,
                                 onNavigateToSaved = {
                                     onEvent(LibraryUiEvent.OnSelectTab(LibraryTab.BOOKMARKS))
-                                    subScreen = YouSubScreen.SAVED_PASSAGES
+                                    subScreen = YouSubScreen.SavedPassages
                                 },
                                 onNavigateToJournal = {
                                     onEvent(LibraryUiEvent.OnSelectTab(LibraryTab.REFLECTIONS))
-                                    subScreen = YouSubScreen.JOURNAL_REFLECTIONS
+                                    subScreen = YouSubScreen.JournalReflections
+                                },
+                                onNavigateToCanon = { tradition ->
+                                    subScreen = YouSubScreen.CanonDetail(tradition)
+                                },
+                                onNavigateToTimeline = {
+                                    subScreen = YouSubScreen.TimelineFull
                                 },
                                 onEvent = onEvent
                             )
                         }
 
-                        YouSubScreen.SAVED_PASSAGES -> {
+                        is YouSubScreen.SavedPassages -> {
                             Column(modifier = Modifier.fillMaxSize()) {
                                 SearchBarAndFilters(
                                     searchQuery = state.searchQuery,
@@ -214,7 +224,7 @@ fun LibraryScreen(
                             }
                         }
 
-                        YouSubScreen.JOURNAL_REFLECTIONS -> {
+                        is YouSubScreen.JournalReflections -> {
                             Column(modifier = Modifier.fillMaxSize()) {
                                 SearchBarAndFilters(
                                     searchQuery = state.searchQuery,
@@ -224,6 +234,23 @@ fun LibraryScreen(
                                 )
                                 ReflectionsList(state.notes, onEvent)
                             }
+                        }
+
+                        is YouSubScreen.CanonDetail -> {
+                            CanonDetailView(
+                                traditionId = currentSubScreen.traditionId,
+                                history = state.history,
+                                bookmarks = state.bookmarks,
+                                notes = state.notes,
+                                onEvent = onEvent
+                            )
+                        }
+
+                        is YouSubScreen.TimelineFull -> {
+                            FullTimelineView(
+                                history = state.history,
+                                onEvent = onEvent
+                            )
                         }
                     }
                 }
@@ -273,6 +300,14 @@ private fun YouTopBar(
     val subscriptionState = LocalSubscriptionState.current
     val openPaywall = LocalOpenPaywall.current
 
+    val title = when (subScreen) {
+        is YouSubScreen.Hub -> "you"
+        is YouSubScreen.SavedPassages -> "Saved Passages"
+        is YouSubScreen.JournalReflections -> "Sacred Reflections"
+        is YouSubScreen.TimelineFull -> "Reading Timeline"
+        is YouSubScreen.CanonDetail -> "${subScreen.traditionId.displayName} Sanctuary"
+    }
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -282,7 +317,7 @@ private fun YouTopBar(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        if (subScreen == YouSubScreen.HUB) {
+        if (subScreen is YouSubScreen.Hub) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(0.dp)
@@ -317,11 +352,13 @@ private fun YouTopBar(
                     )
                 }
                 Text(
-                    text = if (subScreen == YouSubScreen.SAVED_PASSAGES) "Saved Passages" else "Sacred Reflections",
+                    text = title,
                     fontFamily = SyneFontFamily,
                     fontWeight = FontWeight.Bold,
-                    fontSize = 18.sp,
-                    color = FathomTheme.colors.textPrimary
+                    fontSize = 17.5.sp,
+                    color = FathomTheme.colors.textPrimary,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
             }
         }
@@ -330,7 +367,7 @@ private fun YouTopBar(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            if (state != null && subScreen == YouSubScreen.HUB) {
+            if (state != null && subScreen is YouSubScreen.Hub) {
                 Row(
                     modifier = Modifier
                         .clip(RoundedCornerShape(20.dp))
@@ -417,6 +454,8 @@ private fun YouHubView(
     state: LibraryUiState.Success,
     onNavigateToSaved: () -> Unit,
     onNavigateToJournal: () -> Unit,
+    onNavigateToCanon: (TraditionId) -> Unit,
+    onNavigateToTimeline: () -> Unit,
     onEvent: (LibraryUiEvent) -> Unit
 ) {
     val subscriptionState = LocalSubscriptionState.current
@@ -776,6 +815,8 @@ private fun YouHubView(
                 streakDays = state.currentStreakDays,
                 weeklyHeatmap = state.weeklyHeatmap,
                 milestoneBadges = state.milestoneBadges,
+                onNavigateToCanon = onNavigateToCanon,
+                onNavigateToTimeline = onNavigateToTimeline,
                 onEvent = onEvent
             )
         }
@@ -789,6 +830,8 @@ private fun HistoryStatsContent(
     streakDays: Int,
     weeklyHeatmap: List<HeatmapDay>,
     milestoneBadges: List<MilestoneBadge>,
+    onNavigateToCanon: (TraditionId) -> Unit,
+    onNavigateToTimeline: () -> Unit,
     onEvent: (LibraryUiEvent) -> Unit
 ) {
     val context = LocalContext.current
@@ -902,54 +945,81 @@ private fun HistoryStatsContent(
             }
         }
 
-        if (traditionCounts.isNotEmpty()) {
-            Spacer(modifier = Modifier.height(20.dp))
+        Spacer(modifier = Modifier.height(20.dp))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
             Text(
                 text = "CANONS EXPLORED",
                 style = FathomTheme.typography.canonicalHeader,
                 color = FathomTheme.colors.accentGold
             )
-            Spacer(modifier = Modifier.height(8.dp))
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .horizontalScroll(rememberScrollState()),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                traditionCounts.forEach { (tradition, count) ->
-                    Row(
+            Text(
+                text = "Tap canon to view",
+                fontFamily = JakartaFontFamily,
+                fontSize = 10.5.sp,
+                color = FathomTheme.colors.textTertiary
+            )
+        }
+        Spacer(modifier = Modifier.height(10.dp))
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            TraditionId.entries.forEach { tradition ->
+                val count = traditionCounts[tradition] ?: 0
+                val isExplored = count > 0
+
+                Row(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(
+                            if (isExplored) FathomTheme.colors.surfaceElevated
+                            else FathomTheme.colors.surface.copy(alpha = 0.5f)
+                        )
+                        .border(
+                            width = 1.dp,
+                            color = if (isExplored) FathomTheme.colors.accentGold.copy(alpha = 0.4f) else FathomTheme.colors.borderSubtle,
+                            shape = RoundedCornerShape(12.dp)
+                        )
+                        .clickable { onNavigateToCanon(tradition) }
+                        .padding(horizontal = 12.dp, vertical = 9.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(
+                        text = tradition.displayName.uppercase(),
+                        style = FathomTheme.typography.traditionBadge,
+                        color = if (isExplored) FathomTheme.colors.accentGold else FathomTheme.colors.textTertiary
+                    )
+                    Box(
                         modifier = Modifier
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(FathomTheme.colors.surfaceElevated)
-                            .border(
-                                width = 1.dp,
-                                color = FathomTheme.colors.borderSubtle,
-                                shape = RoundedCornerShape(8.dp)
+                            .clip(RoundedCornerShape(6.dp))
+                            .background(
+                                if (isExplored) FathomTheme.colors.accentGold.copy(alpha = 0.16f)
+                                else FathomTheme.colors.surfaceElevated
                             )
-                            .padding(horizontal = 10.dp, vertical = 6.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            .padding(horizontal = 6.dp, vertical = 2.dp)
                     ) {
                         Text(
-                            text = tradition.displayName.uppercase(),
-                            style = FathomTheme.typography.traditionBadge,
-                            color = FathomTheme.colors.accentGold
+                            text = "$count",
+                            fontFamily = JakartaFontFamily,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 10.5.sp,
+                            color = if (isExplored) FathomTheme.colors.accentGold else FathomTheme.colors.textTertiary
                         )
-                        Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(4.dp))
-                                .background(FathomTheme.colors.accentGold.copy(alpha = 0.15f))
-                                .padding(horizontal = 6.dp, vertical = 2.dp)
-                        ) {
-                            Text(
-                                text = "$count",
-                                fontFamily = JakartaFontFamily,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 10.5.sp,
-                                color = FathomTheme.colors.accentGold
-                            )
-                        }
                     }
+                    Icon(
+                        imageVector = PhosphorIcons.Regular.CaretRight,
+                        contentDescription = null,
+                        tint = if (isExplored) FathomTheme.colors.accentGold.copy(alpha = 0.6f) else FathomTheme.colors.textTertiary,
+                        modifier = Modifier.size(12.dp)
+                    )
                 }
             }
         }
@@ -1100,19 +1170,51 @@ private fun HistoryStatsContent(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                text = "CHRONOLOGICAL TIMELINE",
-                style = FathomTheme.typography.canonicalHeader,
-                color = FathomTheme.colors.accentGold
-            )
-            Icon(
-                imageVector = PhosphorIcons.Regular.ClockCounterClockwise,
-                contentDescription = null,
-                tint = FathomTheme.colors.textTertiary,
-                modifier = Modifier.size(14.dp)
-            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                Icon(
+                    imageVector = PhosphorIcons.Regular.ClockCounterClockwise,
+                    contentDescription = null,
+                    tint = FathomTheme.colors.accentGold,
+                    modifier = Modifier.size(14.dp)
+                )
+                Text(
+                    text = "RECENT CONTEMPLATIONS",
+                    style = FathomTheme.typography.canonicalHeader,
+                    color = FathomTheme.colors.accentGold
+                )
+            }
+
+            if (history.isNotEmpty()) {
+                TextButton(
+                    onClick = onNavigateToTimeline,
+                    contentPadding = PaddingValues(horizontal = 4.dp, vertical = 0.dp)
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(2.dp)
+                    ) {
+                        Text(
+                            text = "VIEW ALL (${history.size})",
+                            fontFamily = JakartaFontFamily,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 10.5.sp,
+                            letterSpacing = 0.6.sp,
+                            color = FathomTheme.colors.accentGold
+                        )
+                        Icon(
+                            imageVector = PhosphorIcons.Regular.CaretRight,
+                            contentDescription = null,
+                            tint = FathomTheme.colors.accentGold,
+                            modifier = Modifier.size(12.dp)
+                        )
+                    }
+                }
+            }
         }
-        Spacer(modifier = Modifier.height(10.dp))
+        Spacer(modifier = Modifier.height(8.dp))
 
         if (history.isEmpty()) {
             Box(
@@ -1151,148 +1253,8 @@ private fun HistoryStatsContent(
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                history.take(15).forEach { item ->
-                    val passage = item.passage
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(14.dp))
-                            .background(FathomTheme.colors.surfaceElevated)
-                            .border(
-                                width = 1.dp,
-                                color = FathomTheme.colors.borderSubtle,
-                                shape = RoundedCornerShape(14.dp)
-                            )
-                            .clickable {
-                                passage?.let { onEvent(LibraryUiEvent.OnOpenContext(it)) }
-                            }
-                            .padding(16.dp)
-                    ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                passage?.let {
-                                    TraditionBadge(traditionId = it.traditionId)
-                                    Text(
-                                        text = it.canonicalReference,
-                                        style = FathomTheme.typography.canonicalHeader,
-                                        color = FathomTheme.colors.textSecondary
-                                    )
-                                } ?: Text(
-                                    text = item.record.passageId,
-                                    style = FathomTheme.typography.canonicalHeader,
-                                    color = FathomTheme.colors.textSecondary
-                                )
-                            }
-
-                            if (item.record.readCount > 1) {
-                                Box(
-                                    modifier = Modifier
-                                        .clip(RoundedCornerShape(6.dp))
-                                        .background(FathomTheme.colors.accentGold.copy(alpha = 0.14f))
-                                        .padding(horizontal = 6.dp, vertical = 2.dp)
-                                ) {
-                                    Text(
-                                        text = "${item.record.readCount}× READ",
-                                        fontFamily = JakartaFontFamily,
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 9.5.sp,
-                                        letterSpacing = 0.5.sp,
-                                        color = FathomTheme.colors.accentGold
-                                    )
-                                }
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.height(10.dp))
-
-                        Text(
-                            text = passage?.translation ?: "Passage text",
-                            style = FathomTheme.typography.verseDisplay.copy(
-                                fontSize = 15.sp,
-                                lineHeight = 23.sp
-                            ),
-                            color = FathomTheme.colors.textPrimary,
-                            maxLines = 4,
-                            overflow = TextOverflow.Ellipsis
-                        )
-
-                        SacredDivider(modifier = Modifier.padding(vertical = 8.dp))
-
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                                IconButton(
-                                    onClick = {
-                                        passage?.let {
-                                            copyToClipboard(context, "${it.translation}\n— ${it.canonicalReference}")
-                                        }
-                                    },
-                                    modifier = Modifier.size(32.dp)
-                                ) {
-                                    Icon(
-                                        imageVector = PhosphorIcons.Regular.Copy,
-                                        contentDescription = "Copy Passage",
-                                        tint = FathomTheme.colors.textSecondary,
-                                        modifier = Modifier.size(16.dp)
-                                    )
-                                }
-
-                                IconButton(
-                                    onClick = {
-                                        passage?.let {
-                                            onEvent(LibraryUiEvent.OnOpenShare(it))
-                                        }
-                                    },
-                                    modifier = Modifier.size(32.dp)
-                                ) {
-                                    Icon(
-                                        imageVector = PhosphorIcons.Regular.ShareNetwork,
-                                        contentDescription = "Share Quote Card",
-                                        tint = FathomTheme.colors.textSecondary,
-                                        modifier = Modifier.size(16.dp)
-                                    )
-                                }
-
-                                IconButton(
-                                    onClick = {
-                                        passage?.let { onEvent(LibraryUiEvent.OnOpenNoteDialog(it)) }
-                                    },
-                                    modifier = Modifier.size(32.dp)
-                                ) {
-                                    Icon(
-                                        imageVector = PhosphorIcons.Regular.NotePencil,
-                                        contentDescription = "Write Reflection",
-                                        tint = FathomTheme.colors.textSecondary,
-                                        modifier = Modifier.size(16.dp)
-                                    )
-                                }
-                            }
-
-                            TextButton(
-                                onClick = { passage?.let { onEvent(LibraryUiEvent.OnOpenContext(it)) } },
-                                contentPadding = PaddingValues(horizontal = 8.dp)
-                            ) {
-                                Text(
-                                    text = "EXEGESIS",
-                                    fontFamily = JakartaFontFamily,
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 11.5.sp,
-                                    letterSpacing = 0.8.sp,
-                                    color = FathomTheme.colors.accentGold
-                                )
-                            }
-                        }
-                    }
+                history.take(4).forEach { item ->
+                    PassageHistoryCard(item = item, onEvent = onEvent)
                 }
             }
         }
@@ -1342,6 +1304,590 @@ private fun HistoryStatsContent(
                 lineHeight = 20.sp,
                 color = FathomTheme.colors.textSecondary
             )
+        }
+    }
+}
+
+@Composable
+private fun CanonDetailView(
+    traditionId: TraditionId,
+    history: List<HistoryWithPassage>,
+    bookmarks: List<BookmarkWithPassage>,
+    notes: List<NoteWithPassage>,
+    onEvent: (LibraryUiEvent) -> Unit
+) {
+    val canonHistory = remember(history, traditionId) {
+        history.filter { it.passage?.traditionId == traditionId }
+    }
+    val canonBookmarks = remember(bookmarks, traditionId) {
+        bookmarks.filter { it.passage?.traditionId == traditionId }
+    }
+    val canonNotes = remember(notes, traditionId) {
+        notes.filter { it.passage?.traditionId == traditionId }
+    }
+
+    var selectedSection by remember { mutableStateOf(0) }
+
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(start = 20.dp, top = 12.dp, end = 20.dp, bottom = 96.dp)
+    ) {
+        item {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(18.dp))
+                    .background(
+                        Brush.linearGradient(
+                            listOf(
+                                FathomTheme.colors.accentGold.copy(alpha = 0.16f),
+                                FathomTheme.colors.surfaceElevated
+                            )
+                        )
+                    )
+                    .border(
+                        width = 1.dp,
+                        color = FathomTheme.colors.accentGold.copy(alpha = 0.35f),
+                        shape = RoundedCornerShape(18.dp)
+                    )
+                    .padding(18.dp)
+            ) {
+                Column {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        TraditionBadge(traditionId = traditionId)
+                        Text(
+                            text = "${canonHistory.size} Verses Studied",
+                            fontFamily = JakartaFontFamily,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 12.sp,
+                            color = FathomTheme.colors.accentGold
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    Text(
+                        text = "${traditionId.displayName} Sanctuary",
+                        fontFamily = SyneFontFamily,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 20.sp,
+                        color = FathomTheme.colors.textPrimary
+                    )
+
+                    Spacer(modifier = Modifier.height(14.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceAround,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(
+                                text = "${canonHistory.size}",
+                                fontFamily = SyneFontFamily,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 20.sp,
+                                color = FathomTheme.colors.accentGold
+                            )
+                            Text(
+                                text = "READ",
+                                fontFamily = JakartaFontFamily,
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 10.sp,
+                                letterSpacing = 0.8.sp,
+                                color = FathomTheme.colors.textTertiary
+                            )
+                        }
+
+                        Box(
+                            modifier = Modifier
+                                .width(1.dp)
+                                .height(24.dp)
+                                .background(FathomTheme.colors.borderSubtle)
+                        )
+
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(
+                                text = "${canonBookmarks.size}",
+                                fontFamily = SyneFontFamily,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 20.sp,
+                                color = FathomTheme.colors.textPrimary
+                            )
+                            Text(
+                                text = "SAVED",
+                                fontFamily = JakartaFontFamily,
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 10.sp,
+                                letterSpacing = 0.8.sp,
+                                color = FathomTheme.colors.textTertiary
+                            )
+                        }
+
+                        Box(
+                            modifier = Modifier
+                                .width(1.dp)
+                                .height(24.dp)
+                                .background(FathomTheme.colors.borderSubtle)
+                        )
+
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(
+                                text = "${canonNotes.size}",
+                                fontFamily = SyneFontFamily,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 20.sp,
+                                color = FathomTheme.colors.textPrimary
+                            )
+                            Text(
+                                text = "REFLECTIONS",
+                                fontFamily = JakartaFontFamily,
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 10.sp,
+                                letterSpacing = 0.8.sp,
+                                color = FathomTheme.colors.textTertiary
+                            )
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                val sections = listOf("VERSES READ (${canonHistory.size})", "SAVED (${canonBookmarks.size})", "JOURNAL (${canonNotes.size})")
+                sections.forEachIndexed { index, label ->
+                    val isSelected = selectedSection == index
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(if (isSelected) FathomTheme.colors.accentGold.copy(alpha = 0.18f) else FathomTheme.colors.surfaceElevated)
+                            .border(
+                                width = 1.dp,
+                                color = if (isSelected) FathomTheme.colors.accentGold else FathomTheme.colors.borderSubtle,
+                                shape = RoundedCornerShape(12.dp)
+                            )
+                            .clickable { selectedSection = index }
+                            .padding(vertical = 8.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = label,
+                            fontFamily = JakartaFontFamily,
+                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                            fontSize = 10.sp,
+                            letterSpacing = 0.5.sp,
+                            color = if (isSelected) FathomTheme.colors.accentGold else FathomTheme.colors.textSecondary,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(14.dp))
+        }
+
+        when (selectedSection) {
+            0 -> {
+                if (canonHistory.isEmpty()) {
+                    item {
+                        EmptyCanonState(
+                            title = "No Verses Read in ${traditionId.displayName}",
+                            body = "Passages you explore from ${traditionId.displayName} will be recorded here."
+                        )
+                    }
+                } else {
+                    items(canonHistory, key = { it.record.passageId }) { item ->
+                        PassageHistoryCard(item = item, onEvent = onEvent)
+                        Spacer(modifier = Modifier.height(10.dp))
+                    }
+                }
+            }
+
+            1 -> {
+                if (canonBookmarks.isEmpty()) {
+                    item {
+                        EmptyCanonState(
+                            title = "No Bookmarks in ${traditionId.displayName}",
+                            body = "Bookmark any passage from ${traditionId.displayName} to save it here."
+                        )
+                    }
+                } else {
+                    items(canonBookmarks, key = { it.bookmark.id }) { item ->
+                        val historyEquivalent = HistoryWithPassage(
+                            record = com.masum.fathom.core.model.user.ReadingRecord(
+                                passageId = item.bookmark.passageId,
+                                bookId = item.passage?.bookId ?: "",
+                                firstSeenAtEpochMs = item.bookmark.createdAtEpochMs,
+                                lastSeenAtEpochMs = item.bookmark.createdAtEpochMs,
+                                readCount = 1,
+                                isCompleted = false
+                            ),
+                            passage = item.passage
+                        )
+                        PassageHistoryCard(item = historyEquivalent, onEvent = onEvent)
+                        Spacer(modifier = Modifier.height(10.dp))
+                    }
+                }
+            }
+
+            2 -> {
+                if (canonNotes.isEmpty()) {
+                    item {
+                        EmptyCanonState(
+                            title = "No Notes in ${traditionId.displayName}",
+                            body = "Marginalia reflections written on ${traditionId.displayName} verses will appear here."
+                        )
+                    }
+                } else {
+                    items(canonNotes, key = { it.note.id }) { item ->
+                        ReflectionsItemCard(item = item, onEvent = onEvent)
+                        Spacer(modifier = Modifier.height(10.dp))
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun FullTimelineView(
+    history: List<HistoryWithPassage>,
+    onEvent: (LibraryUiEvent) -> Unit
+) {
+    var searchQuery by remember { mutableStateOf("") }
+    var selectedTradition by remember { mutableStateOf<TraditionId?>(null) }
+
+    val filteredHistory = remember(history, searchQuery, selectedTradition) {
+        history.filter { item ->
+            val matchesTradition = selectedTradition == null || item.passage?.traditionId == selectedTradition
+            val matchesQuery = searchQuery.isBlank() || (item.passage?.translation?.contains(searchQuery, ignoreCase = true) == true ||
+                    item.passage?.canonicalReference?.contains(searchQuery, ignoreCase = true) == true)
+            matchesTradition && matchesQuery
+        }
+    }
+
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(start = 20.dp, top = 8.dp, end = 20.dp, bottom = 96.dp)
+    ) {
+        item {
+            SearchBarAndFilters(
+                searchQuery = searchQuery,
+                selectedTradition = selectedTradition,
+                onQueryChange = { searchQuery = it },
+                onTraditionSelect = { selectedTradition = it }
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+        }
+
+        if (filteredHistory.isEmpty()) {
+            item {
+                Box(
+                    modifier = Modifier.fillMaxWidth().padding(32.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "No reading records match your filter.",
+                        style = FathomTheme.typography.commentaryBody,
+                        color = FathomTheme.colors.textTertiary,
+                        textAlign = TextAlign.Center
+                    )
+                }
+            }
+        } else {
+            items(filteredHistory, key = { it.record.passageId }) { item ->
+                PassageHistoryCard(item = item, onEvent = onEvent)
+                Spacer(modifier = Modifier.height(10.dp))
+            }
+        }
+    }
+}
+
+@Composable
+private fun EmptyCanonState(title: String, body: String) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(14.dp))
+            .background(FathomTheme.colors.surfaceElevated)
+            .border(
+                width = 1.dp,
+                color = FathomTheme.colors.borderSubtle,
+                shape = RoundedCornerShape(14.dp)
+            )
+            .padding(24.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(
+                text = title,
+                fontFamily = SyneFontFamily,
+                fontWeight = FontWeight.Bold,
+                fontSize = 16.sp,
+                color = FathomTheme.colors.textPrimary
+            )
+            Spacer(modifier = Modifier.height(6.dp))
+            Text(
+                text = body,
+                fontFamily = JakartaFontFamily,
+                fontSize = 13.sp,
+                color = FathomTheme.colors.textTertiary,
+                textAlign = TextAlign.Center
+            )
+        }
+    }
+}
+
+@Composable
+private fun PassageHistoryCard(
+    item: HistoryWithPassage,
+    onEvent: (LibraryUiEvent) -> Unit
+) {
+    val context = LocalContext.current
+    val passage = item.passage
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(14.dp))
+            .background(FathomTheme.colors.surfaceElevated)
+            .border(
+                width = 1.dp,
+                color = FathomTheme.colors.borderSubtle,
+                shape = RoundedCornerShape(14.dp)
+            )
+            .clickable {
+                passage?.let { onEvent(LibraryUiEvent.OnOpenContext(it)) }
+            }
+            .padding(16.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                passage?.let {
+                    TraditionBadge(traditionId = it.traditionId)
+                    Text(
+                        text = it.canonicalReference,
+                        style = FathomTheme.typography.canonicalHeader,
+                        color = FathomTheme.colors.textSecondary
+                    )
+                } ?: Text(
+                    text = item.record.passageId,
+                    style = FathomTheme.typography.canonicalHeader,
+                    color = FathomTheme.colors.textSecondary
+                )
+            }
+
+            if (item.record.readCount > 1) {
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(6.dp))
+                        .background(FathomTheme.colors.accentGold.copy(alpha = 0.14f))
+                        .padding(horizontal = 6.dp, vertical = 2.dp)
+                ) {
+                    Text(
+                        text = "${item.record.readCount}× READ",
+                        fontFamily = JakartaFontFamily,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 9.5.sp,
+                        letterSpacing = 0.5.sp,
+                        color = FathomTheme.colors.accentGold
+                    )
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(10.dp))
+
+        Text(
+            text = passage?.translation ?: "Passage text",
+            style = FathomTheme.typography.verseDisplay.copy(
+                fontSize = 15.sp,
+                lineHeight = 23.sp
+            ),
+            color = FathomTheme.colors.textPrimary,
+            maxLines = 4,
+            overflow = TextOverflow.Ellipsis
+        )
+
+        SacredDivider(modifier = Modifier.padding(vertical = 8.dp))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                IconButton(
+                    onClick = {
+                        passage?.let {
+                            copyToClipboard(context, "${it.translation}\n— ${it.canonicalReference}")
+                        }
+                    },
+                    modifier = Modifier.size(32.dp)
+                ) {
+                    Icon(
+                        imageVector = PhosphorIcons.Regular.Copy,
+                        contentDescription = "Copy Passage",
+                        tint = FathomTheme.colors.textSecondary,
+                        modifier = Modifier.size(16.dp)
+                    )
+                }
+
+                IconButton(
+                    onClick = {
+                        passage?.let {
+                            onEvent(LibraryUiEvent.OnOpenShare(it))
+                        }
+                    },
+                    modifier = Modifier.size(32.dp)
+                ) {
+                    Icon(
+                        imageVector = PhosphorIcons.Regular.ShareNetwork,
+                        contentDescription = "Share Quote Card",
+                        tint = FathomTheme.colors.textSecondary,
+                        modifier = Modifier.size(16.dp)
+                    )
+                }
+
+                IconButton(
+                    onClick = {
+                        passage?.let { onEvent(LibraryUiEvent.OnOpenNoteDialog(it)) }
+                    },
+                    modifier = Modifier.size(32.dp)
+                ) {
+                    Icon(
+                        imageVector = PhosphorIcons.Regular.NotePencil,
+                        contentDescription = "Write Reflection",
+                        tint = FathomTheme.colors.textSecondary,
+                        modifier = Modifier.size(16.dp)
+                    )
+                }
+            }
+
+            TextButton(
+                onClick = { passage?.let { onEvent(LibraryUiEvent.OnOpenContext(it)) } },
+                contentPadding = PaddingValues(horizontal = 8.dp)
+            ) {
+                Text(
+                    text = "EXEGESIS",
+                    fontFamily = JakartaFontFamily,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 11.5.sp,
+                    letterSpacing = 0.8.sp,
+                    color = FathomTheme.colors.accentGold
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ReflectionsItemCard(
+    item: NoteWithPassage,
+    onEvent: (LibraryUiEvent) -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(14.dp))
+            .background(FathomTheme.colors.surfaceElevated)
+            .border(
+                width = 1.dp,
+                color = FathomTheme.colors.borderSubtle,
+                shape = RoundedCornerShape(14.dp)
+            )
+            .padding(16.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            item.passage?.let {
+                TraditionBadge(traditionId = it.traditionId)
+                Text(
+                    text = it.canonicalReference,
+                    style = FathomTheme.typography.canonicalHeader,
+                    color = FathomTheme.colors.textSecondary
+                )
+            }
+
+            IconButton(
+                onClick = { onEvent(LibraryUiEvent.OnDeleteNote(item.note.id)) },
+                modifier = Modifier.size(28.dp)
+            ) {
+                Icon(
+                    imageVector = PhosphorIcons.Regular.TrashSimple,
+                    contentDescription = "Delete Reflection",
+                    tint = FathomTheme.colors.textTertiary,
+                    modifier = Modifier.size(16.dp)
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(10.dp))
+
+        Text(
+            text = "“${item.passage?.translation ?: ""}”",
+            style = FathomTheme.typography.verseOriginal.copy(
+                fontSize = 14.5.sp,
+                lineHeight = 22.sp
+            ),
+            color = FathomTheme.colors.textTertiary,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis
+        )
+
+        SacredDivider(modifier = Modifier.padding(vertical = 10.dp))
+
+        Text(
+            text = item.note.content,
+            style = FathomTheme.typography.commentaryBody.copy(
+                fontFamily = JakartaFontFamily,
+                fontSize = 15.sp,
+                lineHeight = 23.sp
+            ),
+            color = FathomTheme.colors.textPrimary
+        )
+
+        Spacer(modifier = Modifier.height(10.dp))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.End
+        ) {
+            item.passage?.let { p ->
+                TextButton(
+                    onClick = { onEvent(LibraryUiEvent.OnOpenContext(p)) },
+                    contentPadding = PaddingValues(horizontal = 4.dp)
+                ) {
+                    Text(
+                        text = "OPEN CONTEXT",
+                        fontFamily = JakartaFontFamily,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 11.5.sp,
+                        letterSpacing = 0.8.sp,
+                        color = FathomTheme.colors.accentGold
+                    )
+                }
+            }
         }
     }
 }
@@ -1799,93 +2345,7 @@ private fun ReflectionsList(
             contentPadding = PaddingValues(start = 20.dp, top = 14.dp, end = 20.dp, bottom = 96.dp)
         ) {
             items(notes, key = { it.note.id }) { item ->
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(14.dp))
-                        .background(FathomTheme.colors.surfaceElevated)
-                        .border(
-                            width = 1.dp,
-                            color = FathomTheme.colors.borderSubtle,
-                            shape = RoundedCornerShape(14.dp)
-                        )
-                        .padding(16.dp)
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        item.passage?.let {
-                            TraditionBadge(traditionId = it.traditionId)
-                            Text(
-                                text = it.canonicalReference,
-                                style = FathomTheme.typography.canonicalHeader,
-                                color = FathomTheme.colors.textSecondary
-                            )
-                        }
-
-                        IconButton(
-                            onClick = { onEvent(LibraryUiEvent.OnDeleteNote(item.note.id)) },
-                            modifier = Modifier.size(28.dp)
-                        ) {
-                            Icon(
-                                imageVector = PhosphorIcons.Regular.TrashSimple,
-                                contentDescription = "Delete Reflection",
-                                tint = FathomTheme.colors.textTertiary,
-                                modifier = Modifier.size(16.dp)
-                            )
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(10.dp))
-
-                    Text(
-                        text = "“${item.passage?.translation ?: ""}”",
-                        style = FathomTheme.typography.verseOriginal.copy(
-                            fontSize = 14.5.sp,
-                            lineHeight = 22.sp
-                        ),
-                        color = FathomTheme.colors.textTertiary,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis
-                    )
-
-                    SacredDivider(modifier = Modifier.padding(vertical = 10.dp))
-
-                    Text(
-                        text = item.note.content,
-                        style = FathomTheme.typography.commentaryBody.copy(
-                            fontFamily = JakartaFontFamily,
-                            fontSize = 15.sp,
-                            lineHeight = 23.sp
-                        ),
-                        color = FathomTheme.colors.textPrimary
-                    )
-
-                    Spacer(modifier = Modifier.height(10.dp))
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.End
-                    ) {
-                        item.passage?.let { p ->
-                            TextButton(
-                                onClick = { onEvent(LibraryUiEvent.OnOpenContext(p)) },
-                                contentPadding = PaddingValues(horizontal = 4.dp)
-                            ) {
-                                Text(
-                                    text = "OPEN CONTEXT",
-                                    fontFamily = JakartaFontFamily,
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 11.5.sp,
-                                    letterSpacing = 0.8.sp,
-                                    color = FathomTheme.colors.accentGold
-                                )
-                            }
-                        }
-                    }
-                }
+                ReflectionsItemCard(item = item, onEvent = onEvent)
                 Spacer(modifier = Modifier.height(12.dp))
             }
         }
