@@ -158,9 +158,9 @@ class SearchViewModel(
         viewModelScope.launch {
             when (val result = passageRepository.getPassagesForBookChapter(currentBook.id, chapter)) {
                 is FathomResult.Success -> {
-                    val newMap = _uiState.value.chapterPassagesMap + (chapter to result.data)
-                    _uiState.update {
-                        it.copy(
+                    _uiState.update { currentState ->
+                        val newMap = currentState.chapterPassagesMap + (chapter to result.data)
+                        currentState.copy(
                             chapterPassages = result.data,
                             chapterPassagesMap = newMap,
                             isLoadingChapter = false

@@ -2,6 +2,8 @@ package com.masum.fathom.ui.search
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -12,6 +14,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -1000,6 +1003,7 @@ private fun ChapterReaderView(
     bookmarkedIds: Set<String>,
     onEvent: (SearchUiEvent) -> Unit
 ) {
+    val haptics = LocalFathomHaptics.current
     val coroutineScope = rememberCoroutineScope()
     val chapterScrollState = rememberLazyListState()
 
@@ -1013,21 +1017,20 @@ private fun ChapterReaderView(
         pageCount = { chapters.size }
     )
 
-    LaunchedEffect(pagerState) {
-        snapshotFlow { pagerState.currentPage }
-            .collect { page ->
-                if (page in chapters.indices) {
-                    val targetChapter = chapters[page]
-                    if (targetChapter != selectedChapter) {
-                        onEvent(SearchUiEvent.OnSelectChapter(targetChapter))
-                    }
-                    chapterScrollState.animateScrollToItem(page)
-                }
+    LaunchedEffect(pagerState.currentPage, chapters) {
+        if (chapters.isNotEmpty() && pagerState.currentPage in chapters.indices) {
+            val targetChapter = chapters[pagerState.currentPage]
+            if (targetChapter != selectedChapter) {
+                haptics.light()
+                onEvent(SearchUiEvent.OnSelectChapter(targetChapter))
             }
+            val targetScrollIndex = (pagerState.currentPage - 1).coerceAtLeast(0)
+            chapterScrollState.animateScrollToItem(targetScrollIndex)
+        }
     }
 
-    LaunchedEffect(selectedChapter) {
-        if (selectedChapter != null) {
+    LaunchedEffect(selectedChapter, chapters) {
+        if (selectedChapter != null && chapters.isNotEmpty()) {
             val targetPage = chapters.indexOf(selectedChapter)
             if (targetPage >= 0 && targetPage != pagerState.currentPage) {
                 pagerState.scrollToPage(targetPage)
@@ -1094,7 +1097,8 @@ private fun ChapterReaderView(
                 LazyRow(
                     state = chapterScrollState,
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    contentPadding = PaddingValues(horizontal = 4.dp)
                 ) {
                     items(chapters.size, key = { chapters[it] }) { index ->
                         val chapter = chapters[index]
@@ -1105,28 +1109,55 @@ private fun ChapterReaderView(
                             TraditionId.STOICISM -> "BOOK"
                             else -> "CH"
                         }
+
+                        val animatedBg by animateColorAsState(
+                            targetValue = if (isSelected) FathomTheme.colors.accentGold.copy(alpha = 0.22f) else FathomTheme.colors.surfaceElevated,
+                            animationSpec = tween(durationMillis = 220, easing = FastOutSlowInEasing),
+                            label = "chapter_tab_bg"
+                        )
+                        val animatedBorder by animateColorAsState(
+                            targetValue = if (isSelected) FathomTheme.colors.accentGold else FathomTheme.colors.borderSubtle,
+                            animationSpec = tween(durationMillis = 220, easing = FastOutSlowInEasing),
+                            label = "chapter_tab_border"
+                        )
+                        val animatedTextColor by animateColorAsState(
+                            targetValue = if (isSelected) FathomTheme.colors.accentGold else FathomTheme.colors.textSecondary,
+                            animationSpec = tween(durationMillis = 220, easing = FastOutSlowInEasing),
+                            label = "chapter_tab_text"
+                        )
+
+                        val interactionSource = remember { MutableInteractionSource() }
+
                         Box(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(14.dp))
-                                .background(if (isSelected) FathomTheme.colors.accentGold.copy(alpha = 0.22f) else FathomTheme.colors.surfaceElevated)
+                                .background(animatedBg)
                                 .border(
                                     width = 1.dp,
-                                    color = if (isSelected) FathomTheme.colors.accentGold else FathomTheme.colors.borderSubtle,
+                                    color = animatedBorder,
                                     shape = RoundedCornerShape(14.dp)
                                 )
-                                .clickable {
-                                    coroutineScope.launch {
-                                        pagerState.animateScrollToPage(index)
+                                .clickable(
+                                    interactionSource = interactionSource,
+                                    indication = null
+                                ) {
+                                    if (pagerState.currentPage != index) {
+                                        haptics.light()
+                                        coroutineScope.launch {
+                                            pagerState.scrollToPage(index)
+                                        }
+                                        onEvent(SearchUiEvent.OnSelectChapter(chapter))
                                     }
                                 }
-                                .padding(horizontal = 14.dp, vertical = 7.dp)
+                                .padding(horizontal = 14.dp, vertical = 7.dp),
+                            contentAlignment = Alignment.Center
                         ) {
                             Text(
                                 text = "$prefix $chapter",
                                 fontFamily = JakartaFontFamily,
-                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                fontWeight = FontWeight.SemiBold,
                                 fontSize = 11.5.sp,
-                                color = if (isSelected) FathomTheme.colors.accentGold else FathomTheme.colors.textSecondary
+                                color = animatedTextColor
                             )
                         }
                     }
@@ -1143,17 +1174,28 @@ private fun ChapterReaderView(
         ) {
             HorizontalPager(
                 state = pagerState,
+                key = { page -> if (page in chapters.indices) chapters[page] else page },
                 modifier = Modifier.fillMaxSize()
             ) { page ->
                 val currentCh = if (page in chapters.indices) chapters[page] else null
                 val passages = currentCh?.let { chapterPassagesMap[it] } ?: emptyList()
+                val isChapterLoading = isLoading && selectedChapter == currentCh
 
-                if (passages.isEmpty() && isLoading) {
+                if (passages.isEmpty()) {
                     Box(
                         modifier = Modifier.fillMaxSize(),
                         contentAlignment = Alignment.Center
                     ) {
-                        CircularProgressIndicator(color = FathomTheme.colors.accentGold)
+                        if (isChapterLoading || isLoading) {
+                            CircularProgressIndicator(color = FathomTheme.colors.accentGold)
+                        } else {
+                            Text(
+                                text = "No verses found in this chapter",
+                                fontFamily = JakartaFontFamily,
+                                fontSize = 13.sp,
+                                color = FathomTheme.colors.textSecondary
+                            )
+                        }
                     }
                 } else {
                     LazyColumn(
