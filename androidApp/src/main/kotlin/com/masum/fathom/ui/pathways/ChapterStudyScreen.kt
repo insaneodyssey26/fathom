@@ -86,7 +86,6 @@ import com.masum.fathom.core.model.Passage
 import com.masum.fathom.ui.components.SacredDivider
 import com.masum.fathom.ui.theme.FathomTheme
 import com.masum.fathom.ui.theme.JakartaFontFamily
-import com.masum.fathom.ui.theme.SyneFontFamily
 import kotlinx.coroutines.launch
 
 @Composable
@@ -192,7 +191,7 @@ fun ChapterStudyScreen(
                         )
                         Text(
                             text = chapterTitle,
-                            fontFamily = SyneFontFamily,
+                            fontFamily = JakartaFontFamily,
                             fontWeight = FontWeight.Bold,
                             fontSize = 15.sp,
                             color = FathomTheme.colors.textPrimary,
@@ -407,7 +406,7 @@ fun ChapterStudyScreen(
                                     )
                                     Text(
                                         text = "PREVIOUS",
-                                        fontFamily = SyneFontFamily,
+                                        fontFamily = JakartaFontFamily,
                                         fontWeight = FontWeight.Bold,
                                         fontSize = 12.sp,
                                         letterSpacing = 1.sp
@@ -442,7 +441,7 @@ fun ChapterStudyScreen(
                                 ) {
                                     Text(
                                         text = "CONTINUE",
-                                        fontFamily = SyneFontFamily,
+                                        fontFamily = JakartaFontFamily,
                                         fontWeight = FontWeight.Bold,
                                         fontSize = 12.sp,
                                         letterSpacing = 1.sp
@@ -480,7 +479,7 @@ fun ChapterStudyScreen(
                                     )
                                     Text(
                                         text = "MASTER CHAPTER",
-                                        fontFamily = SyneFontFamily,
+                                        fontFamily = JakartaFontFamily,
                                         fontWeight = FontWeight.Bold,
                                         fontSize = 12.sp,
                                         letterSpacing = 1.sp
@@ -844,7 +843,7 @@ private fun InteractiveWisdomCard(
                                 if (!expTitle.isNullOrBlank()) {
                                     Text(
                                         text = expTitle,
-                                        fontFamily = SyneFontFamily,
+                                        fontFamily = JakartaFontFamily,
                                         fontWeight = FontWeight.Bold,
                                         fontSize = 12.5.sp,
                                         color = FathomTheme.colors.textPrimary

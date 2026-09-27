@@ -1,16 +1,5 @@
 package com.masum.fathom.ui.pathways
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.scaleIn
-import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -33,12 +22,10 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -59,7 +46,6 @@ import com.masum.fathom.core.haptics.LocalFathomHaptics
 import com.masum.fathom.ui.components.SacredDivider
 import com.masum.fathom.ui.theme.FathomTheme
 import com.masum.fathom.ui.theme.JakartaFontFamily
-import com.masum.fathom.ui.theme.SyneFontFamily
 
 @Composable
 fun ChapterCelebrationModal(
@@ -67,16 +53,6 @@ fun ChapterCelebrationModal(
     onDismiss: () -> Unit
 ) {
     val haptics = LocalFathomHaptics.current
-    val infiniteTransition = rememberInfiniteTransition(label = "celebration_pulse")
-    val pulseScale by infiniteTransition.animateFloat(
-        initialValue = 0.98f,
-        targetValue = 1.05f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(1200, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "celebration_scale"
-    )
 
     Dialog(
         onDismissRequest = onDismiss,
@@ -128,9 +104,8 @@ fun ChapterCelebrationModal(
                     Box(
                         modifier = Modifier
                             .size(80.dp)
-                            .scale(pulseScale)
                             .shadow(
-                                elevation = 24.dp,
+                                elevation = 20.dp,
                                 shape = CircleShape,
                                 ambientColor = FathomTheme.colors.accentGold,
                                 spotColor = FathomTheme.colors.accentGold
@@ -158,7 +133,7 @@ fun ChapterCelebrationModal(
 
                     Text(
                         text = "CHAPTER MASTERED",
-                        fontFamily = SyneFontFamily,
+                        fontFamily = JakartaFontFamily,
                         fontWeight = FontWeight.Bold,
                         fontSize = 12.sp,
                         letterSpacing = 2.sp,
@@ -169,7 +144,7 @@ fun ChapterCelebrationModal(
 
                     Text(
                         text = reward.chapterTitle,
-                        fontFamily = SyneFontFamily,
+                        fontFamily = JakartaFontFamily,
                         fontWeight = FontWeight.Bold,
                         fontSize = 20.sp,
                         color = FathomTheme.colors.textPrimary,
@@ -208,7 +183,7 @@ fun ChapterCelebrationModal(
                                 )
                                 Text(
                                     text = "+${reward.gainedXp} XP",
-                                    fontFamily = SyneFontFamily,
+                                    fontFamily = JakartaFontFamily,
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 15.sp,
                                     color = FathomTheme.colors.accentGold
@@ -242,7 +217,7 @@ fun ChapterCelebrationModal(
                                 )
                                 Text(
                                     text = "${reward.passageCount}",
-                                    fontFamily = SyneFontFamily,
+                                    fontFamily = JakartaFontFamily,
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 15.sp,
                                     color = FathomTheme.colors.textPrimary
@@ -271,7 +246,7 @@ fun ChapterCelebrationModal(
                             Column {
                                 Text(
                                     text = "SACRED ESSENCE",
-                                    fontFamily = SyneFontFamily,
+                                    fontFamily = JakartaFontFamily,
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 10.sp,
                                     letterSpacing = 1.sp,
@@ -307,7 +282,7 @@ fun ChapterCelebrationModal(
                     ) {
                         Text(
                             text = "CLAIM WISDOM & CONTINUE",
-                            fontFamily = SyneFontFamily,
+                            fontFamily = JakartaFontFamily,
                             fontWeight = FontWeight.Bold,
                             fontSize = 12.sp,
                             letterSpacing = 1.sp

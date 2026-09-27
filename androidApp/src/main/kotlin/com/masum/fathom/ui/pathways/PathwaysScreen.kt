@@ -1,10 +1,13 @@
 package com.masum.fathom.ui.pathways
 
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
@@ -31,17 +34,20 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -49,6 +55,7 @@ import com.adamglin.PhosphorIcons
 import com.adamglin.phosphoricons.Regular
 import com.adamglin.phosphoricons.regular.BookBookmark
 import com.adamglin.phosphoricons.regular.CaretDown
+import com.adamglin.phosphoricons.regular.Compass
 import com.adamglin.phosphoricons.regular.Crown
 import com.adamglin.phosphoricons.regular.Sliders
 import com.adamglin.phosphoricons.regular.Sparkle
@@ -61,7 +68,7 @@ import com.masum.fathom.ui.feed.PassageContextSheet
 import com.masum.fathom.ui.feed.ScriptureSelectorSheet
 import com.masum.fathom.ui.theme.FathomTheme
 import com.masum.fathom.ui.theme.JakartaFontFamily
-import com.masum.fathom.ui.theme.SyneFontFamily
+import kotlinx.coroutines.launch
 
 @Composable
 fun PathwaysScreen(
@@ -161,288 +168,219 @@ fun PathwaysScreen(
                     )
                 } else {
                     val listState = rememberLazyListState()
+                    val scope = rememberCoroutineScope()
+                    val activeChapterIndex = remember(pathway.chapters) {
+                        pathway.chapters.indexOfFirst { it.isCurrent }
+                    }
+                    val showJumpToActive by remember(activeChapterIndex) {
+                        derivedStateOf {
+                            activeChapterIndex > 1 && listState.firstVisibleItemIndex < 1
+                        }
+                    }
 
-                    Column(
+                    Box(
                         modifier = Modifier
                             .fillMaxSize()
                             .background(FathomTheme.colors.background)
                     ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .statusBarsPadding()
-                                .padding(horizontal = 20.dp)
-                                .padding(top = 10.dp, bottom = 8.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
+                        Column(modifier = Modifier.fillMaxSize()) {
                             Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(0.dp)
-                            ) {
-                                Text(
-                                    text = "path",
-                                    style = FathomTheme.typography.brandTitle,
-                                    color = FathomTheme.colors.textPrimary
-                                )
-                                Text(
-                                    text = ".",
-                                    style = FathomTheme.typography.brandTitle.copy(color = FathomTheme.colors.accentGold)
-                                )
-                            }
-
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .statusBarsPadding()
+                                    .padding(horizontal = 20.dp)
+                                    .padding(top = 10.dp, bottom = 8.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Row(
-                                    modifier = Modifier
-                                        .clip(RoundedCornerShape(20.dp))
-                                        .background(FathomTheme.colors.surfaceElevated)
-                                        .border(
-                                            width = 1.dp,
-                                            color = FathomTheme.colors.accentGold.copy(alpha = 0.7f),
-                                            shape = RoundedCornerShape(20.dp)
-                                        )
-                                        .clickable {
-                                            haptics.light()
-                                            showScriptureSheet = true
-                                        }
-                                        .padding(horizontal = 12.dp, vertical = 7.dp),
                                     verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                    horizontalArrangement = Arrangement.spacedBy(0.dp)
                                 ) {
-                                    Icon(
-                                        imageVector = PhosphorIcons.Regular.BookBookmark,
-                                        contentDescription = null,
-                                        tint = FathomTheme.colors.accentGold,
-                                        modifier = Modifier.size(13.dp)
+                                    Text(
+                                        text = "path",
+                                        style = FathomTheme.typography.brandTitle,
+                                        color = FathomTheme.colors.textPrimary
                                     )
                                     Text(
-                                        text = state.selectedBook.title,
-                                        style = FathomTheme.typography.traditionBadge.copy(fontSize = 11.sp),
-                                        color = FathomTheme.colors.accentGold,
-                                        maxLines = 1
-                                    )
-                                    Icon(
-                                        imageVector = PhosphorIcons.Regular.CaretDown,
-                                        contentDescription = null,
-                                        tint = FathomTheme.colors.textTertiary,
-                                        modifier = Modifier.size(11.dp)
+                                        text = ".",
+                                        style = FathomTheme.typography.brandTitle.copy(color = FathomTheme.colors.accentGold)
                                     )
                                 }
 
-                                Box(
-                                    modifier = Modifier
-                                        .clip(RoundedCornerShape(20.dp))
-                                        .background(
-                                            if (subscriptionState.isPro) FathomTheme.colors.accentGold.copy(alpha = 0.16f)
-                                             else FathomTheme.colors.surfaceElevated
-                                        )
-                                        .border(
-                                            width = 1.dp,
-                                            color = if (subscriptionState.isPro) FathomTheme.colors.accentGold else FathomTheme.colors.borderSubtle,
-                                            shape = RoundedCornerShape(20.dp)
-                                        )
-                                        .clickable {
-                                            haptics.medium()
-                                            openPaywall()
-                                        }
-                                        .padding(horizontal = 9.dp, vertical = 6.dp),
-                                    contentAlignment = Alignment.Center
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                                 ) {
                                     Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(4.dp)
-                                    ) {
-                                        Icon(
-                                            imageVector = PhosphorIcons.Regular.Crown,
-                                            contentDescription = "Sanctuary+ Pro",
-                                            tint = if (subscriptionState.isPro) FathomTheme.colors.accentGold else FathomTheme.colors.textSecondary,
-                                            modifier = Modifier.size(12.dp)
-                                        )
-                                        Text(
-                                            text = if (subscriptionState.isPro) "PATRON" else "PRO",
-                                            fontFamily = JakartaFontFamily,
-                                            fontWeight = FontWeight.Bold,
-                                            fontSize = 10.5.sp,
-                                            letterSpacing = 0.5.sp,
-                                            color = if (subscriptionState.isPro) FathomTheme.colors.accentGold else FathomTheme.colors.textSecondary
-                                        )
-                                    }
-                                }
-
-                                IconButton(
-                                    onClick = {
-                                        haptics.light()
-                                        openSanctuary()
-                                    },
-                                    modifier = Modifier
-                                        .clip(CircleShape)
-                                        .background(FathomTheme.colors.surfaceElevated)
-                                        .size(38.dp)
-                                ) {
-                                    Icon(
-                                        imageVector = PhosphorIcons.Regular.Sliders,
-                                        contentDescription = "Sanctuary Settings",
-                                        tint = FathomTheme.colors.textSecondary,
-                                        modifier = Modifier.size(18.dp)
-                                    )
-                                }
-                            }
-                        }
-
-                        LazyColumn(
-                            state = listState,
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(horizontal = 20.dp),
-                            contentPadding = PaddingValues(bottom = 120.dp, top = 6.dp),
-                            verticalArrangement = Arrangement.spacedBy(16.dp)
-                        ) {
-                            item {
-                                PathwayOverviewCard(
-                                    pathway = pathway,
-                                    onOpenScripturePicker = { showScriptureSheet = true }
-                                )
-                            }
-
-                            if (!subscriptionState.isPro) {
-                                item {
-                                    Box(
                                         modifier = Modifier
-                                            .fillMaxWidth()
-                                            .clip(RoundedCornerShape(16.dp))
-                                            .background(
-                                                Brush.linearGradient(
-                                                    listOf(
-                                                        FathomTheme.colors.accentGold.copy(alpha = 0.18f),
-                                                        FathomTheme.colors.surfaceElevated
-                                                    )
-                                                )
-                                            )
+                                            .clip(RoundedCornerShape(20.dp))
+                                            .background(FathomTheme.colors.surfaceElevated)
                                             .border(
                                                 width = 1.dp,
-                                                color = FathomTheme.colors.accentGold.copy(alpha = 0.45f),
-                                                shape = RoundedCornerShape(16.dp)
+                                                color = FathomTheme.colors.accentGold.copy(alpha = 0.7f),
+                                                shape = RoundedCornerShape(20.dp)
                                             )
                                             .clickable {
-                                                haptics.medium()
-                                                openPaywall()
+                                                haptics.light()
+                                                showScriptureSheet = true
                                             }
-                                            .padding(14.dp)
-                                    ) {
-                                        Row(
-                                            modifier = Modifier.fillMaxWidth(),
-                                            horizontalArrangement = Arrangement.SpaceBetween,
-                                            verticalAlignment = Alignment.CenterVertically
-                                        ) {
-                                            Row(
-                                                verticalAlignment = Alignment.CenterVertically,
-                                                horizontalArrangement = Arrangement.spacedBy(10.dp)
-                                            ) {
-                                                Box(
-                                                    modifier = Modifier
-                                                        .size(36.dp)
-                                                        .clip(CircleShape)
-                                                        .background(FathomTheme.colors.accentGold.copy(alpha = 0.2f)),
-                                                    contentAlignment = Alignment.Center
-                                                ) {
-                                                    Icon(
-                                                        imageVector = PhosphorIcons.Regular.Crown,
-                                                        contentDescription = null,
-                                                        tint = FathomTheme.colors.accentGold,
-                                                        modifier = Modifier.size(18.dp)
-                                                    )
-                                                }
-
-                                                Column {
-                                                    Text(
-                                                        text = "Chapter 1 Free · Unlock All ${pathway.totalChapters} Chapters",
-                                                        fontFamily = JakartaFontFamily,
-                                                        fontWeight = FontWeight.Bold,
-                                                        fontSize = 12.5.sp,
-                                                        color = FathomTheme.colors.textPrimary
-                                                    )
-                                                    Text(
-                                                        text = "Master the full sacred road with Sanctuary+",
-                                                        fontFamily = JakartaFontFamily,
-                                                        fontSize = 11.sp,
-                                                        color = FathomTheme.colors.accentGold
-                                                    )
-                                                }
-                                            }
-
-                                            Box(
-                                                modifier = Modifier
-                                                    .clip(RoundedCornerShape(8.dp))
-                                                    .background(FathomTheme.colors.accentGold)
-                                                    .padding(horizontal = 9.dp, vertical = 4.dp)
-                                            ) {
-                                                Text(
-                                                    text = "UNLOCK",
-                                                    fontFamily = JakartaFontFamily,
-                                                    fontWeight = FontWeight.Bold,
-                                                    fontSize = 10.sp,
-                                                    letterSpacing = 0.5.sp,
-                                                    color = androidx.compose.ui.graphics.Color.Black
-                                                )
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-
-                            item {
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(top = 8.dp, bottom = 2.dp),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Text(
-                                        text = "THE SACRED ROAD",
-                                        fontFamily = SyneFontFamily,
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 11.5.sp,
-                                        letterSpacing = 1.5.sp,
-                                        color = FathomTheme.colors.accentGold
-                                    )
-
-                                    Row(
+                                            .padding(horizontal = 12.dp, vertical = 7.dp),
                                         verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                        horizontalArrangement = Arrangement.spacedBy(6.dp)
                                     ) {
                                         Icon(
-                                            imageVector = PhosphorIcons.Regular.Crown,
+                                            imageVector = PhosphorIcons.Regular.BookBookmark,
                                             contentDescription = null,
                                             tint = FathomTheme.colors.accentGold,
                                             modifier = Modifier.size(13.dp)
                                         )
                                         Text(
-                                            text = "${pathway.completedChapters}/${pathway.totalChapters} Chapters",
-                                            fontFamily = JakartaFontFamily,
-                                            fontWeight = FontWeight.SemiBold,
-                                            fontSize = 11.sp,
-                                            color = FathomTheme.colors.textSecondary
+                                            text = state.selectedBook.title,
+                                            style = FathomTheme.typography.traditionBadge.copy(fontSize = 11.sp),
+                                            color = FathomTheme.colors.accentGold,
+                                            maxLines = 1
+                                        )
+                                        Icon(
+                                            imageVector = PhosphorIcons.Regular.CaretDown,
+                                            contentDescription = null,
+                                            tint = FathomTheme.colors.textTertiary,
+                                            modifier = Modifier.size(11.dp)
+                                        )
+                                    }
+
+                                    IconButton(
+                                        onClick = {
+                                            haptics.light()
+                                            openSanctuary()
+                                        },
+                                        modifier = Modifier
+                                            .clip(CircleShape)
+                                            .background(FathomTheme.colors.surfaceElevated)
+                                            .size(38.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = PhosphorIcons.Regular.Sliders,
+                                            contentDescription = "Sanctuary Settings",
+                                            tint = FathomTheme.colors.textSecondary,
+                                            modifier = Modifier.size(18.dp)
                                         )
                                     }
                                 }
                             }
 
-                            item {
-                                SacredRoadStream(
-                                    chapters = pathway.chapters,
-                                    onOpenChapter = { chNum ->
-                                        if (chNum > 1 && !subscriptionState.isPro) {
-                                            haptics.medium()
-                                            openPaywall()
-                                        } else {
+                            LazyColumn(
+                                state = listState,
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .padding(horizontal = 20.dp),
+                                contentPadding = PaddingValues(bottom = 120.dp, top = 6.dp),
+                                verticalArrangement = Arrangement.spacedBy(16.dp)
+                            ) {
+                                item {
+                                    PathwayOverviewCard(
+                                        pathway = pathway,
+                                        onOpenScripturePicker = { showScriptureSheet = true }
+                                    )
+                                }
+
+                                item {
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(top = 8.dp, bottom = 2.dp),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(
+                                            text = "THE SACRED ROAD",
+                                            fontFamily = JakartaFontFamily,
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 11.5.sp,
+                                            letterSpacing = 1.5.sp,
+                                            color = FathomTheme.colors.accentGold
+                                        )
+
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                        ) {
+                                            Icon(
+                                                imageVector = PhosphorIcons.Regular.Crown,
+                                                contentDescription = null,
+                                                tint = FathomTheme.colors.accentGold,
+                                                modifier = Modifier.size(13.dp)
+                                            )
+                                            Text(
+                                                text = "${pathway.completedChapters}/${pathway.totalChapters} Chapters",
+                                                fontFamily = JakartaFontFamily,
+                                                fontWeight = FontWeight.SemiBold,
+                                                fontSize = 11.sp,
+                                                color = FathomTheme.colors.textSecondary
+                                            )
+                                        }
+                                    }
+                                }
+
+                                item {
+                                    SacredRoadStream(
+                                        chapters = pathway.chapters,
+                                        onOpenChapter = { chNum ->
                                             haptics.light()
                                             onEvent(PathwaysUiEvent.OnOpenChapter(chNum))
                                         }
+                                    )
+                                }
+                            }
+                        }
+
+                        AnimatedVisibility(
+                            visible = showJumpToActive,
+                            enter = fadeIn(tween(200)) + scaleIn(tween(200)),
+                            exit = fadeOut(tween(150)) + scaleOut(tween(150)),
+                            modifier = Modifier
+                                .align(Alignment.BottomEnd)
+                                .padding(end = 20.dp, bottom = 100.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .shadow(
+                                        elevation = 12.dp,
+                                        shape = RoundedCornerShape(24.dp),
+                                        ambientColor = FathomTheme.colors.accentGold.copy(alpha = 0.35f),
+                                        spotColor = FathomTheme.colors.accentGold.copy(alpha = 0.5f)
+                                    )
+                                    .clip(RoundedCornerShape(24.dp))
+                                    .background(FathomTheme.colors.surfaceElevated)
+                                    .border(
+                                        width = 1.dp,
+                                        color = FathomTheme.colors.accentGold,
+                                        shape = RoundedCornerShape(24.dp)
+                                    )
+                                    .clickable {
+                                        haptics.medium()
+                                        scope.launch {
+                                            val targetItem = if (subscriptionState.isPro) 2 else 3
+                                            listState.animateScrollToItem(targetItem)
+                                        }
                                     }
+                                    .padding(horizontal = 14.dp, vertical = 9.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                Icon(
+                                    imageVector = PhosphorIcons.Regular.Compass,
+                                    contentDescription = "Jump to Active Step",
+                                    tint = FathomTheme.colors.accentGold,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Text(
+                                    text = "ACTIVE STEP",
+                                    fontFamily = JakartaFontFamily,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 11.sp,
+                                    letterSpacing = 0.5.sp,
+                                    color = FathomTheme.colors.accentGold
                                 )
                             }
                         }
@@ -538,7 +476,7 @@ fun PathwayOverviewCard(
                     )
                     Text(
                         text = "${pathway.wisdomXp} WISDOM XP",
-                        fontFamily = SyneFontFamily,
+                        fontFamily = JakartaFontFamily,
                         fontWeight = FontWeight.Bold,
                         fontSize = 10.5.sp,
                         letterSpacing = 0.5.sp,
@@ -557,7 +495,7 @@ fun PathwayOverviewCard(
                 Column(modifier = Modifier.weight(1f).padding(end = 12.dp)) {
                     Text(
                         text = pathway.book.title,
-                        fontFamily = SyneFontFamily,
+                        fontFamily = JakartaFontFamily,
                         fontWeight = FontWeight.Bold,
                         fontSize = 22.sp,
                         color = FathomTheme.colors.textPrimary
@@ -604,7 +542,7 @@ fun PathwayOverviewCard(
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
                             text = "${(progressPercent * 100).toInt()}%",
-                            fontFamily = SyneFontFamily,
+                            fontFamily = JakartaFontFamily,
                             fontWeight = FontWeight.Bold,
                             fontSize = 14.sp,
                             color = FathomTheme.colors.textPrimary

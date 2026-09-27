@@ -79,6 +79,7 @@ import com.adamglin.phosphoricons.regular.Crown
 import com.adamglin.phosphoricons.regular.Info
 import com.adamglin.phosphoricons.regular.MagnifyingGlass
 import com.adamglin.phosphoricons.regular.ShareNetwork
+import com.adamglin.phosphoricons.regular.Sliders
 import com.adamglin.phosphoricons.regular.Sparkle
 import com.adamglin.phosphoricons.regular.SpeakerHigh
 import com.adamglin.phosphoricons.regular.X
@@ -96,7 +97,6 @@ import com.masum.fathom.ui.components.TraditionBadge
 import com.masum.fathom.ui.feed.PassageContextSheet
 import com.masum.fathom.ui.theme.FathomTheme
 import com.masum.fathom.ui.theme.JakartaFontFamily
-import com.masum.fathom.ui.theme.SyneFontFamily
 import kotlinx.coroutines.launch
 
 @Composable
@@ -181,6 +181,7 @@ private fun DirectoryAndSearchRootView(
     onEvent: (SearchUiEvent) -> Unit
 ) {
     val haptics = LocalFathomHaptics.current
+    val openSanctuary = com.masum.fathom.core.sanctuary.LocalOpenSanctuary.current
     val subscriptionState = LocalSubscriptionState.current
     val openPaywall = LocalOpenPaywall.current
 
@@ -218,46 +219,6 @@ private fun DirectoryAndSearchRootView(
                 ) {
                     Box(
                         modifier = Modifier
-                            .clip(RoundedCornerShape(20.dp))
-                            .background(
-                                if (subscriptionState.isPro) FathomTheme.colors.accentGold.copy(alpha = 0.16f)
-                                else FathomTheme.colors.surfaceElevated
-                            )
-                            .border(
-                                width = 1.dp,
-                                color = if (subscriptionState.isPro) FathomTheme.colors.accentGold else FathomTheme.colors.borderSubtle,
-                                shape = RoundedCornerShape(20.dp)
-                            )
-                            .clickable {
-                                haptics.medium()
-                                openPaywall()
-                            }
-                            .padding(horizontal = 10.dp, vertical = 5.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(4.dp)
-                        ) {
-                            Icon(
-                                imageVector = PhosphorIcons.Regular.Crown,
-                                contentDescription = "Sanctuary+ Pro",
-                                tint = if (subscriptionState.isPro) FathomTheme.colors.accentGold else FathomTheme.colors.textSecondary,
-                                modifier = Modifier.size(12.dp)
-                            )
-                            Text(
-                                text = if (subscriptionState.isPro) "PATRON" else "PRO",
-                                fontFamily = JakartaFontFamily,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 10.5.sp,
-                                letterSpacing = 0.5.sp,
-                                color = if (subscriptionState.isPro) FathomTheme.colors.accentGold else FathomTheme.colors.textSecondary
-                            )
-                        }
-                    }
-
-                    Box(
-                        modifier = Modifier
                             .clip(RoundedCornerShape(12.dp))
                             .background(FathomTheme.colors.accentGold.copy(alpha = 0.12f))
                             .border(1.dp, FathomTheme.colors.accentGold.copy(alpha = 0.35f), RoundedCornerShape(12.dp))
@@ -270,6 +231,24 @@ private fun DirectoryAndSearchRootView(
                             fontSize = 9.5.sp,
                             letterSpacing = 1.sp,
                             color = FathomTheme.colors.accentGold
+                        )
+                    }
+
+                    IconButton(
+                        onClick = {
+                            haptics.light()
+                            openSanctuary()
+                        },
+                        modifier = Modifier
+                            .clip(CircleShape)
+                            .background(FathomTheme.colors.surfaceElevated)
+                            .size(38.dp)
+                    ) {
+                        Icon(
+                            imageVector = PhosphorIcons.Regular.Sliders,
+                            contentDescription = "Sanctuary Settings",
+                            tint = FathomTheme.colors.textSecondary,
+                            modifier = Modifier.size(18.dp)
                         )
                     }
                 }
@@ -633,7 +612,7 @@ private fun SearchResultsView(
                 Text(
                     text = "No Passages Found",
                     style = FathomTheme.typography.commentaryTitle.copy(
-                        fontFamily = SyneFontFamily,
+                        fontFamily = JakartaFontFamily,
                         fontSize = 18.sp
                     ),
                     color = FathomTheme.colors.textPrimary
@@ -952,7 +931,7 @@ private fun ScripturesDirectoryView(
                     Column {
                         Text(
                             text = book.title,
-                            fontFamily = SyneFontFamily,
+                            fontFamily = JakartaFontFamily,
                             fontWeight = FontWeight.Bold,
                             fontSize = 22.sp,
                             color = FathomTheme.colors.textPrimary,
@@ -1073,7 +1052,7 @@ private fun ChapterReaderView(
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = book.title,
-                        fontFamily = SyneFontFamily,
+                        fontFamily = JakartaFontFamily,
                         fontWeight = FontWeight.Bold,
                         fontSize = 17.5.sp,
                         color = FathomTheme.colors.textPrimary,

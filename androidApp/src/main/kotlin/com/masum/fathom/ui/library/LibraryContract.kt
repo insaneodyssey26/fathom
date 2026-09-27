@@ -52,6 +52,9 @@ sealed interface LibraryUiState {
     data object Loading : LibraryUiState
 
     data class Success(
+        val userName: String = "Sanctuary Reader",
+        val userTradition: String? = null,
+        val isEditingProfile: Boolean = false,
         val selectedTab: LibraryTab = LibraryTab.BOOKMARKS,
         val bookmarks: List<BookmarkWithPassage> = emptyList(),
         val notes: List<NoteWithPassage> = emptyList(),
@@ -86,5 +89,8 @@ sealed interface LibraryUiEvent {
     data class OnFilterTradition(val traditionId: TraditionId?) : LibraryUiEvent
     data class OnFilterTag(val tag: String?) : LibraryUiEvent
     data class OnSearchQueryChanged(val query: String) : LibraryUiEvent
+    data object OnOpenEditProfile : LibraryUiEvent
+    data object OnCloseEditProfile : LibraryUiEvent
+    data class OnSaveProfile(val name: String, val tradition: String?) : LibraryUiEvent
 }
 

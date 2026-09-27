@@ -58,7 +58,6 @@ import com.masum.fathom.core.audio.SacredAudioState
 import com.masum.fathom.core.model.Passage
 import com.masum.fathom.ui.theme.FathomTheme
 import com.masum.fathom.ui.theme.JakartaFontFamily
-import com.masum.fathom.ui.theme.SyneFontFamily
 
 @Composable
 fun SacredAudioPlayerBar(
@@ -171,7 +170,7 @@ fun SacredAudioPlayerBar(
                                 ) {
                                     Text(
                                         text = currentPassage.canonicalReference,
-                                        fontFamily = SyneFontFamily,
+                                        fontFamily = JakartaFontFamily,
                                         fontWeight = FontWeight.Bold,
                                         fontSize = 12.5.sp,
                                         color = FathomTheme.colors.textPrimary,

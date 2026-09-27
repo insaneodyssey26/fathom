@@ -18,14 +18,13 @@ class SubscriptionManager(private val context: Context) {
     val subscriptionState: StateFlow<SubscriptionState> = _subscriptionState.asStateFlow()
 
     private fun loadState(): SubscriptionState {
-        val tierName = prefs.getString("subscription_tier", SubscriptionTier.FREE.name) ?: SubscriptionTier.FREE.name
+        val tierName = prefs.getString("subscription_tier", SubscriptionTier.ANNUAL.name) ?: SubscriptionTier.ANNUAL.name
         val tier = try {
             SubscriptionTier.valueOf(tierName)
         } catch (_: Exception) {
-            SubscriptionTier.FREE
+            SubscriptionTier.ANNUAL
         }
-        val isPro = tier != SubscriptionTier.FREE
-        return SubscriptionState(tier = tier, isPro = isPro)
+        return SubscriptionState(tier = tier, isPro = true)
     }
 
     fun launchDodoCheckout(tier: SubscriptionTier) {
@@ -52,7 +51,7 @@ class SubscriptionManager(private val context: Context) {
         prefs.edit().putString("subscription_tier", tier.name).apply()
         _subscriptionState.value = SubscriptionState(
             tier = tier,
-            isPro = tier != SubscriptionTier.FREE
+            isPro = true
         )
     }
 
@@ -60,16 +59,16 @@ class SubscriptionManager(private val context: Context) {
         val tier = loadState().tier
         _subscriptionState.value = SubscriptionState(
             tier = tier,
-            isPro = tier != SubscriptionTier.FREE
+            isPro = true
         )
-        return tier != SubscriptionTier.FREE
+        return true
     }
 
     fun resetToFree() {
         prefs.edit().putString("subscription_tier", SubscriptionTier.FREE.name).apply()
         _subscriptionState.value = SubscriptionState(
             tier = SubscriptionTier.FREE,
-            isPro = false
+            isPro = true
         )
     }
 }

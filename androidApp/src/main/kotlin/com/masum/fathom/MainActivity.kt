@@ -112,8 +112,16 @@ class MainActivity : ComponentActivity() {
                 )
             }
 
+            val sanctuaryPreferences = remember { com.masum.fathom.core.sanctuary.SanctuaryPreferences(context) }
+            val sanctuaryDataEngine = remember { com.masum.fathom.core.sanctuary.SanctuaryDataEngine(context, userRepo, passageRepo) }
+            val sanctuarySettings by sanctuaryPreferences.settings.collectAsState()
+
             val libraryViewModel: LibraryViewModel = viewModel {
-                LibraryViewModel(userDataRepository = userRepo, passageRepository = passageRepo)
+                LibraryViewModel(
+                    userDataRepository = userRepo,
+                    passageRepository = passageRepo,
+                    sanctuaryPreferences = sanctuaryPreferences
+                )
             }
 
             val pathwaysViewModel: PathwaysViewModel = viewModel {
@@ -124,10 +132,6 @@ class MainActivity : ComponentActivity() {
             val pathwaysUiState by pathwaysViewModel.uiState.collectAsStateWithLifecycle()
             val searchUiState by searchViewModel.uiState.collectAsStateWithLifecycle()
             val libraryUiState by libraryViewModel.uiState.collectAsStateWithLifecycle()
-
-            val sanctuaryPreferences = remember { com.masum.fathom.core.sanctuary.SanctuaryPreferences(context) }
-            val sanctuaryDataEngine = remember { com.masum.fathom.core.sanctuary.SanctuaryDataEngine(context, userRepo, passageRepo) }
-            val sanctuarySettings by sanctuaryPreferences.settings.collectAsState()
 
             val subscriptionManager = remember { com.masum.fathom.core.subscription.SubscriptionManager(context) }
             val subscriptionState by subscriptionManager.subscriptionState.collectAsState()
@@ -197,6 +201,23 @@ class MainActivity : ComponentActivity() {
                         if (!splashDone) {
                             com.masum.fathom.ui.splash.SplashScreen(
                                 onSplashFinished = { isSplashDone = true }
+                            )
+                        } else if (!sanctuarySettings.hasCompletedOnboarding) {
+                            com.masum.fathom.ui.onboarding.OnboardingScreen(
+                                onComplete = { name, tradition, personalizeFeed ->
+                                    sanctuaryPreferences.completeOnboarding(name, tradition, personalizeFeed)
+                                    if (personalizeFeed && tradition != null) {
+                                        val traditionId = when (tradition) {
+                                            "Sanatana Dharma" -> com.masum.fathom.core.model.TraditionId.HINDUISM
+                                            "Islam" -> com.masum.fathom.core.model.TraditionId.ISLAM
+                                            "Christianity" -> com.masum.fathom.core.model.TraditionId.CHRISTIANITY
+                                            "Buddhism" -> com.masum.fathom.core.model.TraditionId.BUDDHISM
+                                            "Taoism" -> com.masum.fathom.core.model.TraditionId.TAOISM
+                                            else -> null
+                                        }
+                                        feedViewModel.setTraditionFocus(traditionId)
+                                    }
+                                }
                             )
                         } else {
                             Box(

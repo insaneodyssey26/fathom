@@ -51,6 +51,7 @@ import com.adamglin.phosphoricons.Regular
 import com.adamglin.phosphoricons.regular.BookOpen
 import com.adamglin.phosphoricons.regular.Crown
 import com.adamglin.phosphoricons.regular.Headphones
+import com.adamglin.phosphoricons.regular.Info
 import com.adamglin.phosphoricons.regular.NotePencil
 import com.adamglin.phosphoricons.regular.PaintBrush
 import com.adamglin.phosphoricons.regular.ShieldCheck
@@ -96,7 +97,7 @@ fun SanctuaryPaywallSheet(
             PaywallFeature(
                 icon = PhosphorIcons.Regular.BookOpen,
                 title = "Full Pathways Scripture Mastery",
-                description = "Study scriptures step-by-step across all chapters with reflections, quizzes, and certificates."
+                description = "Study scriptures step-by-step across all chapters with reflections and certificates."
             ),
             PaywallFeature(
                 icon = PhosphorIcons.Regular.NotePencil,
@@ -148,13 +149,9 @@ fun SanctuaryPaywallSheet(
                 TextButton(
                     onClick = {
                         haptics.light()
-                        val restored = subscriptionManager.restorePurchases()
-                        if (restored) {
-                            Toast.makeText(context, "Sanctuary+ Patronage Restored", Toast.LENGTH_SHORT).show()
-                            onDismiss()
-                        } else {
-                            Toast.makeText(context, "No active Sanctuary+ subscription found", Toast.LENGTH_SHORT).show()
-                        }
+                        subscriptionManager.restorePurchases()
+                        Toast.makeText(context, "Full access active during testing", Toast.LENGTH_SHORT).show()
+                        onDismiss()
                     }
                 ) {
                     Text(
@@ -231,7 +228,72 @@ fun SanctuaryPaywallSheet(
                 )
             }
 
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp)
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(
+                        Brush.verticalGradient(
+                            listOf(
+                                FathomTheme.colors.accentGold.copy(alpha = 0.12f),
+                                FathomTheme.colors.surfaceElevated
+                            )
+                        )
+                    )
+                    .border(1.dp, FathomTheme.colors.accentGold.copy(alpha = 0.45f), RoundedCornerShape(16.dp))
+                    .padding(16.dp)
+            ) {
+                Row(
+                    verticalAlignment = Alignment.Top,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(32.dp)
+                            .clip(CircleShape)
+                            .background(FathomTheme.colors.accentGold.copy(alpha = 0.2f)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = PhosphorIcons.Regular.Info,
+                            contentDescription = null,
+                            tint = FathomTheme.colors.accentGold,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+
+                    Column(modifier = Modifier.weight(1f)) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Text(
+                                text = "CLOSED TESTING PREVIEW",
+                                fontFamily = JakartaFontFamily,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 11.sp,
+                                letterSpacing = 0.8.sp,
+                                color = FathomTheme.colors.accentGold
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(4.dp))
+
+                        Text(
+                            text = "Fathom is currently in closed testing. Subscriptions and pricing are not finalized and will officially launch later on Google Play. All Sanctuary+ features are 100% unlocked for your testing!",
+                            fontFamily = JakartaFontFamily,
+                            fontSize = 12.sp,
+                            lineHeight = 17.sp,
+                            color = FathomTheme.colors.textSecondary
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(18.dp))
 
             Column(
                 modifier = Modifier
@@ -322,7 +384,20 @@ fun SanctuaryPaywallSheet(
                 )
             }
 
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Text(
+                text = "* Pricing shown is a provisional preview and subject to change upon Google Play launch.",
+                fontFamily = JakartaFontFamily,
+                fontSize = 10.5.sp,
+                color = FathomTheme.colors.textTertiary,
+                textAlign = TextAlign.Center,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp)
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
 
             Column(
                 modifier = Modifier
@@ -330,19 +405,11 @@ fun SanctuaryPaywallSheet(
                     .padding(horizontal = 20.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                val buttonText = when (selectedTier) {
-                    SubscriptionTier.ANNUAL -> "START 7-DAY FREE TRIAL"
-                    SubscriptionTier.SIX_MONTH -> "UNLOCK 6-MONTH PASS ($19.99)"
-                    SubscriptionTier.MONTHLY -> "UNLOCK MONTHLY PASS ($4.99)"
-                    SubscriptionTier.FREE -> "CONTINUE WITH FREE"
-                }
-
                 Button(
                     onClick = {
                         haptics.heavy()
-                        subscriptionManager.launchDodoCheckout(selectedTier)
                         subscriptionManager.purchaseTier(selectedTier)
-                        Toast.makeText(context, "Welcome to Sanctuary+", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, "Full Sanctuary+ access unlocked for testing", Toast.LENGTH_SHORT).show()
                         onDismiss()
                     },
                     modifier = Modifier
@@ -366,10 +433,10 @@ fun SanctuaryPaywallSheet(
                             modifier = Modifier.size(18.dp)
                         )
                         Text(
-                            text = buttonText,
+                            text = "ENJOY FULL ACCESS (TESTING PREVIEW)",
                             fontFamily = JakartaFontFamily,
                             fontWeight = FontWeight.Bold,
-                            fontSize = 13.5.sp,
+                            fontSize = 12.5.sp,
                             letterSpacing = 0.5.sp
                         )
                     }
@@ -388,7 +455,7 @@ fun SanctuaryPaywallSheet(
                         modifier = Modifier.size(14.dp)
                     )
                     Text(
-                        text = "Secured via Dodo Payments · Instant Access · Cancel Anytime",
+                        text = "Google Play Closed Testing · All Features Unlocked",
                         fontFamily = JakartaFontFamily,
                         fontSize = 11.sp,
                         color = FathomTheme.colors.textTertiary

@@ -9,12 +9,15 @@ import com.masum.fathom.core.model.user.Bookmark
 import com.masum.fathom.core.model.user.UserNote
 import com.masum.fathom.core.repository.PassageRepository
 import com.masum.fathom.core.repository.UserDataRepository
+import com.masum.fathom.core.sanctuary.SanctuaryPreferences
+import com.masum.fathom.core.sanctuary.SanctuarySettings
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
@@ -46,7 +49,8 @@ private data class FilteredLibraryData(
 
 class LibraryViewModel(
     private val userDataRepository: UserDataRepository,
-    private val passageRepository: PassageRepository
+    private val passageRepository: PassageRepository,
+    private val sanctuaryPreferences: SanctuaryPreferences? = null
 ) : ViewModel() {
 
     private val passageCache = ConcurrentHashMap<String, Passage>()
@@ -61,6 +65,7 @@ class LibraryViewModel(
     private val _selectedTraditionFilter = MutableStateFlow<TraditionId?>(null)
     private val _selectedTagFilter = MutableStateFlow<String?>(null)
     private val _searchQuery = MutableStateFlow("")
+    private val _isEditingProfile = MutableStateFlow(false)
 
     init {
         observeLibraryData()
@@ -92,6 +97,12 @@ class LibraryViewModel(
             is LibraryUiEvent.OnFilterTradition -> _selectedTraditionFilter.value = event.traditionId
             is LibraryUiEvent.OnFilterTag -> _selectedTagFilter.value = event.tag
             is LibraryUiEvent.OnSearchQueryChanged -> _searchQuery.value = event.query
+            is LibraryUiEvent.OnOpenEditProfile -> _isEditingProfile.value = true
+            is LibraryUiEvent.OnCloseEditProfile -> _isEditingProfile.value = false
+            is LibraryUiEvent.OnSaveProfile -> {
+                sanctuaryPreferences?.updateProfile(event.name, event.tradition)
+                _isEditingProfile.value = false
+            }
         }
     }
 
@@ -177,25 +188,43 @@ class LibraryViewModel(
             )
         }.flowOn(Dispatchers.Default)
 
+        val profileFlow = combine(
+            _isEditingProfile,
+            sanctuaryPreferences?.settings ?: flowOf(SanctuarySettings())
+        ) { isEditing, settings ->
+            Pair(isEditing, Pair(settings.userName, settings.userTradition))
+        }
+
         val uiControlsFlow = combine(
             _selectedTab,
             _selectedPassageForNote,
             _selectedPassageForContext,
-            _selectedPassageForShare
-        ) { tab, notePassage, contextPassage, sharePassage ->
-            listOf(tab, notePassage, contextPassage, sharePassage)
+            _selectedPassageForShare,
+            profileFlow
+        ) { tab, notePassage, contextPassage, sharePassage, profile ->
+            Triple(
+                Triple(tab, notePassage, contextPassage),
+                sharePassage,
+                profile
+            )
         }
 
         combine(
             filteredDataFlow,
             uiControlsFlow
-        ) { filteredData, uiControls ->
-            val tab = uiControls[0] as LibraryTab
-            val notePassage = uiControls[1] as? Passage
-            val contextPassage = uiControls[2] as? Passage
-            val sharePassage = uiControls[3] as? Passage
+        ) { filteredData, controls ->
+            val tab = controls.first.first
+            val notePassage = controls.first.second
+            val contextPassage = controls.first.third
+            val sharePassage = controls.second
+            val isEditing = controls.third.first
+            val userName = controls.third.second.first
+            val userTradition = controls.third.second.second
 
             LibraryUiState.Success(
+                userName = userName,
+                userTradition = userTradition,
+                isEditingProfile = isEditing,
                 selectedTab = tab,
                 bookmarks = filteredData.bookmarks,
                 notes = filteredData.notes,

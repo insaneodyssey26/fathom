@@ -115,7 +115,7 @@ fun QuoteCardModal(
                     Text(
                         text = "Export Typographic Card",
                         style = FathomTheme.typography.commentaryTitle.copy(
-                            fontFamily = SyneFontFamily,
+                            fontFamily = JakartaFontFamily,
                             fontSize = 18.sp
                         ),
                         color = FathomTheme.colors.textPrimary

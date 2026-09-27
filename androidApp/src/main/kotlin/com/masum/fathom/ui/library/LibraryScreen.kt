@@ -39,13 +39,18 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -79,6 +84,7 @@ import com.adamglin.phosphoricons.regular.Flame
 import com.adamglin.phosphoricons.regular.MagnifyingGlass
 import com.adamglin.phosphoricons.regular.Medal
 import com.adamglin.phosphoricons.regular.NotePencil
+import com.adamglin.phosphoricons.regular.PencilSimple
 import com.adamglin.phosphoricons.regular.ShareNetwork
 import com.adamglin.phosphoricons.regular.Sliders
 import com.adamglin.phosphoricons.regular.Sparkle
@@ -99,7 +105,6 @@ import com.masum.fathom.ui.components.TraditionBadge
 import com.masum.fathom.ui.feed.PassageContextSheet
 import com.masum.fathom.ui.theme.FathomTheme
 import com.masum.fathom.ui.theme.JakartaFontFamily
-import com.masum.fathom.ui.theme.SyneFontFamily
 
 sealed interface YouSubScreen {
     data object Hub : YouSubScreen
@@ -286,6 +291,17 @@ fun LibraryScreen(
                         onDismiss = { onEvent(LibraryUiEvent.OnCloseShare) }
                     )
                 }
+
+                if (state.isEditingProfile) {
+                    EditProfileSheet(
+                        currentName = state.userName,
+                        currentTradition = state.userTradition,
+                        onSave = { name, tradition ->
+                            onEvent(LibraryUiEvent.OnSaveProfile(name, tradition))
+                        },
+                        onDismiss = { onEvent(LibraryUiEvent.OnCloseEditProfile) }
+                    )
+                }
             }
         }
     }
@@ -399,46 +415,6 @@ private fun YouTopBar(
                 }
             }
 
-            Box(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(20.dp))
-                    .background(
-                        if (subscriptionState.isPro) FathomTheme.colors.accentGold.copy(alpha = 0.16f)
-                        else FathomTheme.colors.surfaceElevated
-                    )
-                    .border(
-                        width = 1.dp,
-                        color = if (subscriptionState.isPro) FathomTheme.colors.accentGold else FathomTheme.colors.borderSubtle,
-                        shape = RoundedCornerShape(20.dp)
-                    )
-                    .clickable {
-                        haptics.medium()
-                        openPaywall()
-                    }
-                    .padding(horizontal = 9.dp, vertical = 5.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    Icon(
-                        imageVector = PhosphorIcons.Regular.Crown,
-                        contentDescription = "Sanctuary+ Pro",
-                        tint = if (subscriptionState.isPro) FathomTheme.colors.accentGold else FathomTheme.colors.textSecondary,
-                        modifier = Modifier.size(12.dp)
-                    )
-                    Text(
-                        text = if (subscriptionState.isPro) "PATRON" else "PRO",
-                        fontFamily = JakartaFontFamily,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 10.5.sp,
-                        letterSpacing = 0.5.sp,
-                        color = if (subscriptionState.isPro) FathomTheme.colors.accentGold else FathomTheme.colors.textSecondary
-                    )
-                }
-            }
-
             IconButton(
                 onClick = {
                     haptics.light()
@@ -512,6 +488,14 @@ private fun YouHubView(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Row(
+                        modifier = Modifier
+                            .weight(1f)
+                            .clip(RoundedCornerShape(16.dp))
+                            .clickable {
+                                haptics.light()
+                                onEvent(LibraryUiEvent.OnOpenEditProfile)
+                            }
+                            .padding(vertical = 4.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
@@ -543,55 +527,68 @@ private fun YouHubView(
                         }
 
                         Column {
-                            Text(
-                                text = "Sanctuary Reader",
-                                fontFamily = SyneFontFamily,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 19.sp,
-                                color = FathomTheme.colors.textPrimary
-                            )
-                                Spacer(modifier = Modifier.height(4.dp))
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                Text(
+                                    text = state.userName,
+                                    fontFamily = JakartaFontFamily,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 18.5.sp,
+                                    color = FathomTheme.colors.textPrimary
+                                )
+                                Icon(
+                                    imageVector = PhosphorIcons.Regular.PencilSimple,
+                                    contentDescription = "Edit Profile",
+                                    tint = FathomTheme.colors.accentGold.copy(alpha = 0.8f),
+                                    modifier = Modifier.size(14.dp)
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(6.dp))
+                                        .background(
+                                            if (subscriptionState.isPro) FathomTheme.colors.accentGold.copy(alpha = 0.18f)
+                                            else FathomTheme.colors.surfaceElevated
+                                        )
+                                        .border(
+                                            width = 1.dp,
+                                            color = if (subscriptionState.isPro) FathomTheme.colors.accentGold.copy(alpha = 0.6f) else FathomTheme.colors.borderSubtle,
+                                            shape = RoundedCornerShape(6.dp)
+                                        )
+                                        .padding(horizontal = 6.dp, vertical = 2.dp)
                                 ) {
-                                    Box(
-                                        modifier = Modifier
-                                            .clip(RoundedCornerShape(6.dp))
-                                            .background(
-                                                if (subscriptionState.isPro) FathomTheme.colors.accentGold.copy(alpha = 0.18f)
-                                                else FathomTheme.colors.surfaceElevated
-                                            )
-                                            .border(
-                                                width = 1.dp,
-                                                color = if (subscriptionState.isPro) FathomTheme.colors.accentGold.copy(alpha = 0.6f) else FathomTheme.colors.borderSubtle,
-                                                shape = RoundedCornerShape(6.dp)
-                                            )
-                                            .padding(horizontal = 6.dp, vertical = 2.dp)
-                                    ) {
-                                        Text(
-                                            text = if (subscriptionState.isPro) "PATRON" else "FREE TIER",
-                                            fontFamily = JakartaFontFamily,
-                                            fontWeight = FontWeight.Bold,
-                                            fontSize = 9.sp,
-                                            letterSpacing = 0.6.sp,
-                                            color = if (subscriptionState.isPro) FathomTheme.colors.accentGold else FathomTheme.colors.textTertiary
-                                        )
-                                    }
+                                    Text(
+                                        text = if (subscriptionState.isPro) "SANCTUARY+" else "FREE TIER",
+                                        fontFamily = JakartaFontFamily,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 9.sp,
+                                        letterSpacing = 0.6.sp,
+                                        color = if (subscriptionState.isPro) FathomTheme.colors.accentGold else FathomTheme.colors.textTertiary
+                                    )
+                                }
 
-                                    topTradition?.let { tradition ->
-                                        Text(
-                                            text = "• ${tradition.displayName} Focus",
-                                            fontFamily = JakartaFontFamily,
-                                            fontSize = 11.5.sp,
-                                            color = FathomTheme.colors.textSecondary
-                                        )
-                                    }
+                                val displayedTradition = state.userTradition ?: topTradition?.displayName?.let { "$it Focus" }
+                                displayedTradition?.let { traditionTag ->
+                                    Text(
+                                        text = "• $traditionTag",
+                                        fontFamily = JakartaFontFamily,
+                                        fontSize = 11.5.sp,
+                                        color = FathomTheme.colors.textSecondary
+                                    )
                                 }
                             }
                         }
+                    }
 
-                        if (!subscriptionState.isPro) {
+                    if (!subscriptionState.isPro) {
+                        Spacer(modifier = Modifier.width(8.dp))
                         Box(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(12.dp))
@@ -659,7 +656,7 @@ private fun YouHubView(
                         Column {
                             Text(
                                 text = "${state.currentStreakDays}",
-                                fontFamily = SyneFontFamily,
+                                fontFamily = JakartaFontFamily,
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 34.sp,
                                 color = FathomTheme.colors.accentGold
@@ -726,7 +723,7 @@ private fun YouHubView(
                             Column {
                                 Text(
                                     text = "${state.totalReadCount}",
-                                    fontFamily = SyneFontFamily,
+                                    fontFamily = JakartaFontFamily,
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 18.sp,
                                     color = FathomTheme.colors.textPrimary
@@ -780,7 +777,7 @@ private fun YouHubView(
                             Column {
                                 Text(
                                     text = "${state.history.size}",
-                                    fontFamily = SyneFontFamily,
+                                    fontFamily = JakartaFontFamily,
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 18.sp,
                                     color = FathomTheme.colors.textPrimary
@@ -863,7 +860,7 @@ private fun YouHubView(
 
                         Text(
                             text = "${state.bookmarks.size}",
-                            fontFamily = SyneFontFamily,
+                            fontFamily = JakartaFontFamily,
                             fontWeight = FontWeight.Bold,
                             fontSize = 24.sp,
                             color = FathomTheme.colors.textPrimary
@@ -931,7 +928,7 @@ private fun YouHubView(
 
                         Text(
                             text = "${state.notes.size}",
-                            fontFamily = SyneFontFamily,
+                            fontFamily = JakartaFontFamily,
                             fontWeight = FontWeight.Bold,
                             fontSize = 24.sp,
                             color = FathomTheme.colors.textPrimary
@@ -1160,7 +1157,7 @@ private fun HistoryStatsContent(
                                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                                     Text(
                                         text = tradition.displayName,
-                                        fontFamily = SyneFontFamily,
+                                        fontFamily = JakartaFontFamily,
                                         fontWeight = FontWeight.Bold,
                                         fontSize = 13.5.sp,
                                         color = if (isExplored) FathomTheme.colors.textPrimary else FathomTheme.colors.textSecondary
@@ -2650,4 +2647,203 @@ private fun copyToClipboard(context: Context, text: String) {
     val clip = ClipData.newPlainText("Fathom Wisdom", text)
     clipboard?.setPrimaryClip(clip)
     Toast.makeText(context, "Passage copied to clipboard", Toast.LENGTH_SHORT).show()
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun EditProfileSheet(
+    currentName: String,
+    currentTradition: String?,
+    onSave: (String, String?) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val haptics = LocalFathomHaptics.current
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    var name by remember { mutableStateOf(currentName) }
+    var selectedTradition by remember { mutableStateOf(currentTradition) }
+
+    val traditionOptions = remember {
+        listOf(
+            null to "Universal / Seeker",
+            TraditionId.HINDUISM.displayName to "Hinduism",
+            TraditionId.BUDDHISM.displayName to "Buddhism",
+            TraditionId.STOICISM.displayName to "Stoicism",
+            TraditionId.TAOISM.displayName to "Taoism",
+            TraditionId.ISLAM.displayName to "Islam",
+            TraditionId.CHRISTIANITY.displayName to "Christianity",
+            TraditionId.JUDAISM.displayName to "Judaism"
+        )
+    }
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        containerColor = FathomTheme.colors.surfaceElevated,
+        dragHandle = {
+            Box(
+                modifier = Modifier
+                    .padding(vertical = 12.dp)
+                    .width(36.dp)
+                    .height(4.dp)
+                    .clip(RoundedCornerShape(2.dp))
+                    .background(FathomTheme.colors.borderSubtle)
+            )
+        }
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .navigationBarsPadding()
+                .imePadding()
+                .verticalScroll(rememberScrollState())
+                .padding(start = 24.dp, end = 24.dp, top = 4.dp, bottom = 28.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Edit Profile",
+                    fontFamily = JakartaFontFamily,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp,
+                    color = FathomTheme.colors.textPrimary
+                )
+                IconButton(onClick = {
+                    haptics.light()
+                    onDismiss()
+                }) {
+                    Icon(
+                        imageVector = PhosphorIcons.Regular.X,
+                        contentDescription = "Close",
+                        tint = FathomTheme.colors.textSecondary,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Text(
+                text = "YOUR NAME",
+                fontFamily = JakartaFontFamily,
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 11.sp,
+                letterSpacing = 1.sp,
+                color = FathomTheme.colors.accentGold
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+
+            BasicTextField(
+                value = name,
+                onValueChange = { name = it },
+                textStyle = TextStyle(
+                    fontFamily = JakartaFontFamily,
+                    fontWeight = FontWeight.Medium,
+                    fontSize = 15.sp,
+                    color = FathomTheme.colors.textPrimary
+                ),
+                cursorBrush = SolidColor(FathomTheme.colors.accentGold),
+                singleLine = true,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(FathomTheme.colors.surface)
+                    .border(1.dp, FathomTheme.colors.borderSubtle, RoundedCornerShape(14.dp))
+                    .padding(horizontal = 16.dp, vertical = 14.dp),
+                decorationBox = { innerTextField ->
+                    if (name.isEmpty()) {
+                        Text(
+                            text = "Enter your name...",
+                            fontFamily = JakartaFontFamily,
+                            fontSize = 15.sp,
+                            color = FathomTheme.colors.textTertiary
+                        )
+                    }
+                    innerTextField()
+                }
+            )
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            Text(
+                text = "SPIRITUAL PATH / FOCUS (OPTIONAL)",
+                fontFamily = JakartaFontFamily,
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 11.sp,
+                letterSpacing = 1.sp,
+                color = FathomTheme.colors.accentGold
+            )
+            Spacer(modifier = Modifier.height(10.dp))
+
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                traditionOptions.chunked(2).forEach { rowPair ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        rowPair.forEach { (optionKey, label) ->
+                            val isSelected = selectedTradition == optionKey
+                            Box(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(
+                                        if (isSelected) FathomTheme.colors.accentGold.copy(alpha = 0.18f)
+                                        else FathomTheme.colors.surface
+                                    )
+                                    .border(
+                                        width = 1.dp,
+                                        color = if (isSelected) FathomTheme.colors.accentGold.copy(alpha = 0.8f) else FathomTheme.colors.borderSubtle,
+                                        shape = RoundedCornerShape(12.dp)
+                                    )
+                                    .clickable {
+                                        haptics.light()
+                                        selectedTradition = optionKey
+                                    }
+                                    .padding(vertical = 12.dp, horizontal = 10.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = label,
+                                    fontFamily = JakartaFontFamily,
+                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                    fontSize = 12.sp,
+                                    color = if (isSelected) FathomTheme.colors.accentGold else FathomTheme.colors.textSecondary
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(50.dp)
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(FathomTheme.colors.accentGold)
+                    .clickable {
+                        haptics.medium()
+                        onSave(name, selectedTradition)
+                    },
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "SAVE PROFILE",
+                    fontFamily = JakartaFontFamily,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 13.sp,
+                    letterSpacing = 1.sp,
+                    color = Color.Black
+                )
+            }
+        }
+    }
 }

@@ -237,6 +237,27 @@ class FeedViewModel(
         refreshFeedPreservingState()
     }
 
+    fun setTraditionFocus(traditionId: com.masum.fathom.core.model.TraditionId?) {
+        val traditions = if (traditionId == null) {
+            com.masum.fathom.core.model.TraditionId.entries.toSet()
+        } else {
+            setOf(traditionId)
+        }
+        currentConfig = currentConfig.copy(
+            selectedTraditions = traditions,
+            selectedBookId = null
+        )
+        _uiState.update { state ->
+            if (state is FeedUiState.Success) {
+                state.copy(
+                    selectedTraditions = traditions,
+                    selectedBookId = null
+                )
+            } else state
+        }
+        refreshFeedPreservingState()
+    }
+
     private fun handleChangeMode(mode: FeedMode) {
         currentConfig = currentConfig.copy(mode = mode)
         _uiState.update { state ->

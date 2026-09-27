@@ -50,7 +50,6 @@ import com.masum.fathom.core.update.AppUpdateEngine
 import com.masum.fathom.core.update.AppUpdateStatus
 import com.masum.fathom.ui.theme.FathomTheme
 import com.masum.fathom.ui.theme.JakartaFontFamily
-import com.masum.fathom.ui.theme.SyneFontFamily
 
 @Composable
 fun AppUpdateBanner(
@@ -116,7 +115,7 @@ fun AppUpdateBanner(
                             Column {
                                 Text(
                                     text = "Sacred Update Available",
-                                    fontFamily = SyneFontFamily,
+                                    fontFamily = JakartaFontFamily,
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 13.sp,
                                     color = FathomTheme.colors.textPrimary
@@ -148,7 +147,7 @@ fun AppUpdateBanner(
                         ) {
                             Text(
                                 text = "Update",
-                                fontFamily = SyneFontFamily,
+                                fontFamily = JakartaFontFamily,
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 12.sp
                             )
@@ -189,7 +188,7 @@ fun AppUpdateBanner(
 
                             Text(
                                 text = "${(progress * 100).toInt()}%",
-                                fontFamily = SyneFontFamily,
+                                fontFamily = JakartaFontFamily,
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 11.sp,
                                 color = FathomTheme.colors.accentGold
@@ -240,7 +239,7 @@ fun AppUpdateBanner(
                             Column {
                                 Text(
                                     text = "Update Ready to Install",
-                                    fontFamily = SyneFontFamily,
+                                    fontFamily = JakartaFontFamily,
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 13.sp,
                                     color = FathomTheme.colors.textPrimary
@@ -268,7 +267,7 @@ fun AppUpdateBanner(
                         ) {
                             Text(
                                 text = "Restart App",
-                                fontFamily = SyneFontFamily,
+                                fontFamily = JakartaFontFamily,
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 12.sp
                             )

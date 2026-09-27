@@ -31,7 +31,6 @@ import com.masum.fathom.ui.components.SacredDivider
 import com.masum.fathom.ui.components.TraditionBadge
 import com.masum.fathom.ui.theme.FathomTheme
 import com.masum.fathom.ui.theme.JakartaFontFamily
-import com.masum.fathom.ui.theme.SyneFontFamily
 
 @Composable
 fun PassageCard(

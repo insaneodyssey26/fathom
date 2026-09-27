@@ -78,6 +78,7 @@ fun FeedScreen(
 ) {
     val coroutineScope = rememberCoroutineScope()
     val haptics = com.masum.fathom.core.haptics.LocalFathomHaptics.current
+    val openSanctuary = com.masum.fathom.core.sanctuary.LocalOpenSanctuary.current
     val subscriptionState = LocalSubscriptionState.current
     val openPaywall = LocalOpenPaywall.current
     val audioEngine = LocalSacredAudioEngine.current
@@ -200,7 +201,7 @@ fun FeedScreen(
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             val activeBook = state.availableBooks.find { it.id == state.selectedBookId }
-                            val activeTitle = activeBook?.title ?: "All Scriptures"
+                            val activeTitle = activeBook?.title ?: "All Wisdom"
 
                             Row(
                                 modifier = Modifier
@@ -215,7 +216,7 @@ fun FeedScreen(
                                         haptics.light()
                                         showScriptureSheet = true
                                     }
-                                    .padding(horizontal = 11.dp, vertical = 7.dp),
+                                    .padding(horizontal = 12.dp, vertical = 7.dp),
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.spacedBy(6.dp)
                             ) {
@@ -231,7 +232,7 @@ fun FeedScreen(
                                     color = if (state.selectedBookId != null) FathomTheme.colors.accentGold else FathomTheme.colors.textPrimary,
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis,
-                                    modifier = Modifier.widthIn(max = 135.dp)
+                                    modifier = Modifier.widthIn(max = 140.dp)
                                 )
                                 Icon(
                                     imageVector = PhosphorIcons.Regular.CaretDown,
@@ -241,50 +242,10 @@ fun FeedScreen(
                                 )
                             }
 
-                            Box(
-                                modifier = Modifier
-                                    .clip(RoundedCornerShape(20.dp))
-                                    .background(
-                                        if (subscriptionState.isPro) FathomTheme.colors.accentGold.copy(alpha = 0.16f)
-                                        else FathomTheme.colors.surfaceElevated
-                                    )
-                                    .border(
-                                        width = 1.dp,
-                                        color = if (subscriptionState.isPro) FathomTheme.colors.accentGold else FathomTheme.colors.borderSubtle,
-                                        shape = RoundedCornerShape(20.dp)
-                                    )
-                                    .clickable {
-                                        haptics.medium()
-                                        openPaywall()
-                                    }
-                                    .padding(horizontal = 9.dp, vertical = 6.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
-                                ) {
-                                    Icon(
-                                        imageVector = PhosphorIcons.Regular.Crown,
-                                        contentDescription = "Sanctuary+ Pro",
-                                        tint = if (subscriptionState.isPro) FathomTheme.colors.accentGold else FathomTheme.colors.textSecondary,
-                                        modifier = Modifier.size(12.dp)
-                                    )
-                                    Text(
-                                        text = if (subscriptionState.isPro) "PATRON" else "PRO",
-                                        fontFamily = JakartaFontFamily,
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 10.5.sp,
-                                        letterSpacing = 0.5.sp,
-                                        color = if (subscriptionState.isPro) FathomTheme.colors.accentGold else FathomTheme.colors.textSecondary
-                                    )
-                                }
-                            }
-
                             IconButton(
                                 onClick = {
                                     haptics.light()
-                                    showFilterSheet = true
+                                    openSanctuary()
                                 },
                                 modifier = Modifier
                                     .clip(CircleShape)
@@ -293,7 +254,7 @@ fun FeedScreen(
                             ) {
                                 Icon(
                                     imageVector = PhosphorIcons.Regular.Sliders,
-                                    contentDescription = "Tradition and Theme Filters",
+                                    contentDescription = "Sanctuary Settings",
                                     tint = FathomTheme.colors.textSecondary,
                                     modifier = Modifier.size(18.dp)
                                 )

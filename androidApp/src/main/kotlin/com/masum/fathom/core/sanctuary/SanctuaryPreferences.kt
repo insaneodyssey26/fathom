@@ -14,6 +14,10 @@ enum class ByokProvider(val displayName: String) {
 }
 
 data class SanctuarySettings(
+    val userName: String = "Sanctuary Reader",
+    val userTradition: String? = null,
+    val feedPersonalizedToTradition: Boolean = false,
+    val hasCompletedOnboarding: Boolean = false,
     val theme: ReadingTheme = ReadingTheme.OBSIDIAN,
     val dailyNotificationEnabled: Boolean = false,
     val notificationHour: Int = 7,
@@ -31,6 +35,11 @@ class SanctuaryPreferences(context: Context) {
     val settings: StateFlow<SanctuarySettings> = _settings.asStateFlow()
 
     private fun loadSettings(): SanctuarySettings {
+        val name = prefs.getString("user_name", "Sanctuary Reader") ?: "Sanctuary Reader"
+        val tradition = prefs.getString("user_tradition", null)
+        val feedPersonalized = prefs.getBoolean("feed_personalized", false)
+        val completedOnboarding = prefs.getBoolean("has_completed_onboarding", false)
+
         val themeName = prefs.getString("reading_theme", ReadingTheme.OBSIDIAN.name) ?: ReadingTheme.OBSIDIAN.name
         val theme = try {
             ReadingTheme.valueOf(themeName)
@@ -53,6 +62,10 @@ class SanctuaryPreferences(context: Context) {
         val voiceId = prefs.getString("byok_voice_id", "") ?: ""
 
         return SanctuarySettings(
+            userName = name,
+            userTradition = tradition,
+            feedPersonalizedToTradition = feedPersonalized,
+            hasCompletedOnboarding = completedOnboarding,
             theme = theme,
             dailyNotificationEnabled = notifEnabled,
             notificationHour = hour,
@@ -60,6 +73,36 @@ class SanctuaryPreferences(context: Context) {
             byokProvider = provider,
             byokApiKey = apiKey,
             byokVoiceId = voiceId
+        )
+    }
+
+    fun completeOnboarding(name: String, tradition: String?, personalizeFeed: Boolean) {
+        val cleanName = name.trim().ifBlank { "Sanctuary Reader" }
+        val cleanTradition = tradition?.trim()?.ifBlank { null }
+        prefs.edit()
+            .putString("user_name", cleanName)
+            .putString("user_tradition", cleanTradition)
+            .putBoolean("feed_personalized", personalizeFeed)
+            .putBoolean("has_completed_onboarding", true)
+            .apply()
+        _settings.value = _settings.value.copy(
+            userName = cleanName,
+            userTradition = cleanTradition,
+            feedPersonalizedToTradition = personalizeFeed,
+            hasCompletedOnboarding = true
+        )
+    }
+
+    fun updateProfile(name: String, tradition: String?) {
+        val cleanName = name.trim().ifBlank { "Sanctuary Reader" }
+        val cleanTradition = tradition?.trim()?.ifBlank { null }
+        prefs.edit()
+            .putString("user_name", cleanName)
+            .putString("user_tradition", cleanTradition)
+            .apply()
+        _settings.value = _settings.value.copy(
+            userName = cleanName,
+            userTradition = cleanTradition
         )
     }
 

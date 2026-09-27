@@ -91,7 +91,6 @@ import com.masum.fathom.ui.theme.ObsidianColors
 import com.masum.fathom.ui.theme.ReadingTheme
 import com.masum.fathom.ui.theme.SepiaColors
 import com.masum.fathom.ui.theme.SlateColors
-import com.masum.fathom.ui.theme.SyneFontFamily
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -153,7 +152,7 @@ fun SanctuaryModal(
                 Column {
                     Text(
                         text = "SANCTUARY",
-                        fontFamily = SyneFontFamily,
+                        fontFamily = JakartaFontFamily,
                         fontWeight = FontWeight.Bold,
                         fontSize = 22.sp,
                         color = FathomTheme.colors.textPrimary
@@ -248,7 +247,7 @@ fun SanctuaryModal(
                             ) {
                                 Text(
                                     text = if (subscriptionState.isPro) "SANCTUARY+ PATRON" else "FATHOM SANCTUARY+",
-                                    fontFamily = SyneFontFamily,
+                                    fontFamily = JakartaFontFamily,
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 13.sp,
                                     letterSpacing = 0.8.sp,
@@ -717,7 +716,7 @@ fun SanctuaryModal(
                     Column {
                         Text(
                             text = "${storageStats.totalVerses} Verses",
-                            fontFamily = SyneFontFamily,
+                            fontFamily = JakartaFontFamily,
                             fontWeight = FontWeight.Bold,
                             fontSize = 17.sp,
                             color = FathomTheme.colors.textPrimary
@@ -733,7 +732,7 @@ fun SanctuaryModal(
                     Column(horizontalAlignment = Alignment.End) {
                         Text(
                             text = storageStats.contentDbSizeMb,
-                            fontFamily = SyneFontFamily,
+                            fontFamily = JakartaFontFamily,
                             fontWeight = FontWeight.Bold,
                             fontSize = 17.sp,
                             color = FathomTheme.colors.accentGold
@@ -814,7 +813,7 @@ fun SanctuaryModal(
 
                 Text(
                     text = "CLOSED TESTING & UPDATES",
-                    style = FathomTheme.typography.commentaryTitle.copy(fontFamily = SyneFontFamily, fontWeight = FontWeight.Bold, fontSize = 12.sp, letterSpacing = 1.sp),
+                    style = FathomTheme.typography.commentaryTitle.copy(fontFamily = JakartaFontFamily, fontWeight = FontWeight.Bold, fontSize = 12.sp, letterSpacing = 1.sp),
                     color = FathomTheme.colors.accentGold
                 )
                 Spacer(modifier = Modifier.height(8.dp))
@@ -850,7 +849,7 @@ fun SanctuaryModal(
 
                             Text(
                                 text = "Fathom for Android",
-                                fontFamily = SyneFontFamily,
+                                fontFamily = JakartaFontFamily,
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 14.sp,
                                 color = FathomTheme.colors.textPrimary
@@ -887,7 +886,7 @@ fun SanctuaryModal(
                                 ) {
                                     Text(
                                         text = "UPDATE",
-                                        fontFamily = SyneFontFamily,
+                                        fontFamily = JakartaFontFamily,
                                         fontWeight = FontWeight.Bold,
                                         fontSize = 11.sp,
                                         color = Color.Black
@@ -907,7 +906,7 @@ fun SanctuaryModal(
                                 ) {
                                     Text(
                                         text = "RESTART",
-                                        fontFamily = SyneFontFamily,
+                                        fontFamily = JakartaFontFamily,
                                         fontWeight = FontWeight.Bold,
                                         fontSize = 11.sp,
                                         color = Color.Black
@@ -993,7 +992,7 @@ fun SanctuaryModal(
             title = {
                 Text(
                     text = "RESTORE BACKUP JSON",
-                    style = FathomTheme.typography.commentaryTitle.copy(fontFamily = SyneFontFamily, fontWeight = FontWeight.Bold, fontSize = 17.sp),
+                    style = FathomTheme.typography.commentaryTitle.copy(fontFamily = JakartaFontFamily, fontWeight = FontWeight.Bold, fontSize = 17.sp),
                     color = FathomTheme.colors.textPrimary
                 )
             },

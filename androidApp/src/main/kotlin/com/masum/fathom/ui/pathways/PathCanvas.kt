@@ -43,13 +43,13 @@ import com.adamglin.phosphoricons.regular.Check
 import com.adamglin.phosphoricons.regular.Crown
 import com.adamglin.phosphoricons.regular.Flame
 import com.adamglin.phosphoricons.regular.Sparkle
+import com.adamglin.phosphoricons.regular.Star
 import com.masum.fathom.ui.theme.FathomTheme
 import com.masum.fathom.ui.theme.JakartaFontFamily
-import com.masum.fathom.ui.theme.SyneFontFamily
 
-private val ITEM_TOTAL_HEIGHT = 160.dp
-private val CIRCLE_CENTER_OFFSET = 33.dp
-private val HORIZONTAL_AMP = 60.dp
+private val ITEM_TOTAL_HEIGHT = 168.dp
+private val CIRCLE_CENTER_OFFSET = 35.dp
+private val HORIZONTAL_AMP = 62.dp
 
 @Composable
 fun SacredRoadStream(
@@ -57,7 +57,7 @@ fun SacredRoadStream(
     onOpenChapter: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val totalHeight = (chapters.size * ITEM_TOTAL_HEIGHT.value + 40).dp
+    val totalHeight = (chapters.size * ITEM_TOTAL_HEIGHT.value + 50).dp
 
     Box(
         modifier = modifier
@@ -165,10 +165,10 @@ private fun SacredCurvedRiverCanvas(
 
         drawPath(
             path = upcomingPath,
-            color = subtleColor.copy(alpha = 0.5f),
+            color = subtleColor.copy(alpha = 0.45f),
             style = Stroke(
-                width = 2.5.dp.toPx(),
-                pathEffect = PathEffect.dashPathEffect(floatArrayOf(12f, 12f), 0f),
+                width = 2.dp.toPx(),
+                pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 10f), 0f),
                 cap = StrokeCap.Round
             )
         )
@@ -176,10 +176,19 @@ private fun SacredCurvedRiverCanvas(
         if (hasStartedCompleted) {
             drawPath(
                 path = completedPath,
+                color = goldColor.copy(alpha = 0.22f),
+                style = Stroke(
+                    width = 8.dp.toPx(),
+                    cap = StrokeCap.Round
+                )
+            )
+
+            drawPath(
+                path = completedPath,
                 brush = Brush.verticalGradient(
                     colors = listOf(
                         goldColor.copy(alpha = 0.95f),
-                        goldColor.copy(alpha = 0.7f),
+                        goldColor.copy(alpha = 0.75f),
                         goldColor.copy(alpha = 0.95f)
                     ),
                     startY = 0f,
@@ -201,7 +210,7 @@ fun SacredMilestoneItem(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val nodeSize = 56.dp
+    val nodeSize = 58.dp
 
     Column(
         modifier = modifier
@@ -210,44 +219,66 @@ fun SacredMilestoneItem(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Box(
-            modifier = Modifier.size(66.dp),
+            modifier = Modifier.size(70.dp),
             contentAlignment = Alignment.Center
         ) {
             if (chapter.isCurrent) {
                 Box(
                     modifier = Modifier
-                        .size(66.dp)
+                        .size(70.dp)
                         .clip(CircleShape)
                         .background(FathomTheme.colors.accentGold.copy(alpha = 0.12f))
                         .border(1.dp, FathomTheme.colors.accentGold.copy(alpha = 0.35f), CircleShape)
                 )
             }
 
+            val nodeShape = when (chapter.nodeType) {
+                MilestoneNodeType.TEMPLE -> RoundedCornerShape(18.dp)
+                MilestoneNodeType.GATEWAY -> RoundedCornerShape(20.dp)
+                MilestoneNodeType.SANCTUARY -> RoundedCornerShape(22.dp)
+                MilestoneNodeType.DISCIPLE -> CircleShape
+            }
+
             Box(
                 modifier = Modifier
                     .size(nodeSize)
                     .shadow(
-                        elevation = if (chapter.isCurrent) 8.dp else 0.dp,
-                        shape = CircleShape,
-                        ambientColor = if (chapter.isCurrent) FathomTheme.colors.accentGold else Color.Transparent,
-                        spotColor = if (chapter.isCurrent) FathomTheme.colors.accentGold else Color.Transparent
+                        elevation = if (chapter.isCurrent || chapter.isCompleted) 8.dp else 0.dp,
+                        shape = nodeShape,
+                        ambientColor = if (chapter.isCurrent || chapter.isCompleted) FathomTheme.colors.accentGold.copy(alpha = 0.35f) else Color.Transparent,
+                        spotColor = if (chapter.isCurrent || chapter.isCompleted) FathomTheme.colors.accentGold.copy(alpha = 0.45f) else Color.Transparent
                     )
-                    .clip(CircleShape)
+                    .clip(nodeShape)
                     .background(
                         when {
-                            chapter.isCompleted -> FathomTheme.colors.accentGold
-                            chapter.isCurrent -> FathomTheme.colors.surfaceElevated
-                            else -> FathomTheme.colors.surface
+                            chapter.isCompleted -> Brush.verticalGradient(
+                                listOf(
+                                    FathomTheme.colors.accentGold,
+                                    FathomTheme.colors.accentGold.copy(alpha = 0.85f)
+                                )
+                            )
+                            chapter.isCurrent -> Brush.verticalGradient(
+                                listOf(
+                                    FathomTheme.colors.surfaceElevated,
+                                    FathomTheme.colors.surface
+                                )
+                            )
+                            else -> Brush.verticalGradient(
+                                listOf(
+                                    FathomTheme.colors.surface,
+                                    FathomTheme.colors.background
+                                )
+                            )
                         }
                     )
                     .border(
-                        width = if (chapter.isCurrent || chapter.isCompleted) 1.5.dp else 1.dp,
+                        width = if (chapter.isCurrent) 1.5.dp else if (chapter.isCompleted) 1.5.dp else 1.dp,
                         color = when {
                             chapter.isCompleted -> FathomTheme.colors.accentGold
                             chapter.isCurrent -> FathomTheme.colors.accentGold
                             else -> FathomTheme.colors.borderSubtle
                         },
-                        shape = CircleShape
+                        shape = nodeShape
                     )
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
@@ -261,11 +292,13 @@ fun SacredMilestoneItem(
                         Icon(
                             imageVector = when (chapter.nodeType) {
                                 MilestoneNodeType.TEMPLE -> PhosphorIcons.Regular.Crown
-                                else -> PhosphorIcons.Regular.Check
+                                MilestoneNodeType.GATEWAY -> PhosphorIcons.Regular.Flame
+                                MilestoneNodeType.SANCTUARY -> PhosphorIcons.Regular.Star
+                                MilestoneNodeType.DISCIPLE -> PhosphorIcons.Regular.Check
                             },
                             contentDescription = "Completed Chapter",
                             tint = Color.Black,
-                            modifier = Modifier.size(20.dp)
+                            modifier = Modifier.size(22.dp)
                         )
                     }
 
@@ -274,18 +307,19 @@ fun SacredMilestoneItem(
                             imageVector = when (chapter.nodeType) {
                                 MilestoneNodeType.TEMPLE -> PhosphorIcons.Regular.Crown
                                 MilestoneNodeType.GATEWAY -> PhosphorIcons.Regular.Flame
-                                else -> PhosphorIcons.Regular.Sparkle
+                                MilestoneNodeType.SANCTUARY -> PhosphorIcons.Regular.Star
+                                MilestoneNodeType.DISCIPLE -> PhosphorIcons.Regular.Sparkle
                             },
                             contentDescription = "Active Chapter",
                             tint = FathomTheme.colors.accentGold,
-                            modifier = Modifier.size(19.dp)
+                            modifier = Modifier.size(21.dp)
                         )
                     }
 
                     else -> {
                         Text(
                             text = "${chapter.chapterNumber}",
-                            fontFamily = SyneFontFamily,
+                            fontFamily = JakartaFontFamily,
                             fontWeight = FontWeight.Bold,
                             fontSize = 15.sp,
                             color = FathomTheme.colors.textSecondary
@@ -299,7 +333,7 @@ fun SacredMilestoneItem(
 
         Box(
             modifier = Modifier
-                .clip(RoundedCornerShape(16.dp))
+                .clip(RoundedCornerShape(18.dp))
                 .background(
                     Brush.verticalGradient(
                         listOf(
@@ -310,8 +344,8 @@ fun SacredMilestoneItem(
                 )
                 .border(
                     width = 1.dp,
-                    color = if (chapter.isCurrent) FathomTheme.colors.accentGold.copy(alpha = 0.5f) else FathomTheme.colors.borderSubtle,
-                    shape = RoundedCornerShape(16.dp)
+                    color = if (chapter.isCurrent) FathomTheme.colors.accentGold.copy(alpha = 0.55f) else FathomTheme.colors.borderSubtle,
+                    shape = RoundedCornerShape(18.dp)
                 )
                 .clickable(
                     interactionSource = remember { MutableInteractionSource() },
@@ -332,10 +366,17 @@ fun SacredMilestoneItem(
                             tint = FathomTheme.colors.accentGold,
                             modifier = Modifier.size(12.dp)
                         )
+                    } else if (chapter.nodeType == MilestoneNodeType.GATEWAY) {
+                        Icon(
+                            imageVector = PhosphorIcons.Regular.Flame,
+                            contentDescription = null,
+                            tint = FathomTheme.colors.accentGold,
+                            modifier = Modifier.size(12.dp)
+                        )
                     }
                     Text(
                         text = chapter.title,
-                        fontFamily = SyneFontFamily,
+                        fontFamily = JakartaFontFamily,
                         fontWeight = FontWeight.Bold,
                         fontSize = 12.5.sp,
                         color = if (chapter.isCurrent) FathomTheme.colors.accentGold else FathomTheme.colors.textPrimary,

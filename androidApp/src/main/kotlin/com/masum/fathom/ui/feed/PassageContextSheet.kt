@@ -55,7 +55,6 @@ import com.masum.fathom.ui.components.SacredDivider
 import com.masum.fathom.ui.components.TraditionBadge
 import com.masum.fathom.ui.theme.FathomTheme
 import com.masum.fathom.ui.theme.JakartaFontFamily
-import com.masum.fathom.ui.theme.SyneFontFamily
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -121,7 +120,7 @@ fun PassageContextSheet(
                     Text(
                         text = passage.canonicalReference,
                         style = FathomTheme.typography.brandTitle.copy(
-                            fontFamily = SyneFontFamily,
+                            fontFamily = JakartaFontFamily,
                             fontWeight = FontWeight.Bold,
                             fontSize = 24.sp,
                             lineHeight = 30.sp,
