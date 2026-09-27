@@ -24,6 +24,7 @@ dependencies {
     implementation(libs.androidx.lifecycle.runtimeCompose)
     implementation(libs.sqldelight.android.driver)
     implementation(libs.play.app.update)
+    implementation(libs.androidx.profileinstaller)
 
     implementation(libs.compose.uiToolingPreview)
     debugImplementation(libs.compose.uiTooling)
