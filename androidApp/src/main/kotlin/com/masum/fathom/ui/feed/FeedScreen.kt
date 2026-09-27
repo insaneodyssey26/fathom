@@ -12,10 +12,12 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.pager.PagerDefaults
 import androidx.compose.foundation.pager.VerticalPager
@@ -38,6 +40,7 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
@@ -334,22 +337,36 @@ fun FeedScreen(
                 }
 
                 if (currentPassage != null) {
-                    Column(
+                    Box(
                         modifier = Modifier
                             .align(Alignment.BottomCenter)
                             .fillMaxWidth()
                             .navigationBarsPadding()
-                            .padding(horizontal = 24.dp)
-                            .padding(bottom = 76.dp)
+                            .padding(bottom = 80.dp),
+                        contentAlignment = Alignment.Center
                     ) {
-                        SacredDivider(modifier = Modifier.padding(bottom = 8.dp))
-
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.End,
-                            verticalAlignment = Alignment.CenterVertically
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(32.dp))
+                                .background(
+                                    Brush.verticalGradient(
+                                        listOf(
+                                            FathomTheme.colors.surfaceElevated,
+                                            FathomTheme.colors.surface
+                                        )
+                                    )
+                                )
+                                .border(
+                                    width = 1.dp,
+                                    color = FathomTheme.colors.accentGold.copy(alpha = 0.35f),
+                                    shape = RoundedCornerShape(32.dp)
+                                )
+                                .padding(horizontal = 8.dp, vertical = 4.dp)
                         ) {
-                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
                                 IconButton(
                                     onClick = {
                                         if (hasPrevious) {
@@ -360,16 +377,13 @@ fun FeedScreen(
                                         }
                                     },
                                     enabled = hasPrevious,
-                                    modifier = Modifier
-                                        .clip(CircleShape)
-                                        .background(FathomTheme.colors.surfaceElevated)
-                                        .size(40.dp)
+                                    modifier = Modifier.size(38.dp)
                                 ) {
                                     Icon(
                                         imageVector = PhosphorIcons.Regular.CaretUp,
                                         contentDescription = "Previous Verse",
                                         tint = if (hasPrevious) FathomTheme.colors.textSecondary else FathomTheme.colors.textTertiary.copy(alpha = 0.35f),
-                                        modifier = Modifier.size(18.dp)
+                                        modifier = Modifier.size(17.dp)
                                     )
                                 }
 
@@ -383,34 +397,35 @@ fun FeedScreen(
                                         }
                                     },
                                     enabled = hasNext,
-                                    modifier = Modifier
-                                        .clip(CircleShape)
-                                        .background(FathomTheme.colors.surfaceElevated)
-                                        .size(40.dp)
+                                    modifier = Modifier.size(38.dp)
                                 ) {
                                     Icon(
                                         imageVector = PhosphorIcons.Regular.CaretDown,
                                         contentDescription = "Next Verse",
                                         tint = if (hasNext) FathomTheme.colors.textSecondary else FathomTheme.colors.textTertiary.copy(alpha = 0.35f),
-                                        modifier = Modifier.size(18.dp)
+                                        modifier = Modifier.size(17.dp)
                                     )
                                 }
+
+                                Box(
+                                    modifier = Modifier
+                                        .width(1.dp)
+                                        .height(18.dp)
+                                        .background(FathomTheme.colors.borderSubtle)
+                                )
 
                                 IconButton(
                                     onClick = {
                                         haptics.medium()
                                         audioEngine.toggle(currentPassage)
                                     },
-                                    modifier = Modifier
-                                        .clip(CircleShape)
-                                        .background(if (isSpeakingCurrent) FathomTheme.colors.accentGold.copy(alpha = 0.2f) else FathomTheme.colors.surfaceElevated)
-                                        .size(40.dp)
+                                    modifier = Modifier.size(38.dp)
                                 ) {
                                     Icon(
                                         imageVector = PhosphorIcons.Regular.SpeakerHigh,
                                         contentDescription = "Audio Recitation",
                                         tint = if (isSpeakingCurrent) FathomTheme.colors.accentGold else FathomTheme.colors.textSecondary,
-                                        modifier = Modifier.size(18.dp)
+                                        modifier = Modifier.size(17.dp)
                                     )
                                 }
 
@@ -419,16 +434,13 @@ fun FeedScreen(
                                         haptics.light()
                                         onEvent(FeedUiEvent.OnOpenShare(currentPassage))
                                     },
-                                    modifier = Modifier
-                                        .clip(CircleShape)
-                                        .background(FathomTheme.colors.surfaceElevated)
-                                        .size(40.dp)
+                                    modifier = Modifier.size(38.dp)
                                 ) {
                                     Icon(
                                         imageVector = PhosphorIcons.Regular.ShareNetwork,
                                         contentDescription = "Share Quote Card",
                                         tint = FathomTheme.colors.textSecondary,
-                                        modifier = Modifier.size(18.dp)
+                                        modifier = Modifier.size(17.dp)
                                     )
                                 }
 
@@ -437,16 +449,13 @@ fun FeedScreen(
                                         haptics.light()
                                         onEvent(FeedUiEvent.OnOpenContext(currentPassage))
                                     },
-                                    modifier = Modifier
-                                        .clip(CircleShape)
-                                        .background(FathomTheme.colors.surfaceElevated)
-                                        .size(40.dp)
+                                    modifier = Modifier.size(38.dp)
                                 ) {
                                     Icon(
                                         imageVector = PhosphorIcons.Regular.Info,
                                         contentDescription = "Context & Commentary",
                                         tint = FathomTheme.colors.textSecondary,
-                                        modifier = Modifier.size(18.dp)
+                                        modifier = Modifier.size(17.dp)
                                     )
                                 }
 
@@ -459,16 +468,13 @@ fun FeedScreen(
                                         }
                                         onEvent(FeedUiEvent.OnToggleBookmark(currentPassage))
                                     },
-                                    modifier = Modifier
-                                        .clip(CircleShape)
-                                        .background(FathomTheme.colors.surfaceElevated)
-                                        .size(40.dp)
+                                    modifier = Modifier.size(38.dp)
                                 ) {
                                     Icon(
                                         imageVector = if (isCurrentBookmarked) PhosphorIcons.Fill.BookmarkSimpleFill else PhosphorIcons.Regular.BookmarkSimple,
                                         contentDescription = "Bookmark",
                                         tint = if (isCurrentBookmarked) FathomTheme.colors.accentGold else FathomTheme.colors.textSecondary,
-                                        modifier = Modifier.size(18.dp)
+                                        modifier = Modifier.size(17.dp)
                                     )
                                 }
                             }

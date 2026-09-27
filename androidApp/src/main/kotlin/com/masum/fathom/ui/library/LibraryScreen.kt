@@ -490,9 +490,9 @@ private fun YouHubView(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(20.dp))
+                    .clip(RoundedCornerShape(26.dp))
                     .background(
-                        Brush.linearGradient(
+                        Brush.verticalGradient(
                             listOf(
                                 FathomTheme.colors.surfaceElevated,
                                 FathomTheme.colors.surface
@@ -502,52 +502,55 @@ private fun YouHubView(
                     .border(
                         width = 1.dp,
                         color = if (subscriptionState.isPro) FathomTheme.colors.accentGold.copy(alpha = 0.5f) else FathomTheme.colors.borderSubtle,
-                        shape = RoundedCornerShape(20.dp)
+                        shape = RoundedCornerShape(26.dp)
                     )
                     .padding(20.dp)
             ) {
-                Column(modifier = Modifier.fillMaxWidth()) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(14.dp)
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(52.dp)
-                                    .clip(CircleShape)
-                                    .background(
-                                        if (subscriptionState.isPro) FathomTheme.colors.accentGold.copy(alpha = 0.18f)
-                                        else FathomTheme.colors.surfaceElevated
+                        Box(
+                            modifier = Modifier
+                                .size(56.dp)
+                                .clip(CircleShape)
+                                .background(
+                                    Brush.radialGradient(
+                                        listOf(
+                                            FathomTheme.colors.accentGold.copy(alpha = 0.25f),
+                                            FathomTheme.colors.surfaceElevated
+                                        )
                                     )
-                                    .border(
-                                        width = 1.5.dp,
-                                        color = if (subscriptionState.isPro) FathomTheme.colors.accentGold else FathomTheme.colors.borderSubtle,
-                                        shape = CircleShape
-                                    ),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(
-                                    imageVector = if (subscriptionState.isPro) PhosphorIcons.Regular.Crown else PhosphorIcons.Regular.User,
-                                    contentDescription = null,
-                                    tint = if (subscriptionState.isPro) FathomTheme.colors.accentGold else FathomTheme.colors.textSecondary,
-                                    modifier = Modifier.size(24.dp)
                                 )
-                            }
+                                .border(
+                                    width = 1.5.dp,
+                                    color = if (subscriptionState.isPro) FathomTheme.colors.accentGold else FathomTheme.colors.accentGold.copy(alpha = 0.5f),
+                                    shape = CircleShape
+                                ),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = if (subscriptionState.isPro) PhosphorIcons.Regular.Crown else PhosphorIcons.Regular.User,
+                                contentDescription = null,
+                                tint = FathomTheme.colors.accentGold,
+                                modifier = Modifier.size(26.dp)
+                            )
+                        }
 
-                            Column {
-                                Text(
-                                    text = "Reader of Wisdom",
-                                    fontFamily = JakartaFontFamily,
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 17.5.sp,
-                                    color = FathomTheme.colors.textPrimary
-                                )
-                                Spacer(modifier = Modifier.height(3.dp))
+                        Column {
+                            Text(
+                                text = "Sanctuary Reader",
+                                fontFamily = SyneFontFamily,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 19.sp,
+                                color = FathomTheme.colors.textPrimary
+                            )
+                                Spacer(modifier = Modifier.height(4.dp))
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.spacedBy(6.dp)
@@ -589,103 +592,23 @@ private fun YouHubView(
                         }
 
                         if (!subscriptionState.isPro) {
-                            Box(
-                                modifier = Modifier
-                                    .clip(RoundedCornerShape(12.dp))
-                                    .background(FathomTheme.colors.accentGold.copy(alpha = 0.15f))
-                                    .border(1.dp, FathomTheme.colors.accentGold.copy(alpha = 0.5f), RoundedCornerShape(12.dp))
-                                    .clickable {
-                                        haptics.medium()
-                                        openPaywall()
-                                    }
-                                    .padding(horizontal = 10.dp, vertical = 6.dp)
-                            ) {
-                                Text(
-                                    text = "UPGRADE",
-                                    fontFamily = JakartaFontFamily,
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 10.5.sp,
-                                    letterSpacing = 0.8.sp,
-                                    color = FathomTheme.colors.accentGold
-                                )
-                            }
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(18.dp))
-                    SacredDivider()
-                    Spacer(modifier = Modifier.height(14.dp))
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceAround,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text(
-                                text = "${state.currentStreakDays}D",
-                                fontFamily = JakartaFontFamily,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 21.sp,
-                                color = FathomTheme.colors.accentGold
-                            )
-                            Text(
-                                text = "STREAK",
-                                fontFamily = JakartaFontFamily,
-                                fontWeight = FontWeight.SemiBold,
-                                fontSize = 10.sp,
-                                letterSpacing = 0.8.sp,
-                                color = FathomTheme.colors.textTertiary
-                            )
-                        }
-
                         Box(
                             modifier = Modifier
-                                .width(1.dp)
-                                .height(26.dp)
-                                .background(FathomTheme.colors.borderSubtle)
-                        )
-
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(FathomTheme.colors.accentGold)
+                                .clickable {
+                                    haptics.medium()
+                                    openPaywall()
+                                }
+                                .padding(horizontal = 12.dp, vertical = 7.dp)
+                        ) {
                             Text(
-                                text = "${state.totalReadCount}",
+                                text = "PRO",
                                 fontFamily = JakartaFontFamily,
                                 fontWeight = FontWeight.Bold,
-                                fontSize = 21.sp,
-                                color = FathomTheme.colors.textPrimary
-                            )
-                            Text(
-                                text = "READINGS",
-                                fontFamily = JakartaFontFamily,
-                                fontWeight = FontWeight.SemiBold,
-                                fontSize = 10.sp,
+                                fontSize = 11.sp,
                                 letterSpacing = 0.8.sp,
-                                color = FathomTheme.colors.textTertiary
-                            )
-                        }
-
-                        Box(
-                            modifier = Modifier
-                                .width(1.dp)
-                                .height(26.dp)
-                                .background(FathomTheme.colors.borderSubtle)
-                        )
-
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text(
-                                text = "${state.history.size}",
-                                fontFamily = JakartaFontFamily,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 21.sp,
-                                color = FathomTheme.colors.textPrimary
-                            )
-                            Text(
-                                text = "VERSES READ",
-                                fontFamily = JakartaFontFamily,
-                                fontWeight = FontWeight.SemiBold,
-                                fontSize = 10.sp,
-                                letterSpacing = 0.8.sp,
-                                color = FathomTheme.colors.textTertiary
+                                color = Color.Black
                             )
                         }
                     }
@@ -694,8 +617,191 @@ private fun YouHubView(
 
             Spacer(modifier = Modifier.height(16.dp))
 
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .weight(1.1f)
+                        .height(168.dp)
+                        .clip(RoundedCornerShape(22.dp))
+                        .background(
+                            Brush.linearGradient(
+                                listOf(
+                                    FathomTheme.colors.accentGold.copy(alpha = 0.16f),
+                                    FathomTheme.colors.surfaceElevated
+                                )
+                            )
+                        )
+                        .border(1.dp, FathomTheme.colors.accentGold.copy(alpha = 0.4f), RoundedCornerShape(22.dp))
+                        .padding(18.dp)
+                ) {
+                    Column(
+                        modifier = Modifier.fillMaxSize(),
+                        verticalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(40.dp)
+                                .clip(CircleShape)
+                                .background(FathomTheme.colors.accentGold.copy(alpha = 0.22f)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = PhosphorIcons.Regular.Flame,
+                                contentDescription = null,
+                                tint = FathomTheme.colors.accentGold,
+                                modifier = Modifier.size(22.dp)
+                            )
+                        }
+
+                        Column {
+                            Text(
+                                text = "${state.currentStreakDays}",
+                                fontFamily = SyneFontFamily,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 34.sp,
+                                color = FathomTheme.colors.accentGold
+                            )
+                            Text(
+                                text = "DAY STREAK",
+                                fontFamily = JakartaFontFamily,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 11.sp,
+                                letterSpacing = 1.sp,
+                                color = FathomTheme.colors.textPrimary
+                            )
+                            Text(
+                                text = "Consecutive study",
+                                fontFamily = JakartaFontFamily,
+                                fontSize = 10.5.sp,
+                                color = FathomTheme.colors.textTertiary
+                            )
+                        }
+                    }
+                }
+
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(168.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f)
+                            .clip(RoundedCornerShape(18.dp))
+                            .background(
+                                Brush.verticalGradient(
+                                    listOf(
+                                        FathomTheme.colors.surfaceElevated,
+                                        FathomTheme.colors.surface
+                                    )
+                                )
+                            )
+                            .border(1.dp, FathomTheme.colors.borderSubtle, RoundedCornerShape(18.dp))
+                            .padding(horizontal = 14.dp, vertical = 10.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxSize(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(34.dp)
+                                    .clip(CircleShape)
+                                    .background(FathomTheme.colors.surface),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = PhosphorIcons.Regular.BookOpen,
+                                    contentDescription = null,
+                                    tint = FathomTheme.colors.accentGold,
+                                    modifier = Modifier.size(17.dp)
+                                )
+                            }
+                            Column {
+                                Text(
+                                    text = "${state.totalReadCount}",
+                                    fontFamily = SyneFontFamily,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 18.sp,
+                                    color = FathomTheme.colors.textPrimary
+                                )
+                                Text(
+                                    text = "Readings",
+                                    fontFamily = JakartaFontFamily,
+                                    fontWeight = FontWeight.Medium,
+                                    fontSize = 10.5.sp,
+                                    color = FathomTheme.colors.textTertiary
+                                )
+                            }
+                        }
+                    }
+
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f)
+                            .clip(RoundedCornerShape(18.dp))
+                            .background(
+                                Brush.verticalGradient(
+                                    listOf(
+                                        FathomTheme.colors.surfaceElevated,
+                                        FathomTheme.colors.surface
+                                    )
+                                )
+                            )
+                            .border(1.dp, FathomTheme.colors.borderSubtle, RoundedCornerShape(18.dp))
+                            .padding(horizontal = 14.dp, vertical = 10.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxSize(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(34.dp)
+                                    .clip(CircleShape)
+                                    .background(FathomTheme.colors.surface),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = PhosphorIcons.Regular.Sparkle,
+                                    contentDescription = null,
+                                    tint = FathomTheme.colors.accentGold,
+                                    modifier = Modifier.size(17.dp)
+                                )
+                            }
+                            Column {
+                                Text(
+                                    text = "${state.history.size}",
+                                    fontFamily = SyneFontFamily,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 18.sp,
+                                    color = FathomTheme.colors.textPrimary
+                                )
+                                Text(
+                                    text = "Verses Read",
+                                    fontFamily = JakartaFontFamily,
+                                    fontWeight = FontWeight.Medium,
+                                    fontSize = 10.5.sp,
+                                    color = FathomTheme.colors.textTertiary
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(20.dp))
+
             Text(
-                text = "SAVED & NOTES",
+                text = "SAVED & REFLECTIONS",
                 style = FathomTheme.typography.canonicalHeader,
                 color = FathomTheme.colors.accentGold
             )
@@ -708,14 +814,21 @@ private fun YouHubView(
                 Box(
                     modifier = Modifier
                         .weight(1f)
-                        .clip(RoundedCornerShape(16.dp))
-                        .background(FathomTheme.colors.surfaceElevated)
-                        .border(1.dp, FathomTheme.colors.borderSubtle, RoundedCornerShape(16.dp))
+                        .clip(RoundedCornerShape(20.dp))
+                        .background(
+                            Brush.verticalGradient(
+                                listOf(
+                                    FathomTheme.colors.surfaceElevated,
+                                    FathomTheme.colors.surface
+                                )
+                            )
+                        )
+                        .border(1.dp, FathomTheme.colors.borderSubtle, RoundedCornerShape(20.dp))
                         .clickable {
                             haptics.light()
                             onNavigateToSaved()
                         }
-                        .padding(16.dp)
+                        .padding(18.dp)
                 ) {
                     Column {
                         Row(
@@ -725,7 +838,7 @@ private fun YouHubView(
                         ) {
                             Box(
                                 modifier = Modifier
-                                    .size(36.dp)
+                                    .size(38.dp)
                                     .clip(CircleShape)
                                     .background(FathomTheme.colors.accentGold.copy(alpha = 0.16f)),
                                 contentAlignment = Alignment.Center
@@ -750,7 +863,7 @@ private fun YouHubView(
 
                         Text(
                             text = "${state.bookmarks.size}",
-                            fontFamily = JakartaFontFamily,
+                            fontFamily = SyneFontFamily,
                             fontWeight = FontWeight.Bold,
                             fontSize = 24.sp,
                             color = FathomTheme.colors.textPrimary
@@ -769,14 +882,21 @@ private fun YouHubView(
                 Box(
                     modifier = Modifier
                         .weight(1f)
-                        .clip(RoundedCornerShape(16.dp))
-                        .background(FathomTheme.colors.surfaceElevated)
-                        .border(1.dp, FathomTheme.colors.borderSubtle, RoundedCornerShape(16.dp))
+                        .clip(RoundedCornerShape(20.dp))
+                        .background(
+                            Brush.verticalGradient(
+                                listOf(
+                                    FathomTheme.colors.surfaceElevated,
+                                    FathomTheme.colors.surface
+                                )
+                            )
+                        )
+                        .border(1.dp, FathomTheme.colors.borderSubtle, RoundedCornerShape(20.dp))
                         .clickable {
                             haptics.light()
                             onNavigateToJournal()
                         }
-                        .padding(16.dp)
+                        .padding(18.dp)
                 ) {
                     Column {
                         Row(
@@ -786,7 +906,7 @@ private fun YouHubView(
                         ) {
                             Box(
                                 modifier = Modifier
-                                    .size(36.dp)
+                                    .size(38.dp)
                                     .clip(CircleShape)
                                     .background(FathomTheme.colors.accentGold.copy(alpha = 0.16f)),
                                 contentAlignment = Alignment.Center
@@ -811,7 +931,7 @@ private fun YouHubView(
 
                         Text(
                             text = "${state.notes.size}",
-                            fontFamily = JakartaFontFamily,
+                            fontFamily = SyneFontFamily,
                             fontWeight = FontWeight.Bold,
                             fontSize = 24.sp,
                             color = FathomTheme.colors.textPrimary
@@ -869,10 +989,17 @@ private fun HistoryStatsContent(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(16.dp))
-                .background(FathomTheme.colors.surfaceElevated)
-                .border(1.dp, FathomTheme.colors.borderSubtle, RoundedCornerShape(16.dp))
-                .padding(16.dp)
+                .clip(RoundedCornerShape(20.dp))
+                .background(
+                    Brush.verticalGradient(
+                        listOf(
+                            FathomTheme.colors.surfaceElevated,
+                            FathomTheme.colors.surface
+                        )
+                    )
+                )
+                .border(1.dp, FathomTheme.colors.borderSubtle, RoundedCornerShape(20.dp))
+                .padding(18.dp)
         ) {
             Column(modifier = Modifier.fillMaxWidth()) {
                 Row(
@@ -989,64 +1116,76 @@ private fun HistoryStatsContent(
         }
         Spacer(modifier = Modifier.height(10.dp))
 
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .horizontalScroll(rememberScrollState()),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            TraditionId.entries.forEach { tradition ->
-                val count = traditionCounts[tradition] ?: 0
-                val isExplored = count > 0
-
+            TraditionId.entries.chunked(2).forEach { pair ->
                 Row(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(
-                            if (isExplored) FathomTheme.colors.surfaceElevated
-                            else FathomTheme.colors.surface.copy(alpha = 0.5f)
-                        )
-                        .border(
-                            width = 1.dp,
-                            color = if (isExplored) FathomTheme.colors.accentGold.copy(alpha = 0.4f) else FathomTheme.colors.borderSubtle,
-                            shape = RoundedCornerShape(12.dp)
-                        )
-                        .clickable {
-                            haptics.light()
-                            onNavigateToCanon(tradition)
-                        }
-                        .padding(horizontal = 12.dp, vertical = 9.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    Text(
-                        text = tradition.displayName.uppercase(),
-                        style = FathomTheme.typography.traditionBadge,
-                        color = if (isExplored) FathomTheme.colors.accentGold else FathomTheme.colors.textTertiary
-                    )
-                    Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(6.dp))
-                            .background(
-                                if (isExplored) FathomTheme.colors.accentGold.copy(alpha = 0.16f)
-                                else FathomTheme.colors.surfaceElevated
-                            )
-                            .padding(horizontal = 6.dp, vertical = 2.dp)
-                    ) {
-                        Text(
-                            text = "$count",
-                            fontFamily = JakartaFontFamily,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 10.5.sp,
-                            color = if (isExplored) FathomTheme.colors.accentGold else FathomTheme.colors.textTertiary
-                        )
+                    pair.forEach { tradition ->
+                        val count = traditionCounts[tradition] ?: 0
+                        val isExplored = count > 0
+
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .clip(RoundedCornerShape(16.dp))
+                                .background(
+                                    Brush.verticalGradient(
+                                        listOf(
+                                            if (isExplored) FathomTheme.colors.surfaceElevated else FathomTheme.colors.surface,
+                                            FathomTheme.colors.surface
+                                        )
+                                    )
+                                )
+                                .border(
+                                    width = 1.dp,
+                                    color = if (isExplored) FathomTheme.colors.accentGold.copy(alpha = 0.4f) else FathomTheme.colors.borderSubtle,
+                                    shape = RoundedCornerShape(16.dp)
+                                )
+                                .clickable {
+                                    haptics.light()
+                                    onNavigateToCanon(tradition)
+                                }
+                                .padding(horizontal = 14.dp, vertical = 12.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                    Text(
+                                        text = tradition.displayName,
+                                        fontFamily = SyneFontFamily,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 13.5.sp,
+                                        color = if (isExplored) FathomTheme.colors.textPrimary else FathomTheme.colors.textSecondary
+                                    )
+                                    Text(
+                                        text = if (isExplored) "$count explored" else "0 read",
+                                        fontFamily = JakartaFontFamily,
+                                        fontSize = 11.sp,
+                                        color = if (isExplored) FathomTheme.colors.accentGold else FathomTheme.colors.textTertiary
+                                    )
+                                }
+
+                                Icon(
+                                    imageVector = PhosphorIcons.Regular.CaretRight,
+                                    contentDescription = null,
+                                    tint = if (isExplored) FathomTheme.colors.accentGold.copy(alpha = 0.8f) else FathomTheme.colors.textTertiary,
+                                    modifier = Modifier.size(14.dp)
+                                )
+                            }
+                        }
                     }
-                    Icon(
-                        imageVector = PhosphorIcons.Regular.CaretRight,
-                        contentDescription = null,
-                        tint = if (isExplored) FathomTheme.colors.accentGold.copy(alpha = 0.6f) else FathomTheme.colors.textTertiary,
-                        modifier = Modifier.size(12.dp)
-                    )
+
+                    if (pair.size == 1) {
+                        Spacer(modifier = Modifier.weight(1f))
+                    }
                 }
             }
         }

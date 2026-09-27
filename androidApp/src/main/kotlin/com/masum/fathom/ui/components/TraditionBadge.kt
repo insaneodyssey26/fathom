@@ -20,12 +20,12 @@ fun TraditionBadge(
 ) {
     Box(
         modifier = modifier
-            .clip(RoundedCornerShape(4.dp))
-            .background(FathomTheme.colors.surfaceElevated)
+            .clip(RoundedCornerShape(8.dp))
+            .background(FathomTheme.colors.accentGold.copy(alpha = 0.12f))
             .border(
                 width = 1.dp,
-                color = FathomTheme.colors.borderSubtle,
-                shape = RoundedCornerShape(4.dp)
+                color = FathomTheme.colors.accentGold.copy(alpha = 0.35f),
+                shape = RoundedCornerShape(8.dp)
             )
             .padding(horizontal = 8.dp, vertical = 4.dp)
     ) {

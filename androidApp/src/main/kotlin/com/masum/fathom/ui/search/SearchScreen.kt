@@ -818,6 +818,7 @@ private fun ScripturesDirectoryView(
     listState: androidx.compose.foundation.lazy.LazyListState,
     onSelectBook: (Book) -> Unit
 ) {
+    val haptics = com.masum.fathom.core.haptics.LocalFathomHaptics.current
     val filteredBooks = if (selectedTradition != null) {
         books.filter { it.traditionId == selectedTradition }
     } else {
@@ -827,83 +828,119 @@ private fun ScripturesDirectoryView(
     LazyColumn(
         state = listState,
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(start = 20.dp, top = 28.dp, end = 20.dp, bottom = 96.dp)
+        contentPadding = PaddingValues(start = 20.dp, top = 28.dp, end = 20.dp, bottom = 120.dp)
     ) {
         item {
-            Text(
-                text = "SACRED CANONS & SCRIPTURES",
-                style = FathomTheme.typography.canonicalHeader,
-                color = FathomTheme.colors.accentGold,
-                modifier = Modifier.padding(bottom = 12.dp)
-            )
-        }
-
-        items(filteredBooks, key = { it.id }) { book ->
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(16.dp))
-                    .background(FathomTheme.colors.surfaceElevated)
-                    .border(
-                        width = 1.dp,
-                        color = FathomTheme.colors.borderSubtle,
-                        shape = RoundedCornerShape(16.dp)
-                    )
-                    .clickable { onSelectBook(book) }
-                    .padding(16.dp),
+                    .padding(bottom = 14.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                Text(
+                    text = "CANONS & SCRIPTURES",
+                    style = FathomTheme.typography.canonicalHeader,
+                    color = FathomTheme.colors.accentGold
+                )
+                Text(
+                    text = "${filteredBooks.size} Books Available",
+                    fontFamily = JakartaFontFamily,
+                    fontSize = 11.sp,
+                    color = FathomTheme.colors.textTertiary
+                )
+            }
+        }
+
+        items(filteredBooks, key = { it.id }) { book ->
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(20.dp))
+                    .background(
+                        Brush.linearGradient(
+                            listOf(
+                                FathomTheme.colors.surfaceElevated,
+                                FathomTheme.colors.surface
+                            )
+                        )
+                    )
+                    .border(
+                        width = 1.dp,
+                        color = FathomTheme.colors.borderSubtle,
+                        shape = RoundedCornerShape(20.dp)
+                    )
+                    .clickable {
+                        haptics.light()
+                        onSelectBook(book)
+                    }
+                    .padding(18.dp)
+            ) {
                 Row(
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
+                    Row(
+                        modifier = Modifier.weight(1f),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(48.dp)
+                                .clip(CircleShape)
+                                .background(FathomTheme.colors.accentGold.copy(alpha = 0.14f))
+                                .border(1.dp, FathomTheme.colors.accentGold.copy(alpha = 0.35f), CircleShape),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = PhosphorIcons.Regular.BookBookmark,
+                                contentDescription = null,
+                                tint = FathomTheme.colors.accentGold,
+                                modifier = Modifier.size(22.dp)
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.width(14.dp))
+
+                        Column {
+                            TraditionBadge(traditionId = book.traditionId)
+                            Spacer(modifier = Modifier.height(6.dp))
+                            Text(
+                                text = book.title,
+                                fontFamily = SyneFontFamily,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 17.5.sp,
+                                color = FathomTheme.colors.textPrimary
+                            )
+                            Spacer(modifier = Modifier.height(3.dp))
+                            Text(
+                                text = "${book.totalPassages} verses • ${book.language.uppercase()}",
+                                fontFamily = JakartaFontFamily,
+                                fontSize = 12.sp,
+                                color = FathomTheme.colors.textTertiary
+                            )
+                        }
+                    }
+
                     Box(
                         modifier = Modifier
-                            .size(46.dp)
+                            .size(34.dp)
                             .clip(CircleShape)
                             .background(FathomTheme.colors.surface)
                             .border(1.dp, FathomTheme.colors.borderSubtle, CircleShape),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
-                            imageVector = PhosphorIcons.Regular.BookBookmark,
-                            contentDescription = null,
+                            imageVector = PhosphorIcons.Regular.CaretRight,
+                            contentDescription = "Browse Chapters",
                             tint = FathomTheme.colors.accentGold,
-                            modifier = Modifier.size(22.dp)
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.width(14.dp))
-
-                    Column {
-                        TraditionBadge(traditionId = book.traditionId)
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = book.title,
-                            fontFamily = SyneFontFamily,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 17.sp,
-                            color = FathomTheme.colors.textPrimary
-                        )
-                        Spacer(modifier = Modifier.height(2.dp))
-                        Text(
-                            text = "${book.totalPassages} verses • ${book.language.uppercase()}",
-                            fontFamily = JakartaFontFamily,
-                            fontSize = 12.sp,
-                            color = FathomTheme.colors.textTertiary
+                            modifier = Modifier.size(16.dp)
                         )
                     }
                 }
-
-                Icon(
-                    imageVector = PhosphorIcons.Regular.CaretRight,
-                    contentDescription = "Browse Chapters",
-                    tint = FathomTheme.colors.textTertiary,
-                    modifier = Modifier.size(18.dp)
-                )
             }
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(12.dp))
         }
     }
 }
