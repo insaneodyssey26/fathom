@@ -3,6 +3,9 @@ package com.masum.fathom.ui.library
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.drawable.BitmapDrawable
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
@@ -14,6 +17,7 @@ import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -62,13 +66,17 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.masum.fathom.R
+import com.masum.fathom.ui.whatsnew.WhatsNewModal
 import com.adamglin.PhosphorIcons
 import com.adamglin.phosphoricons.Regular
 import com.adamglin.phosphoricons.regular.ArrowLeft
@@ -121,6 +129,7 @@ fun LibraryScreen(
     modifier: Modifier = Modifier
 ) {
     var subScreen by remember { mutableStateOf<YouSubScreen>(YouSubScreen.Hub) }
+    var showWhatsNewModal by remember { mutableStateOf(false) }
 
     Column(
         modifier = modifier
@@ -214,6 +223,9 @@ fun LibraryScreen(
                                 onNavigateToTimeline = {
                                     subScreen = YouSubScreen.TimelineFull
                                 },
+                                onOpenWhatsNew = {
+                                    showWhatsNewModal = true
+                                },
                                 onEvent = onEvent
                             )
                         }
@@ -300,6 +312,12 @@ fun LibraryScreen(
                             onEvent(LibraryUiEvent.OnSaveProfile(name, tradition))
                         },
                         onDismiss = { onEvent(LibraryUiEvent.OnCloseEditProfile) }
+                    )
+                }
+
+                if (showWhatsNewModal) {
+                    WhatsNewModal(
+                        onDismiss = { showWhatsNewModal = false }
                     )
                 }
             }
@@ -443,6 +461,7 @@ private fun YouHubView(
     onNavigateToJournal: () -> Unit,
     onNavigateToCanon: (TraditionId) -> Unit,
     onNavigateToTimeline: () -> Unit,
+    onOpenWhatsNew: () -> Unit,
     onEvent: (LibraryUiEvent) -> Unit
 ) {
     val haptics = LocalFathomHaptics.current
@@ -957,7 +976,8 @@ private fun YouHubView(
                 milestoneBadges = state.milestoneBadges,
                 onNavigateToCanon = onNavigateToCanon,
                 onNavigateToTimeline = onNavigateToTimeline,
-                onEvent = onEvent
+                onEvent = onEvent,
+                onOpenWhatsNew = onOpenWhatsNew
             )
         }
     }
@@ -972,10 +992,41 @@ private fun HistoryStatsContent(
     milestoneBadges: List<MilestoneBadge>,
     onNavigateToCanon: (TraditionId) -> Unit,
     onNavigateToTimeline: () -> Unit,
-    onEvent: (LibraryUiEvent) -> Unit
+    onEvent: (LibraryUiEvent) -> Unit,
+    onOpenWhatsNew: () -> Unit
 ) {
     val haptics = LocalFathomHaptics.current
     val context = LocalContext.current
+    val appIconBitmap = remember(context) {
+        try {
+            val drawable = context.packageManager.getApplicationIcon(context.packageName)
+            if (drawable is BitmapDrawable && drawable.bitmap != null) {
+                drawable.bitmap.asImageBitmap()
+            } else {
+                val width = drawable.intrinsicWidth.takeIf { it > 0 } ?: 96
+                val height = drawable.intrinsicHeight.takeIf { it > 0 } ?: 96
+                val bmp = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+                val canvas = Canvas(bmp)
+                drawable.setBounds(0, 0, canvas.width, canvas.height)
+                drawable.draw(canvas)
+                bmp.asImageBitmap()
+            }
+        } catch (e: Exception) {
+            null
+        }
+    }
+    val appVersionName = remember(context) {
+        try {
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+                context.packageManager.getPackageInfo(context.packageName, android.content.pm.PackageManager.PackageInfoFlags.of(0)).versionName
+            } else {
+                @Suppress("DEPRECATION")
+                context.packageManager.getPackageInfo(context.packageName, 0).versionName
+            }
+        } catch (_: Exception) {
+            "1.2.0"
+        } ?: "1.2.0"
+    }
     val traditionCounts = remember(history) {
         history.mapNotNull { it.passage?.traditionId }
             .groupingBy { it }
@@ -1415,61 +1466,116 @@ private fun HistoryStatsContent(
                 }
             }
         } else {
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                history.take(4).forEach { item ->
-                    PassageHistoryCard(item = item, onEvent = onEvent)
+                history.take(8).forEach { item ->
+                    RecentReadingMiniCard(item = item, onEvent = onEvent)
                 }
             }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
-        Text(
-            text = "PRIVACY & STORAGE",
-            style = FathomTheme.typography.canonicalHeader,
-            color = FathomTheme.colors.accentGold
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        Column(
+        Spacer(modifier = Modifier.height(20.dp))
+
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(14.dp))
+                .clip(RoundedCornerShape(16.dp))
                 .background(FathomTheme.colors.surfaceElevated)
                 .border(
                     width = 1.dp,
                     color = FathomTheme.colors.borderSubtle,
-                    shape = RoundedCornerShape(14.dp)
+                    shape = RoundedCornerShape(16.dp)
                 )
-                .padding(18.dp)
+                .clickable {
+                    haptics.light()
+                    onOpenWhatsNew()
+                }
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(14.dp)
             ) {
-                Icon(
-                    imageVector = PhosphorIcons.Regular.Sparkle,
-                    contentDescription = null,
-                    tint = FathomTheme.colors.accentGold,
-                    modifier = Modifier.size(16.dp)
-                )
+                Box(
+                    modifier = Modifier
+                        .size(46.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(FathomTheme.colors.background)
+                        .border(1.dp, FathomTheme.colors.accentGold.copy(alpha = 0.4f), RoundedCornerShape(12.dp)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (appIconBitmap != null) {
+                        Image(
+                            bitmap = appIconBitmap,
+                            contentDescription = "Fathom App Icon",
+                            modifier = Modifier.size(32.dp).clip(CircleShape)
+                        )
+                    } else {
+                        Icon(
+                            imageVector = PhosphorIcons.Regular.Sparkle,
+                            contentDescription = null,
+                            tint = FathomTheme.colors.accentGold,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
+                }
+
+                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(0.dp)
+                    ) {
+                        Text(
+                            text = "fathom",
+                            style = FathomTheme.typography.brandTitle.copy(fontSize = 17.sp),
+                            color = FathomTheme.colors.textPrimary
+                        )
+                        Text(
+                            text = ".",
+                            style = FathomTheme.typography.brandTitle.copy(
+                                fontSize = 17.sp,
+                                color = FathomTheme.colors.accentGold
+                            )
+                        )
+                    }
+                    Text(
+                        text = "Version $appVersionName (Closed Beta)",
+                        fontFamily = JakartaFontFamily,
+                        fontWeight = FontWeight.Medium,
+                        fontSize = 12.sp,
+                        color = FathomTheme.colors.textSecondary
+                    )
+                }
+            }
+
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                modifier = Modifier
+                    .clip(RoundedCornerShape(20.dp))
+                    .background(FathomTheme.colors.accentGold.copy(alpha = 0.12f))
+                    .padding(horizontal = 10.dp, vertical = 6.dp)
+            ) {
                 Text(
-                    text = "100% On-Device Storage",
+                    text = "What's New",
                     fontFamily = JakartaFontFamily,
                     fontWeight = FontWeight.Bold,
-                    fontSize = 15.sp,
-                    color = FathomTheme.colors.textPrimary
+                    fontSize = 11.5.sp,
+                    color = FathomTheme.colors.accentGold
+                )
+                Icon(
+                    imageVector = PhosphorIcons.Regular.CaretRight,
+                    contentDescription = null,
+                    tint = FathomTheme.colors.accentGold,
+                    modifier = Modifier.size(12.dp)
                 )
             }
-            Spacer(modifier = Modifier.height(6.dp))
-            Text(
-                text = "All your bookmarks, notes, and reading history stay privately on your device.",
-                fontFamily = JakartaFontFamily,
-                fontSize = 13.5.sp,
-                lineHeight = 20.sp,
-                color = FathomTheme.colors.textSecondary
-            )
         }
     }
 }
@@ -1810,6 +1916,119 @@ private fun EmptyCanonState(title: String, body: String) {
                 color = FathomTheme.colors.textTertiary,
                 textAlign = TextAlign.Center
             )
+        }
+    }
+}
+
+@Composable
+private fun RecentReadingMiniCard(
+    item: HistoryWithPassage,
+    onEvent: (LibraryUiEvent) -> Unit
+) {
+    val haptics = LocalFathomHaptics.current
+    val passage = item.passage
+
+    Box(
+        modifier = Modifier
+            .width(260.dp)
+            .height(118.dp)
+            .clip(RoundedCornerShape(14.dp))
+            .background(FathomTheme.colors.surfaceElevated)
+            .border(
+                width = 1.dp,
+                color = FathomTheme.colors.borderSubtle,
+                shape = RoundedCornerShape(14.dp)
+            )
+            .clickable {
+                haptics.light()
+                passage?.let { onEvent(LibraryUiEvent.OnOpenContext(it)) }
+            }
+            .padding(12.dp)
+    ) {
+        Column(
+            modifier = Modifier.fillMaxSize(),
+            verticalArrangement = Arrangement.SpaceBetween
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    modifier = Modifier.weight(1f, fill = false)
+                ) {
+                    passage?.let {
+                        TraditionBadge(traditionId = it.traditionId)
+                        Text(
+                            text = it.canonicalReference,
+                            style = FathomTheme.typography.canonicalHeader.copy(fontSize = 11.sp),
+                            color = FathomTheme.colors.textSecondary,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    } ?: Text(
+                        text = item.record.passageId,
+                        style = FathomTheme.typography.canonicalHeader.copy(fontSize = 11.sp),
+                        color = FathomTheme.colors.textSecondary,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+
+                if (item.record.readCount > 1) {
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(4.dp))
+                            .background(FathomTheme.colors.accentGold.copy(alpha = 0.14f))
+                            .padding(horizontal = 5.dp, vertical = 1.5.dp)
+                    ) {
+                        Text(
+                            text = "${item.record.readCount}×",
+                            fontFamily = JakartaFontFamily,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 9.sp,
+                            color = FathomTheme.colors.accentGold
+                        )
+                    }
+                }
+            }
+
+            Text(
+                text = passage?.translation ?: "Passage text",
+                fontFamily = JakartaFontFamily,
+                fontWeight = FontWeight.Normal,
+                fontSize = 12.sp,
+                lineHeight = 16.5.sp,
+                color = FathomTheme.colors.textPrimary,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
+            )
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = passage?.traditionId?.displayName ?: "Scripture",
+                    fontFamily = JakartaFontFamily,
+                    fontWeight = FontWeight.Medium,
+                    fontSize = 10.sp,
+                    color = FathomTheme.colors.textTertiary,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f, fill = false)
+                )
+
+                Icon(
+                    imageVector = PhosphorIcons.Regular.CaretRight,
+                    contentDescription = null,
+                    tint = FathomTheme.colors.accentGold.copy(alpha = 0.7f),
+                    modifier = Modifier.size(11.dp)
+                )
+            }
         }
     }
 }

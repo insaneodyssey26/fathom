@@ -839,12 +839,12 @@ fun SanctuaryModal(
                                     null
                                 }
                             }
-                            val displayVersionName = pkgInfo?.versionName ?: "1.1.0"
+                            val displayVersionName = pkgInfo?.versionName ?: "1.2.0"
                             val displayVersionCode = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
-                                pkgInfo?.longVersionCode?.toInt() ?: 2
+                                pkgInfo?.longVersionCode?.toInt() ?: 3
                             } else {
                                 @Suppress("DEPRECATION")
-                                pkgInfo?.versionCode ?: 2
+                                pkgInfo?.versionCode ?: 3
                             }
 
                             Text(

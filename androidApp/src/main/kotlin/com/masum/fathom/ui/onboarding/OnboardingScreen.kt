@@ -103,7 +103,7 @@ fun OnboardingScreen(
             TraditionOption(
                 id = "Christianity",
                 title = "Christianity",
-                scriptureHint = "Psalms, Proverbs, Gospels",
+                scriptureHint = "The Holy Bible",
                 icon = PhosphorIcons.Regular.HandsPraying
             ),
             TraditionOption(
@@ -372,6 +372,7 @@ fun OnboardingScreen(
                                             .clickable {
                                                 haptics.light()
                                                 selectedTradition = trad.id
+                                                personalizeFeed = (trad.id != "All Traditions")
                                             }
                                             .padding(14.dp),
                                         verticalAlignment = Alignment.CenterVertically,

@@ -147,15 +147,62 @@ class MainActivity : ComponentActivity() {
 
             val activeTheme = sanctuarySettings.theme
 
+            val packageInfo = remember(context) {
+                try {
+                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+                        context.packageManager.getPackageInfo(context.packageName, android.content.pm.PackageManager.PackageInfoFlags.of(0))
+                    } else {
+                        @Suppress("DEPRECATION")
+                        context.packageManager.getPackageInfo(context.packageName, 0)
+                    }
+                } catch (_: Exception) {
+                    null
+                }
+            }
+            val currentVersionCode = remember(packageInfo) {
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
+                    packageInfo?.longVersionCode?.toInt() ?: 3
+                } else {
+                    @Suppress("DEPRECATION")
+                    packageInfo?.versionCode ?: 3
+                }
+            }
+
             var showSanctuaryModal by remember { mutableStateOf(false) }
+            var showWhatsNewModal by remember { mutableStateOf(false) }
             var selectedNav by remember { mutableStateOf(NavigationItem.FEED) }
             var isSplashDone by remember { mutableStateOf(false) }
+
+            androidx.compose.runtime.LaunchedEffect(sanctuarySettings.hasCompletedOnboarding, currentVersionCode) {
+                if (sanctuarySettings.hasCompletedOnboarding && sanctuaryPreferences.shouldShowWhatsNew(currentVersionCode)) {
+                    showWhatsNewModal = true
+                }
+            }
 
             androidx.compose.runtime.LaunchedEffect(intent) {
                 val passageId = intent?.getStringExtra(com.masum.fathom.core.widget.DailyWisdomWidgetProvider.EXTRA_PASSAGE_ID)
                 if (!passageId.isNullOrEmpty()) {
                     selectedNav = NavigationItem.FEED
                     feedViewModel.loadSpecificPassage(passageId)
+                }
+            }
+
+            androidx.compose.runtime.LaunchedEffect(sanctuarySettings.hasCompletedOnboarding, sanctuarySettings.userTradition, sanctuarySettings.feedPersonalizedToTradition) {
+                if (sanctuarySettings.hasCompletedOnboarding && sanctuarySettings.feedPersonalizedToTradition && sanctuarySettings.userTradition != null) {
+                    val traditionId = when (sanctuarySettings.userTradition) {
+                        "Sanatana Dharma" -> com.masum.fathom.core.model.TraditionId.HINDUISM
+                        "Hinduism" -> com.masum.fathom.core.model.TraditionId.HINDUISM
+                        "Islam" -> com.masum.fathom.core.model.TraditionId.ISLAM
+                        "Christianity" -> com.masum.fathom.core.model.TraditionId.CHRISTIANITY
+                        "Buddhism" -> com.masum.fathom.core.model.TraditionId.BUDDHISM
+                        "Taoism" -> com.masum.fathom.core.model.TraditionId.TAOISM
+                        "Stoicism" -> com.masum.fathom.core.model.TraditionId.STOICISM
+                        "Judaism" -> com.masum.fathom.core.model.TraditionId.JUDAISM
+                        else -> null
+                    }
+                    if (traditionId != null) {
+                        feedViewModel.setTraditionFocus(traditionId)
+                    }
                 }
             }
 
@@ -217,13 +264,18 @@ class MainActivity : ComponentActivity() {
                                         if (personalizeFeed && tradition != null) {
                                             val traditionId = when (tradition) {
                                                 "Sanatana Dharma" -> com.masum.fathom.core.model.TraditionId.HINDUISM
+                                                "Hinduism" -> com.masum.fathom.core.model.TraditionId.HINDUISM
                                                 "Islam" -> com.masum.fathom.core.model.TraditionId.ISLAM
                                                 "Christianity" -> com.masum.fathom.core.model.TraditionId.CHRISTIANITY
                                                 "Buddhism" -> com.masum.fathom.core.model.TraditionId.BUDDHISM
                                                 "Taoism" -> com.masum.fathom.core.model.TraditionId.TAOISM
+                                                "Stoicism" -> com.masum.fathom.core.model.TraditionId.STOICISM
+                                                "Judaism" -> com.masum.fathom.core.model.TraditionId.JUDAISM
                                                 else -> null
                                             }
                                             feedViewModel.setTraditionFocus(traditionId)
+                                        } else {
+                                            feedViewModel.setTraditionFocus(null)
                                         }
                                     }
                                 )
@@ -309,6 +361,15 @@ class MainActivity : ComponentActivity() {
                                 if (showPaywallModal) {
                                     com.masum.fathom.ui.subscription.SanctuaryPaywallSheet(
                                         onDismiss = { showPaywallModal = false }
+                                    )
+                                }
+
+                                if (showWhatsNewModal) {
+                                    com.masum.fathom.ui.whatsnew.WhatsNewModal(
+                                        onDismiss = {
+                                            sanctuaryPreferences.markWhatsNewSeen(currentVersionCode)
+                                            showWhatsNewModal = false
+                                        }
                                     )
                                 }
                             }

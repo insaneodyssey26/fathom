@@ -41,5 +41,6 @@ sealed interface FeedUiEvent {
     data class OnToggleTradition(val traditionId: TraditionId) : FeedUiEvent
     data class OnChangeMode(val mode: FeedMode) : FeedUiEvent
     data class OnSelectBook(val bookId: String?) : FeedUiEvent
+    data class OnSelectTradition(val traditionId: TraditionId?) : FeedUiEvent
 }
 

@@ -69,6 +69,7 @@ import com.adamglin.phosphoricons.regular.Warning
 import com.adamglin.phosphoricons.regular.X
 import com.masum.fathom.core.audio.LocalSacredAudioEngine
 import com.masum.fathom.core.audio.SacredAudioState
+import com.masum.fathom.core.model.TraditionId
 import com.masum.fathom.core.subscription.LocalOpenPaywall
 import com.masum.fathom.core.subscription.LocalSubscriptionState
 import com.masum.fathom.ui.components.SacredDivider
@@ -245,7 +246,13 @@ fun FeedScreen(
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             val activeBook = state.availableBooks.find { it.id == state.selectedBookId }
-                            val activeTitle = activeBook?.title ?: "All Wisdom"
+                            val activeTitle = when {
+                                activeBook != null -> activeBook.title
+                                state.selectedTraditions.size == 1 -> state.selectedTraditions.first().displayName
+                                state.selectedTraditions.size < TraditionId.entries.size -> "Filtered (${state.selectedTraditions.size})"
+                                else -> "All Scriptures"
+                            }
+                            val isFiltered = state.selectedBookId != null || (state.selectedTraditions.isNotEmpty() && state.selectedTraditions.size < TraditionId.entries.size)
 
                             Row(
                                 modifier = Modifier
@@ -253,7 +260,7 @@ fun FeedScreen(
                                     .background(FathomTheme.colors.surfaceElevated)
                                     .border(
                                         width = 1.dp,
-                                        color = if (state.selectedBookId != null) FathomTheme.colors.accentGold.copy(alpha = 0.7f) else FathomTheme.colors.borderSubtle,
+                                        color = if (isFiltered) FathomTheme.colors.accentGold.copy(alpha = 0.7f) else FathomTheme.colors.borderSubtle,
                                         shape = RoundedCornerShape(20.dp)
                                     )
                                     .clickable {
@@ -265,15 +272,15 @@ fun FeedScreen(
                                 horizontalArrangement = Arrangement.spacedBy(6.dp)
                             ) {
                                 Icon(
-                                    imageVector = if (state.selectedBookId != null) PhosphorIcons.Regular.BookBookmark else PhosphorIcons.Regular.Sparkle,
+                                    imageVector = if (isFiltered) PhosphorIcons.Regular.BookBookmark else PhosphorIcons.Regular.Sparkle,
                                     contentDescription = null,
-                                    tint = if (state.selectedBookId != null) FathomTheme.colors.accentGold else FathomTheme.colors.textSecondary,
+                                    tint = if (isFiltered) FathomTheme.colors.accentGold else FathomTheme.colors.textSecondary,
                                     modifier = Modifier.size(13.dp)
                                 )
                                 Text(
                                     text = activeTitle,
                                     style = FathomTheme.typography.traditionBadge.copy(fontSize = 11.sp),
-                                    color = if (state.selectedBookId != null) FathomTheme.colors.accentGold else FathomTheme.colors.textPrimary,
+                                    color = if (isFiltered) FathomTheme.colors.accentGold else FathomTheme.colors.textPrimary,
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis,
                                     modifier = Modifier.widthIn(max = 140.dp)
@@ -505,7 +512,9 @@ fun FeedScreen(
                     ScriptureSelectorSheet(
                         availableBooks = state.availableBooks,
                         selectedBookId = state.selectedBookId,
+                        selectedTraditions = state.selectedTraditions,
                         onSelectBook = { onEvent(FeedUiEvent.OnSelectBook(it)) },
+                        onSelectTradition = { onEvent(FeedUiEvent.OnSelectTradition(it)) },
                         onDismiss = { showScriptureSheet = false }
                     )
                 }

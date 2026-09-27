@@ -61,13 +61,16 @@ import com.masum.fathom.ui.theme.FathomTheme
 fun ScriptureSelectorSheet(
     availableBooks: List<Book>,
     selectedBookId: String?,
+    selectedTraditions: Set<TraditionId> = emptySet(),
     onSelectBook: (String?) -> Unit,
+    onSelectTradition: (TraditionId?) -> Unit = {},
     onDismiss: () -> Unit
 ) {
     val haptics = com.masum.fathom.core.haptics.LocalFathomHaptics.current
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val groupedByTradition = remember(availableBooks) { availableBooks.groupBy { it.traditionId } }
     val activeTradition = availableBooks.find { it.id == selectedBookId }?.traditionId
+        ?: if (selectedTraditions.size == 1) selectedTraditions.first() else null
     val maxHeight = (LocalConfiguration.current.screenHeightDp * 0.78f).dp
 
     val expandedMap = remember {
@@ -116,11 +119,12 @@ fun ScriptureSelectorSheet(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            val isAllSelected = selectedBookId == null
+            val isAllSelected = selectedBookId == null && (selectedTraditions.isEmpty() || selectedTraditions.size == TraditionId.entries.size)
             AllScripturesMinimalRow(
                 isSelected = isAllSelected,
                 onClick = {
                     haptics.light()
+                    onSelectTradition(null)
                     onSelectBook(null)
                     onDismiss()
                 }
@@ -132,7 +136,8 @@ fun ScriptureSelectorSheet(
                 val books = groupedByTradition[tradition]
                 if (!books.isNullOrEmpty()) {
                     val isExpanded = expandedMap[tradition] == true
-                    val hasActiveBook = books.any { it.id == selectedBookId }
+                    val isEntireTraditionSelected = selectedBookId == null && selectedTraditions.size == 1 && selectedTraditions.contains(tradition)
+                    val hasActiveBook = books.any { it.id == selectedBookId } || isEntireTraditionSelected
 
                     TraditionAccordionSection(
                         tradition = tradition,
@@ -140,8 +145,13 @@ fun ScriptureSelectorSheet(
                         isExpanded = isExpanded,
                         hasActiveBook = hasActiveBook,
                         selectedBookId = selectedBookId,
+                        isEntireTraditionSelected = isEntireTraditionSelected,
                         onToggleExpand = {
                             expandedMap[tradition] = !isExpanded
+                        },
+                        onSelectTradition = {
+                            onSelectTradition(tradition)
+                            onDismiss()
                         },
                         onSelectBook = { bookId ->
                             onSelectBook(bookId)
@@ -226,7 +236,9 @@ private fun TraditionAccordionSection(
     isExpanded: Boolean,
     hasActiveBook: Boolean,
     selectedBookId: String?,
+    isEntireTraditionSelected: Boolean,
     onToggleExpand: () -> Unit,
+    onSelectTradition: () -> Unit,
     onSelectBook: (String) -> Unit
 ) {
     val haptics = com.masum.fathom.core.haptics.LocalFathomHaptics.current
@@ -308,6 +320,60 @@ private fun TraditionAccordionSection(
                     .padding(horizontal = 8.dp)
                     .padding(bottom = 8.dp)
             ) {
+                val allTraditionInteraction = remember { MutableInteractionSource() }
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(6.dp))
+                        .background(
+                            if (isEntireTraditionSelected) FathomTheme.colors.surfaceElevated else androidx.compose.ui.graphics.Color.Transparent
+                        )
+                        .clickable(
+                            interactionSource = allTraditionInteraction,
+                            indication = null,
+                            onClick = {
+                                haptics.light()
+                                onSelectTradition()
+                            }
+                        )
+                        .padding(horizontal = 10.dp, vertical = 9.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Icon(
+                            imageVector = PhosphorIcons.Regular.Sparkle,
+                            contentDescription = null,
+                            tint = if (isEntireTraditionSelected) FathomTheme.colors.accentGold else FathomTheme.colors.textTertiary,
+                            modifier = Modifier.size(13.dp)
+                        )
+                        Column {
+                            Text(
+                                text = "All ${tradition.displayName} Passages",
+                                style = FathomTheme.typography.commentaryBody.copy(fontSize = 13.sp),
+                                color = if (isEntireTraditionSelected) FathomTheme.colors.accentGold else FathomTheme.colors.textSecondary
+                            )
+                            Text(
+                                text = "Explore across all ${tradition.displayName} scriptures",
+                                style = FathomTheme.typography.caption.copy(fontSize = 10.sp),
+                                color = FathomTheme.colors.textTertiary
+                            )
+                        }
+                    }
+
+                    if (isEntireTraditionSelected) {
+                        Icon(
+                            imageVector = PhosphorIcons.Bold.Check,
+                            contentDescription = "Selected",
+                            tint = FathomTheme.colors.accentGold,
+                            modifier = Modifier.size(14.dp)
+                        )
+                    }
+                }
                 books.forEach { book ->
                     val isBookSelected = book.id == selectedBookId
                     val bookInteraction = remember { MutableInteractionSource() }

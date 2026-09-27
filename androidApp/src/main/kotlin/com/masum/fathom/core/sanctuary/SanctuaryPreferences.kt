@@ -24,12 +24,17 @@ data class SanctuarySettings(
     val notificationMinute: Int = 0,
     val byokProvider: ByokProvider = ByokProvider.NONE,
     val byokApiKey: String = "",
-    val byokVoiceId: String = ""
+    val byokVoiceId: String = "",
+    val lastSeenWhatsNewVersion: Int = 0
 )
 
 class SanctuaryPreferences(context: Context) {
 
     private val prefs: SharedPreferences = context.getSharedPreferences("fathom_sanctuary_prefs", Context.MODE_PRIVATE)
+
+    companion object {
+        const val CURRENT_ONBOARDING_VERSION = 1
+    }
 
     private val _settings = MutableStateFlow(loadSettings())
     val settings: StateFlow<SanctuarySettings> = _settings.asStateFlow()
@@ -38,7 +43,8 @@ class SanctuaryPreferences(context: Context) {
         val name = prefs.getString("user_name", "Sanctuary Reader") ?: "Sanctuary Reader"
         val tradition = prefs.getString("user_tradition", null)
         val feedPersonalized = prefs.getBoolean("feed_personalized", false)
-        val completedOnboarding = prefs.getBoolean("has_completed_onboarding", false)
+        val completedVersion = prefs.getInt("completed_onboarding_version", 0)
+        val completedOnboarding = completedVersion >= CURRENT_ONBOARDING_VERSION
 
         val themeName = prefs.getString("reading_theme", ReadingTheme.OBSIDIAN.name) ?: ReadingTheme.OBSIDIAN.name
         val theme = try {
@@ -60,6 +66,7 @@ class SanctuaryPreferences(context: Context) {
 
         val apiKey = prefs.getString("byok_api_key", "") ?: ""
         val voiceId = prefs.getString("byok_voice_id", "") ?: ""
+        val lastSeenWhatsNew = prefs.getInt("last_seen_whats_new_version", 0)
 
         return SanctuarySettings(
             userName = name,
@@ -72,7 +79,8 @@ class SanctuaryPreferences(context: Context) {
             notificationMinute = minute,
             byokProvider = provider,
             byokApiKey = apiKey,
-            byokVoiceId = voiceId
+            byokVoiceId = voiceId,
+            lastSeenWhatsNewVersion = lastSeenWhatsNew
         )
     }
 
@@ -84,6 +92,7 @@ class SanctuaryPreferences(context: Context) {
             .putString("user_tradition", cleanTradition)
             .putBoolean("feed_personalized", personalizeFeed)
             .putBoolean("has_completed_onboarding", true)
+            .putInt("completed_onboarding_version", CURRENT_ONBOARDING_VERSION)
             .apply()
         _settings.value = _settings.value.copy(
             userName = cleanName,
@@ -135,5 +144,14 @@ class SanctuaryPreferences(context: Context) {
             byokApiKey = apiKey,
             byokVoiceId = voiceId
         )
+    }
+
+    fun shouldShowWhatsNew(currentVersionCode: Int): Boolean {
+        return _settings.value.lastSeenWhatsNewVersion < currentVersionCode
+    }
+
+    fun markWhatsNewSeen(currentVersionCode: Int) {
+        prefs.edit().putInt("last_seen_whats_new_version", currentVersionCode).apply()
+        _settings.value = _settings.value.copy(lastSeenWhatsNewVersion = currentVersionCode)
     }
 }

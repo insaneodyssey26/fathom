@@ -49,6 +49,7 @@ class FeedViewModel(
             is FeedUiEvent.OnToggleTradition -> handleToggleTradition(event.traditionId)
             is FeedUiEvent.OnChangeMode -> handleChangeMode(event.mode)
             is FeedUiEvent.OnSelectBook -> handleSelectBook(event.bookId)
+            is FeedUiEvent.OnSelectTradition -> setTraditionFocus(event.traditionId)
         }
     }
 
