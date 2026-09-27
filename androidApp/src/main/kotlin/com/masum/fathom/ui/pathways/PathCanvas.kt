@@ -213,6 +213,16 @@ fun SacredMilestoneItem(
             modifier = Modifier.size(66.dp),
             contentAlignment = Alignment.Center
         ) {
+            if (chapter.isCurrent) {
+                Box(
+                    modifier = Modifier
+                        .size(66.dp)
+                        .clip(CircleShape)
+                        .background(FathomTheme.colors.accentGold.copy(alpha = 0.12f))
+                        .border(1.dp, FathomTheme.colors.accentGold.copy(alpha = 0.35f), CircleShape)
+                )
+            }
+
             Box(
                 modifier = Modifier
                     .size(nodeSize)
@@ -289,19 +299,26 @@ fun SacredMilestoneItem(
 
         Box(
             modifier = Modifier
-                .clip(RoundedCornerShape(12.dp))
-                .background(FathomTheme.colors.surfaceElevated)
+                .clip(RoundedCornerShape(16.dp))
+                .background(
+                    Brush.verticalGradient(
+                        listOf(
+                            FathomTheme.colors.surfaceElevated,
+                            FathomTheme.colors.surface
+                        )
+                    )
+                )
                 .border(
                     width = 1.dp,
                     color = if (chapter.isCurrent) FathomTheme.colors.accentGold.copy(alpha = 0.5f) else FathomTheme.colors.borderSubtle,
-                    shape = RoundedCornerShape(12.dp)
+                    shape = RoundedCornerShape(16.dp)
                 )
                 .clickable(
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null,
                     onClick = onClick
                 )
-                .padding(horizontal = 12.dp, vertical = 6.dp)
+                .padding(horizontal = 14.dp, vertical = 8.dp)
         ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Row(
@@ -313,14 +330,14 @@ fun SacredMilestoneItem(
                             imageVector = PhosphorIcons.Regular.Crown,
                             contentDescription = null,
                             tint = FathomTheme.colors.accentGold,
-                            modifier = Modifier.size(11.dp)
+                            modifier = Modifier.size(12.dp)
                         )
                     }
                     Text(
                         text = chapter.title,
                         fontFamily = SyneFontFamily,
                         fontWeight = FontWeight.Bold,
-                        fontSize = 12.sp,
+                        fontSize = 12.5.sp,
                         color = if (chapter.isCurrent) FathomTheme.colors.accentGold else FathomTheme.colors.textPrimary,
                         textAlign = TextAlign.Center
                     )
@@ -336,7 +353,7 @@ fun SacredMilestoneItem(
                     )
                 }
 
-                Spacer(modifier = Modifier.height(2.dp))
+                Spacer(modifier = Modifier.height(3.dp))
 
                 Text(
                     text = "${chapter.totalVerses} Verses" + if (chapter.completedVerses > 0) " • ${chapter.completedVerses} read" else "",

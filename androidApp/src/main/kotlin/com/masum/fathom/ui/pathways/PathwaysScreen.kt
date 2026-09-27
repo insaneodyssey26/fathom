@@ -55,6 +55,7 @@ import com.adamglin.phosphoricons.regular.Sparkle
 import com.masum.fathom.core.haptics.LocalFathomHaptics
 import com.masum.fathom.core.model.TraditionId
 import com.masum.fathom.core.sanctuary.LocalOpenSanctuary
+import com.masum.fathom.ui.components.SacredDivider
 import com.masum.fathom.ui.components.TraditionBadge
 import com.masum.fathom.ui.feed.PassageContextSheet
 import com.masum.fathom.ui.feed.ScriptureSelectorSheet
@@ -491,11 +492,12 @@ fun PathwayOverviewCard(
     modifier: Modifier = Modifier
 ) {
     val traditionId = pathway.book.traditionId
+    val progressPercent = pathway.progressPercent
 
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(22.dp))
+            .clip(RoundedCornerShape(26.dp))
             .background(
                 Brush.verticalGradient(
                     listOf(
@@ -504,8 +506,12 @@ fun PathwayOverviewCard(
                     )
                 )
             )
-            .border(1.dp, FathomTheme.colors.borderSubtle, RoundedCornerShape(22.dp))
-            .padding(18.dp)
+            .border(
+                width = 1.dp,
+                color = FathomTheme.colors.accentGold.copy(alpha = 0.45f),
+                shape = RoundedCornerShape(26.dp)
+            )
+            .padding(20.dp)
     ) {
         Column {
             Row(
@@ -517,74 +523,106 @@ fun PathwayOverviewCard(
 
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(5.dp),
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(FathomTheme.colors.accentGold.copy(alpha = 0.14f))
+                        .border(1.dp, FathomTheme.colors.accentGold.copy(alpha = 0.35f), RoundedCornerShape(12.dp))
+                        .padding(horizontal = 9.dp, vertical = 4.dp)
                 ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp),
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(FathomTheme.colors.accentGold.copy(alpha = 0.12f))
-                            .padding(horizontal = 8.dp, vertical = 3.dp)
-                    ) {
-                        Icon(
-                            imageVector = PhosphorIcons.Regular.Sparkle,
-                            contentDescription = null,
-                            tint = FathomTheme.colors.accentGold,
-                            modifier = Modifier.size(12.dp)
-                        )
-                        Text(
-                            text = "${pathway.wisdomXp} XP",
-                            fontFamily = SyneFontFamily,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 11.sp,
-                            color = FathomTheme.colors.accentGold
-                        )
-                    }
-
+                    Icon(
+                        imageVector = PhosphorIcons.Regular.Sparkle,
+                        contentDescription = null,
+                        tint = FathomTheme.colors.accentGold,
+                        modifier = Modifier.size(13.dp)
+                    )
                     Text(
-                        text = "${(pathway.progressPercent * 100).toInt()}%",
+                        text = "${pathway.wisdomXp} WISDOM XP",
                         fontFamily = SyneFontFamily,
                         fontWeight = FontWeight.Bold,
-                        fontSize = 13.sp,
+                        fontSize = 10.5.sp,
                         letterSpacing = 0.5.sp,
                         color = FathomTheme.colors.accentGold
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
-            Text(
-                text = pathway.book.title,
-                fontFamily = SyneFontFamily,
-                fontWeight = FontWeight.Bold,
-                fontSize = 20.sp,
-                color = FathomTheme.colors.textPrimary
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f).padding(end = 12.dp)) {
+                    Text(
+                        text = pathway.book.title,
+                        fontFamily = SyneFontFamily,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 22.sp,
+                        color = FathomTheme.colors.textPrimary
+                    )
 
-            val author = pathway.book.author
-            if (!author.isNullOrBlank()) {
-                Text(
-                    text = author,
-                    fontFamily = JakartaFontFamily,
-                    fontSize = 12.sp,
-                    color = FathomTheme.colors.textSecondary
-                )
+                    val author = pathway.book.author
+                    if (!author.isNullOrBlank()) {
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = author,
+                            fontFamily = JakartaFontFamily,
+                            fontSize = 12.5.sp,
+                            color = FathomTheme.colors.textSecondary
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Text(
+                        text = "${pathway.completedChapters} of ${pathway.totalChapters} Chapters Mastered",
+                        fontFamily = JakartaFontFamily,
+                        fontWeight = FontWeight.Medium,
+                        fontSize = 11.5.sp,
+                        color = FathomTheme.colors.accentGold
+                    )
+                }
+
+                Box(
+                    modifier = Modifier.size(68.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator(
+                        progress = { 1f },
+                        modifier = Modifier.fillMaxSize(),
+                        color = FathomTheme.colors.surfaceElevated,
+                        strokeWidth = 5.dp
+                    )
+                    CircularProgressIndicator(
+                        progress = { progressPercent },
+                        modifier = Modifier.fillMaxSize(),
+                        color = FathomTheme.colors.accentGold,
+                        strokeWidth = 5.dp
+                    )
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(
+                            text = "${(progressPercent * 100).toInt()}%",
+                            fontFamily = SyneFontFamily,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 14.sp,
+                            color = FathomTheme.colors.textPrimary
+                        )
+                        Text(
+                            text = "ROAD",
+                            fontFamily = JakartaFontFamily,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 7.5.sp,
+                            letterSpacing = 0.5.sp,
+                            color = FathomTheme.colors.textTertiary
+                        )
+                    }
+                }
             }
 
-            Spacer(modifier = Modifier.height(14.dp))
-
-            LinearProgressIndicator(
-                progress = { pathway.progressPercent },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(5.dp)
-                    .clip(RoundedCornerShape(2.5.dp)),
-                color = FathomTheme.colors.accentGold,
-                trackColor = FathomTheme.colors.surfaceElevated
-            )
-
+            Spacer(modifier = Modifier.height(16.dp))
+            SacredDivider()
             Spacer(modifier = Modifier.height(12.dp))
 
             Row(
@@ -593,19 +631,28 @@ fun PathwayOverviewCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "${pathway.completedChapters} of ${pathway.totalChapters} Chapters Mastered",
+                    text = "${pathway.readVerses} of ${pathway.totalVerses} Verses Completed",
                     fontFamily = JakartaFontFamily,
-                    fontSize = 11.5.sp,
-                    color = FathomTheme.colors.textSecondary
-                )
-
-                Text(
-                    text = "${pathway.readVerses}/${pathway.totalVerses} Verses",
-                    fontFamily = JakartaFontFamily,
-                    fontWeight = FontWeight.Medium,
                     fontSize = 11.5.sp,
                     color = FathomTheme.colors.textTertiary
                 )
+
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(FathomTheme.colors.surfaceElevated)
+                        .clickable { onOpenScripturePicker() }
+                        .padding(horizontal = 8.dp, vertical = 4.dp)
+                ) {
+                    Text(
+                        text = "CHANGE SCRIPTURE",
+                        fontFamily = JakartaFontFamily,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 9.sp,
+                        letterSpacing = 0.5.sp,
+                        color = FathomTheme.colors.textSecondary
+                    )
+                }
             }
         }
     }

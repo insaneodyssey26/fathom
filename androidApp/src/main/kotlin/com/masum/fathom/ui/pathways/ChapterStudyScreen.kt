@@ -389,7 +389,7 @@ fun ChapterStudyScreen(
                                 modifier = Modifier
                                     .weight(1f)
                                     .height(52.dp),
-                                shape = RoundedCornerShape(16.dp),
+                                shape = RoundedCornerShape(20.dp),
                                 colors = ButtonDefaults.outlinedButtonColors(
                                     contentColor = FathomTheme.colors.textPrimary
                                 ),
@@ -402,7 +402,7 @@ fun ChapterStudyScreen(
                                     Icon(
                                         imageVector = PhosphorIcons.Regular.ArrowLeft,
                                         contentDescription = "Previous Verse",
-                                        modifier = Modifier.size(20.dp),
+                                        modifier = Modifier.size(18.dp),
                                         tint = FathomTheme.colors.accentGold
                                     )
                                     Text(
@@ -428,9 +428,9 @@ fun ChapterStudyScreen(
                                     }
                                 },
                                 modifier = Modifier
-                                    .weight(1f)
+                                    .weight(1.3f)
                                     .height(52.dp),
-                                shape = RoundedCornerShape(16.dp),
+                                shape = RoundedCornerShape(20.dp),
                                 colors = ButtonDefaults.buttonColors(
                                     containerColor = FathomTheme.colors.accentGold,
                                     contentColor = Color.Black
@@ -450,7 +450,7 @@ fun ChapterStudyScreen(
                                     Icon(
                                         imageVector = PhosphorIcons.Regular.ArrowRight,
                                         contentDescription = "Next Verse",
-                                        modifier = Modifier.size(20.dp)
+                                        modifier = Modifier.size(18.dp)
                                     )
                                 }
                             }
@@ -461,9 +461,9 @@ fun ChapterStudyScreen(
                                     onCompleteChapter()
                                 },
                                 modifier = Modifier
-                                    .weight(1f)
+                                    .weight(1.3f)
                                     .height(52.dp),
-                                shape = RoundedCornerShape(16.dp),
+                                shape = RoundedCornerShape(20.dp),
                                 colors = ButtonDefaults.buttonColors(
                                     containerColor = FathomTheme.colors.accentGold,
                                     contentColor = Color.Black
@@ -685,7 +685,7 @@ private fun InteractiveWisdomCard(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .clip(RoundedCornerShape(22.dp))
+            .clip(RoundedCornerShape(26.dp))
             .background(
                 Brush.verticalGradient(
                     listOf(
@@ -694,8 +694,12 @@ private fun InteractiveWisdomCard(
                     )
                 )
             )
-            .border(1.dp, FathomTheme.colors.borderSubtle, RoundedCornerShape(22.dp))
-            .padding(20.dp)
+            .border(
+                width = 1.dp,
+                color = FathomTheme.colors.accentGold.copy(alpha = 0.35f),
+                shape = RoundedCornerShape(26.dp)
+            )
+            .padding(22.dp)
     ) {
         Column(
             modifier = Modifier

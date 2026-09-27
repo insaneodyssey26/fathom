@@ -145,6 +145,7 @@ class MainActivity : ComponentActivity() {
 
             var showSanctuaryModal by remember { mutableStateOf(false) }
             var selectedNav by remember { mutableStateOf(NavigationItem.FEED) }
+            var isSplashDone by remember { mutableStateOf(false) }
 
             androidx.compose.runtime.LaunchedEffect(intent) {
                 val passageId = intent?.getStringExtra(com.masum.fathom.core.widget.DailyWisdomWidgetProvider.EXTRA_PASSAGE_ID)
@@ -180,87 +181,107 @@ class MainActivity : ComponentActivity() {
                 com.masum.fathom.core.update.LocalAppUpdateEngine provides updateEngine
             ) {
                 FathomTheme(readingTheme = activeTheme) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .background(FathomTheme.colors.background)
-                    ) {
-                        androidx.compose.animation.AnimatedContent(
-                            targetState = selectedNav,
-                            transitionSpec = {
-                                (androidx.compose.animation.fadeIn(androidx.compose.animation.core.tween(240)) +
-                                    androidx.compose.animation.scaleIn(initialScale = 0.98f, animationSpec = androidx.compose.animation.core.tween(240)))
-                                    .togetherWith(
-                                        androidx.compose.animation.fadeOut(androidx.compose.animation.core.tween(200)) +
-                                            androidx.compose.animation.scaleOut(targetScale = 0.98f, animationSpec = androidx.compose.animation.core.tween(200))
-                                    )
-                            },
-                            label = "screen_nav_transition",
-                            modifier = Modifier.fillMaxSize()
-                        ) { targetNav ->
-                            when (targetNav) {
-                                NavigationItem.FEED -> FeedScreen(
-                                    state = feedUiState,
-                                    onEvent = feedViewModel::onEvent
+                    androidx.compose.animation.AnimatedContent(
+                        targetState = isSplashDone,
+                        transitionSpec = {
+                            (androidx.compose.animation.fadeIn(androidx.compose.animation.core.tween(350)) +
+                                androidx.compose.animation.scaleIn(initialScale = 0.98f, animationSpec = androidx.compose.animation.core.tween(350)))
+                                .togetherWith(
+                                    androidx.compose.animation.fadeOut(androidx.compose.animation.core.tween(250)) +
+                                        androidx.compose.animation.scaleOut(targetScale = 1.02f, animationSpec = androidx.compose.animation.core.tween(250))
                                 )
-                                NavigationItem.PATHWAYS -> PathwaysScreen(
-                                    state = pathwaysUiState,
-                                    onEvent = pathwaysViewModel::onEvent
-                                )
-                                NavigationItem.SEARCH -> SearchScreen(
-                                    state = searchUiState,
-                                    onEvent = searchViewModel::onEvent
-                                )
-                                NavigationItem.LIBRARY -> LibraryScreen(
-                                    state = libraryUiState,
-                                    onEvent = libraryViewModel::onEvent
-                                )
-                            }
-                        }
-
-                        val isStudyingChapter = selectedNav == NavigationItem.PATHWAYS &&
-                            (pathwaysUiState as? com.masum.fathom.ui.pathways.PathwaysUiState.Success)?.activeChapterForReading != null
-
-                        androidx.compose.foundation.layout.Column(
-                            modifier = Modifier
-                                .align(Alignment.BottomCenter)
-                                .fillMaxWidth()
-                        ) {
-                            com.masum.fathom.ui.components.SacredAudioPlayerBar(
-                                isNavbarVisible = !isStudyingChapter
+                        },
+                        label = "splash_transition",
+                        modifier = Modifier.fillMaxSize()
+                    ) { splashDone ->
+                        if (!splashDone) {
+                            com.masum.fathom.ui.splash.SplashScreen(
+                                onSplashFinished = { isSplashDone = true }
                             )
-
-                            androidx.compose.animation.AnimatedVisibility(
-                                visible = !isStudyingChapter,
-                                enter = androidx.compose.animation.fadeIn(androidx.compose.animation.core.tween(200)) +
-                                    androidx.compose.animation.slideInVertically(initialOffsetY = { it }),
-                                exit = androidx.compose.animation.fadeOut(androidx.compose.animation.core.tween(150)) +
-                                    androidx.compose.animation.slideOutVertically(targetOffsetY = { it })
+                        } else {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .background(FathomTheme.colors.background)
                             ) {
-                                com.masum.fathom.ui.components.FathomBottomNavBar(
-                                    selectedItem = selectedNav,
-                                    onItemSelected = { selectedNav = it }
+                                androidx.compose.animation.AnimatedContent(
+                                    targetState = selectedNav,
+                                    transitionSpec = {
+                                        (androidx.compose.animation.fadeIn(androidx.compose.animation.core.tween(240)) +
+                                            androidx.compose.animation.scaleIn(initialScale = 0.98f, animationSpec = androidx.compose.animation.core.tween(240)))
+                                            .togetherWith(
+                                                androidx.compose.animation.fadeOut(androidx.compose.animation.core.tween(200)) +
+                                                    androidx.compose.animation.scaleOut(targetScale = 0.98f, animationSpec = androidx.compose.animation.core.tween(200))
+                                            )
+                                    },
+                                    label = "screen_nav_transition",
+                                    modifier = Modifier.fillMaxSize()
+                                ) { targetNav ->
+                                    when (targetNav) {
+                                        NavigationItem.FEED -> FeedScreen(
+                                            state = feedUiState,
+                                            onEvent = feedViewModel::onEvent
+                                        )
+                                        NavigationItem.PATHWAYS -> PathwaysScreen(
+                                            state = pathwaysUiState,
+                                            onEvent = pathwaysViewModel::onEvent
+                                        )
+                                        NavigationItem.SEARCH -> SearchScreen(
+                                            state = searchUiState,
+                                            onEvent = searchViewModel::onEvent
+                                        )
+                                        NavigationItem.LIBRARY -> LibraryScreen(
+                                            state = libraryUiState,
+                                            onEvent = libraryViewModel::onEvent
+                                        )
+                                    }
+                                }
+
+                                val isStudyingChapter = selectedNav == NavigationItem.PATHWAYS &&
+                                    (pathwaysUiState as? com.masum.fathom.ui.pathways.PathwaysUiState.Success)?.activeChapterForReading != null
+
+                                androidx.compose.foundation.layout.Column(
+                                    modifier = Modifier
+                                        .align(Alignment.BottomCenter)
+                                        .fillMaxWidth()
+                                ) {
+                                    com.masum.fathom.ui.components.SacredAudioPlayerBar(
+                                        isNavbarVisible = !isStudyingChapter
+                                    )
+
+                                    androidx.compose.animation.AnimatedVisibility(
+                                        visible = !isStudyingChapter,
+                                        enter = androidx.compose.animation.fadeIn(androidx.compose.animation.core.tween(200)) +
+                                            androidx.compose.animation.slideInVertically(initialOffsetY = { it }),
+                                        exit = androidx.compose.animation.fadeOut(androidx.compose.animation.core.tween(150)) +
+                                            androidx.compose.animation.slideOutVertically(targetOffsetY = { it })
+                                    ) {
+                                        com.masum.fathom.ui.components.FathomBottomNavBar(
+                                            selectedItem = selectedNav,
+                                            onItemSelected = { selectedNav = it }
+                                        )
+                                    }
+                                }
+
+                                com.masum.fathom.ui.components.AppUpdateBanner(
+                                    updateEngine = updateEngine,
+                                    modifier = Modifier.align(Alignment.TopCenter)
                                 )
+
+                                if (showSanctuaryModal) {
+                                    com.masum.fathom.ui.sanctuary.SanctuaryModal(
+                                        preferences = sanctuaryPreferences,
+                                        dataEngine = sanctuaryDataEngine,
+                                        onDismiss = { showSanctuaryModal = false }
+                                    )
+                                }
+
+                                if (showPaywallModal) {
+                                    com.masum.fathom.ui.subscription.SanctuaryPaywallSheet(
+                                        onDismiss = { showPaywallModal = false }
+                                    )
+                                }
                             }
-                        }
-
-                        com.masum.fathom.ui.components.AppUpdateBanner(
-                            updateEngine = updateEngine,
-                            modifier = Modifier.align(Alignment.TopCenter)
-                        )
-
-                        if (showSanctuaryModal) {
-                            com.masum.fathom.ui.sanctuary.SanctuaryModal(
-                                preferences = sanctuaryPreferences,
-                                dataEngine = sanctuaryDataEngine,
-                                onDismiss = { showSanctuaryModal = false }
-                            )
-                        }
-
-                        if (showPaywallModal) {
-                            com.masum.fathom.ui.subscription.SanctuaryPaywallSheet(
-                                onDismiss = { showPaywallModal = false }
-                            )
                         }
                     }
                 }
