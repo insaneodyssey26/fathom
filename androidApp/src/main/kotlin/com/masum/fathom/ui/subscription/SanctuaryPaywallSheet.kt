@@ -283,7 +283,7 @@ fun SanctuaryPaywallSheet(
                         Spacer(modifier = Modifier.height(4.dp))
 
                         Text(
-                            text = "Fathom is currently in closed testing. Subscriptions and pricing are not finalized and will officially launch later on Google Play. All Sanctuary+ features are 100% unlocked for your testing!",
+                            text = "Fathom is currently in closed beta testing. Subscriptions and pricing are not finalized and will launch later on Google Play. You may encounter bugs, incomplete features, or UI polish in progress. All features are unlocked for your testing!",
                             fontFamily = JakartaFontFamily,
                             fontSize = 12.sp,
                             lineHeight = 17.sp,

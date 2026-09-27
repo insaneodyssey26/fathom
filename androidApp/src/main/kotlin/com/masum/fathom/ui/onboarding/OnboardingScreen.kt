@@ -60,14 +60,13 @@ import com.adamglin.phosphoricons.regular.Check
 import com.adamglin.phosphoricons.regular.Flame
 import com.adamglin.phosphoricons.regular.Globe
 import com.adamglin.phosphoricons.regular.HandsPraying
+import com.adamglin.phosphoricons.regular.Info
 import com.adamglin.phosphoricons.regular.Moon
-import com.adamglin.phosphoricons.regular.ShieldCheck
 import com.adamglin.phosphoricons.regular.Sparkle
 import com.adamglin.phosphoricons.regular.Sun
 import com.masum.fathom.core.haptics.LocalFathomHaptics
 import com.masum.fathom.ui.theme.FathomTheme
 import com.masum.fathom.ui.theme.JakartaFontFamily
-import com.masum.fathom.ui.theme.SyneFontFamily
 
 private data class TraditionOption(
     val id: String,
@@ -84,7 +83,7 @@ fun OnboardingScreen(
     val haptics = LocalFathomHaptics.current
     var currentStep by remember { mutableIntStateOf(1) }
     var enteredName by remember { mutableStateOf("") }
-    var selectedTradition by remember { mutableStateOf<String?>("Universal Wisdom") }
+    var selectedTradition by remember { mutableStateOf<String?>("All Traditions") }
     var personalizeFeed by remember { mutableStateOf(false) }
 
     val traditions = remember {
@@ -97,32 +96,32 @@ fun OnboardingScreen(
             ),
             TraditionOption(
                 id = "Islam",
-                title = "Islamic Wisdom",
+                title = "Islam",
                 scriptureHint = "The Holy Quran",
                 icon = PhosphorIcons.Regular.Moon
             ),
             TraditionOption(
                 id = "Christianity",
-                title = "Judeo-Christian",
+                title = "Christianity",
                 scriptureHint = "Psalms, Proverbs, Gospels",
                 icon = PhosphorIcons.Regular.HandsPraying
             ),
             TraditionOption(
                 id = "Buddhism",
-                title = "Buddhist Dharma",
+                title = "Buddhism",
                 scriptureHint = "Dhammapada, Zen",
                 icon = PhosphorIcons.Regular.Sparkle
             ),
             TraditionOption(
                 id = "Taoism",
-                title = "Taoism & Eastern",
-                scriptureHint = "Tao Te Ching, Lao Tzu",
+                title = "Taoism",
+                scriptureHint = "Tao Te Ching",
                 icon = PhosphorIcons.Regular.Flame
             ),
             TraditionOption(
-                id = "Universal Wisdom",
-                title = "Universal Wisdom",
-                scriptureHint = "All Global Traditions",
+                id = "All Traditions",
+                title = "All Traditions",
+                scriptureHint = "Explore all books freely",
                 icon = PhosphorIcons.Regular.Globe
             )
         )
@@ -269,9 +268,9 @@ fun OnboardingScreen(
 
                             Text(
                                 text = "Welcome to Fathom",
-                                fontFamily = SyneFontFamily,
+                                fontFamily = JakartaFontFamily,
                                 fontWeight = FontWeight.Bold,
-                                fontSize = 26.sp,
+                                fontSize = 24.sp,
                                 color = FathomTheme.colors.textPrimary,
                                 textAlign = TextAlign.Center
                             )
@@ -279,7 +278,7 @@ fun OnboardingScreen(
                             Spacer(modifier = Modifier.height(8.dp))
 
                             Text(
-                                text = "What shall we call you in your sanctuary?",
+                                text = "What is your name?",
                                 fontFamily = JakartaFontFamily,
                                 fontSize = 14.sp,
                                 color = FathomTheme.colors.textSecondary,
@@ -302,7 +301,7 @@ fun OnboardingScreen(
                             ) {
                                 if (enteredName.isEmpty()) {
                                     Text(
-                                        text = "Enter your name (e.g. Seeker)",
+                                        text = "Your Name",
                                         fontFamily = JakartaFontFamily,
                                         fontSize = 15.sp,
                                         color = FathomTheme.colors.textTertiary
@@ -331,8 +330,8 @@ fun OnboardingScreen(
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Text(
-                                text = "Your Spiritual Path",
-                                fontFamily = SyneFontFamily,
+                                text = "Scriptures of Interest",
+                                fontFamily = JakartaFontFamily,
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 24.sp,
                                 color = FathomTheme.colors.textPrimary,
@@ -342,7 +341,7 @@ fun OnboardingScreen(
                             Spacer(modifier = Modifier.height(6.dp))
 
                             Text(
-                                text = "Select a tradition to prioritize, or explore all freely (optional)",
+                                text = "Which scriptures or traditions are you most drawn to? (Optional)",
                                 fontFamily = JakartaFontFamily,
                                 fontSize = 13.5.sp,
                                 color = FathomTheme.colors.textSecondary,
@@ -437,8 +436,8 @@ fun OnboardingScreen(
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Text(
-                                text = "Personalize Your Feed",
-                                fontFamily = SyneFontFamily,
+                                text = "Your Daily Feed",
+                                fontFamily = JakartaFontFamily,
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 24.sp,
                                 color = FathomTheme.colors.textPrimary,
@@ -448,7 +447,7 @@ fun OnboardingScreen(
                             Spacer(modifier = Modifier.height(6.dp))
 
                             Text(
-                                text = "How would you like daily wisdom presented?",
+                                text = "Choose how verses appear on your daily feed:",
                                 fontFamily = JakartaFontFamily,
                                 fontSize = 13.5.sp,
                                 color = FathomTheme.colors.textSecondary,
@@ -457,79 +456,83 @@ fun OnboardingScreen(
 
                             Spacer(modifier = Modifier.height(20.dp))
 
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clip(RoundedCornerShape(14.dp))
-                                    .background(
-                                        if (personalizeFeed) FathomTheme.colors.accentGold.copy(alpha = 0.14f)
-                                        else FathomTheme.colors.surfaceElevated
-                                    )
-                                    .border(
-                                        width = if (personalizeFeed) 1.5.dp else 1.dp,
-                                        color = if (personalizeFeed) FathomTheme.colors.accentGold else FathomTheme.colors.borderSubtle,
-                                        shape = RoundedCornerShape(14.dp)
-                                    )
-                                    .clickable {
-                                        haptics.light()
-                                        personalizeFeed = true
-                                    }
-                                    .padding(14.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(12.dp)
-                            ) {
-                                Box(
+                            val hasSpecificTradition = selectedTradition != null && selectedTradition != "All Traditions"
+
+                            if (hasSpecificTradition) {
+                                Row(
                                     modifier = Modifier
-                                        .size(22.dp)
-                                        .clip(CircleShape)
-                                        .background(if (personalizeFeed) FathomTheme.colors.accentGold else Color.Transparent)
+                                        .fillMaxWidth()
+                                        .clip(RoundedCornerShape(14.dp))
+                                        .background(
+                                            if (personalizeFeed) FathomTheme.colors.accentGold.copy(alpha = 0.14f)
+                                            else FathomTheme.colors.surfaceElevated
+                                        )
                                         .border(
-                                            1.5.dp,
-                                            if (personalizeFeed) FathomTheme.colors.accentGold else FathomTheme.colors.borderSubtle,
-                                            CircleShape
-                                        ),
-                                    contentAlignment = Alignment.Center
+                                            width = if (personalizeFeed) 1.5.dp else 1.dp,
+                                            color = if (personalizeFeed) FathomTheme.colors.accentGold else FathomTheme.colors.borderSubtle,
+                                            shape = RoundedCornerShape(14.dp)
+                                        )
+                                        .clickable {
+                                            haptics.light()
+                                            personalizeFeed = true
+                                        }
+                                        .padding(14.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(12.dp)
                                 ) {
-                                    if (personalizeFeed) {
-                                        Icon(
-                                            imageVector = PhosphorIcons.Regular.Check,
-                                            contentDescription = null,
-                                            tint = Color.Black,
-                                            modifier = Modifier.size(13.dp)
+                                    Box(
+                                        modifier = Modifier
+                                            .size(22.dp)
+                                            .clip(CircleShape)
+                                            .background(if (personalizeFeed) FathomTheme.colors.accentGold else Color.Transparent)
+                                            .border(
+                                                1.5.dp,
+                                                if (personalizeFeed) FathomTheme.colors.accentGold else FathomTheme.colors.borderSubtle,
+                                                CircleShape
+                                            ),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        if (personalizeFeed) {
+                                            Icon(
+                                                imageVector = PhosphorIcons.Regular.Check,
+                                                contentDescription = null,
+                                                tint = Color.Black,
+                                                modifier = Modifier.size(13.dp)
+                                            )
+                                        }
+                                    }
+
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            text = "Mainly $selectedTradition",
+                                            fontFamily = JakartaFontFamily,
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 13.5.sp,
+                                            color = FathomTheme.colors.textPrimary
+                                        )
+                                        Text(
+                                            text = "Focus primarily on $selectedTradition scriptures, with occasional wisdom from other texts.",
+                                            fontFamily = JakartaFontFamily,
+                                            fontSize = 11.5.sp,
+                                            color = FathomTheme.colors.textTertiary
                                         )
                                     }
                                 }
 
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Text(
-                                        text = "Focus on ${selectedTradition ?: "my chosen tradition"}",
-                                        fontFamily = JakartaFontFamily,
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 13.5.sp,
-                                        color = FathomTheme.colors.textPrimary
-                                    )
-                                    Text(
-                                        text = "Prioritize scriptures aligned with your tradition in the daily feed.",
-                                        fontFamily = JakartaFontFamily,
-                                        fontSize = 11.5.sp,
-                                        color = FathomTheme.colors.textTertiary
-                                    )
-                                }
+                                Spacer(modifier = Modifier.height(10.dp))
                             }
-
-                            Spacer(modifier = Modifier.height(10.dp))
 
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .clip(RoundedCornerShape(14.dp))
                                     .background(
-                                        if (!personalizeFeed) FathomTheme.colors.accentGold.copy(alpha = 0.14f)
+                                        if (!personalizeFeed || !hasSpecificTradition) FathomTheme.colors.accentGold.copy(alpha = 0.14f)
                                         else FathomTheme.colors.surfaceElevated
                                     )
                                     .border(
-                                        width = if (!personalizeFeed) 1.5.dp else 1.dp,
-                                        color = if (!personalizeFeed) FathomTheme.colors.accentGold else FathomTheme.colors.borderSubtle,
+                                        width = if (!personalizeFeed || !hasSpecificTradition) 1.5.dp else 1.dp,
+                                        color = if (!personalizeFeed || !hasSpecificTradition) FathomTheme.colors.accentGold else FathomTheme.colors.borderSubtle,
                                         shape = RoundedCornerShape(14.dp)
                                     )
                                     .clickable {
@@ -544,148 +547,103 @@ fun OnboardingScreen(
                                     modifier = Modifier
                                         .size(22.dp)
                                         .clip(CircleShape)
-                                        .background(if (!personalizeFeed) FathomTheme.colors.accentGold else Color.Transparent)
-                                        .border(
-                                            1.5.dp,
-                                            if (!personalizeFeed) FathomTheme.colors.accentGold else FathomTheme.colors.borderSubtle,
-                                            CircleShape
-                                        ),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    if (!personalizeFeed) {
-                                        Icon(
-                                            imageVector = PhosphorIcons.Regular.Check,
-                                            contentDescription = null,
-                                            tint = Color.Black,
-                                            modifier = Modifier.size(13.dp)
-                                        )
-                                    }
-                                }
-
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Text(
-                                        text = "Universal Exploration",
-                                        fontFamily = JakartaFontFamily,
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 13.5.sp,
-                                        color = FathomTheme.colors.textPrimary
-                                    )
-                                    Text(
-                                        text = "Discover passages from all world traditions in your daily sanctuary stream.",
-                                        fontFamily = JakartaFontFamily,
-                                        fontSize = 11.5.sp,
-                                        color = FathomTheme.colors.textTertiary
-                                    )
-                                }
-                            }
-
-                            Spacer(modifier = Modifier.height(20.dp))
-
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clip(RoundedCornerShape(16.dp))
-                                    .background(
-                                        Brush.verticalGradient(
-                                            listOf(
-                                                FathomTheme.colors.accentGold.copy(alpha = 0.10f),
-                                                FathomTheme.colors.surfaceElevated
-                                            )
-                                        )
-                                    )
-                                    .border(1.dp, FathomTheme.colors.accentGold.copy(alpha = 0.35f), RoundedCornerShape(16.dp))
-                                    .padding(16.dp)
+                                        .background(if (!personalizeFeed || !hasSpecificTradition) FathomTheme.colors.accentGold else Color.Transparent)
+                                    .border(
+                                        1.5.dp,
+                                        if (!personalizeFeed || !hasSpecificTradition) FathomTheme.colors.accentGold else FathomTheme.colors.borderSubtle,
+                                        CircleShape
+                                    ),
+                                contentAlignment = Alignment.Center
                             ) {
-                                Row(
-                                    verticalAlignment = Alignment.Top,
-                                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                                ) {
-                                    Box(
-                                        modifier = Modifier
-                                            .size(32.dp)
-                                            .clip(CircleShape)
-                                            .background(FathomTheme.colors.accentGold.copy(alpha = 0.18f)),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Icon(
-                                            imageVector = PhosphorIcons.Regular.ShieldCheck,
-                                            contentDescription = null,
-                                            tint = FathomTheme.colors.accentGold,
-                                            modifier = Modifier.size(18.dp)
-                                        )
-                                    }
-
-                                    Column(modifier = Modifier.weight(1f)) {
-                                        Text(
-                                            text = "100% PRIVATE & ON-DEVICE",
-                                            fontFamily = JakartaFontFamily,
-                                            fontWeight = FontWeight.Bold,
-                                            fontSize = 11.sp,
-                                            letterSpacing = 0.8.sp,
-                                            color = FathomTheme.colors.accentGold
-                                        )
-                                        Spacer(modifier = Modifier.height(4.dp))
-                                        Text(
-                                            text = "Fathom has no backend servers, telemetry, or user tracking. Your name, preferences, reflections, and notes exist strictly on your local device.",
-                                            fontFamily = JakartaFontFamily,
-                                            fontSize = 12.sp,
-                                            lineHeight = 17.sp,
-                                            color = FathomTheme.colors.textSecondary
-                                        )
-                                    }
+                                if (!personalizeFeed || !hasSpecificTradition) {
+                                    Icon(
+                                        imageVector = PhosphorIcons.Regular.Check,
+                                        contentDescription = null,
+                                        tint = Color.Black,
+                                        modifier = Modifier.size(13.dp)
+                                    )
                                 }
                             }
+
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = "All Scriptures",
+                                    fontFamily = JakartaFontFamily,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 13.5.sp,
+                                    color = FathomTheme.colors.textPrimary
+                                )
+                                Text(
+                                    text = "A balanced mix of verses from all sacred texts and traditions.",
+                                    fontFamily = JakartaFontFamily,
+                                    fontSize = 11.5.sp,
+                                    color = FathomTheme.colors.textTertiary
+                                )
+                            }
                         }
+
+                        Spacer(modifier = Modifier.height(22.dp))
+
+                        Text(
+                            text = "Your data stays on your phone. Because there is no server, your name and preferences are never sent anywhere.",
+                            fontFamily = JakartaFontFamily,
+                            fontSize = 11.sp,
+                            lineHeight = 15.sp,
+                            color = FathomTheme.colors.textTertiary,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.padding(horizontal = 8.dp)
+                        )
                     }
                 }
             }
-
-            Spacer(modifier = Modifier.height(28.dp))
-
-            Button(
-                onClick = {
-                    haptics.medium()
-                    if (currentStep < 3) {
-                        if (currentStep == 1 && enteredName.isBlank()) {
-                            enteredName = "Seeker"
-                        }
-                        currentStep += 1
-                    } else {
-                        val finalName = enteredName.trim().ifBlank { "Seeker" }
-                        val finalTrad = if (selectedTradition == "Universal Wisdom") null else selectedTradition
-                        onComplete(finalName, finalTrad, personalizeFeed)
-                    }
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(52.dp)
-                    .clip(RoundedCornerShape(14.dp)),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = FathomTheme.colors.accentGold,
-                    contentColor = Color.Black
-                ),
-                shape = RoundedCornerShape(14.dp)
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Text(
-                        text = if (currentStep < 3) "CONTINUE" else "ENTER SANCTUARY",
-                        fontFamily = JakartaFontFamily,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 13.5.sp,
-                        letterSpacing = 0.5.sp
-                    )
-                    Icon(
-                        imageVector = PhosphorIcons.Regular.ArrowRight,
-                        contentDescription = null,
-                        modifier = Modifier.size(16.dp)
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(12.dp))
         }
+
+        Spacer(modifier = Modifier.height(28.dp))
+
+        Button(
+            onClick = {
+                haptics.medium()
+                if (currentStep < 3) {
+                    if (currentStep == 1 && enteredName.isBlank()) {
+                        enteredName = "Seeker"
+                    }
+                    currentStep += 1
+                } else {
+                    val finalName = enteredName.trim().ifBlank { "Seeker" }
+                    val finalTrad = if (selectedTradition == "All Traditions") null else selectedTradition
+                    onComplete(finalName, finalTrad, personalizeFeed)
+                }
+            },
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(52.dp)
+                .clip(RoundedCornerShape(14.dp)),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = FathomTheme.colors.accentGold,
+                contentColor = Color.Black
+            ),
+            shape = RoundedCornerShape(14.dp)
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Text(
+                    text = if (currentStep < 3) "CONTINUE" else "START READING",
+                    fontFamily = JakartaFontFamily,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 13.5.sp,
+                    letterSpacing = 0.5.sp
+                )
+                Icon(
+                    imageVector = PhosphorIcons.Regular.ArrowRight,
+                    contentDescription = null,
+                    modifier = Modifier.size(16.dp)
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
     }
+}
 }

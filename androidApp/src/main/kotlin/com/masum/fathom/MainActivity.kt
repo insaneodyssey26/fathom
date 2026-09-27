@@ -185,46 +185,55 @@ class MainActivity : ComponentActivity() {
                 com.masum.fathom.core.update.LocalAppUpdateEngine provides updateEngine
             ) {
                 FathomTheme(readingTheme = activeTheme) {
+                    val appStage = when {
+                        !isSplashDone -> "SPLASH"
+                        !sanctuarySettings.hasCompletedOnboarding -> "ONBOARDING"
+                        else -> "MAIN"
+                    }
+
                     androidx.compose.animation.AnimatedContent(
-                        targetState = isSplashDone,
+                        targetState = appStage,
                         transitionSpec = {
-                            (androidx.compose.animation.fadeIn(androidx.compose.animation.core.tween(350)) +
-                                androidx.compose.animation.scaleIn(initialScale = 0.98f, animationSpec = androidx.compose.animation.core.tween(350)))
+                            (androidx.compose.animation.fadeIn(androidx.compose.animation.core.tween(380)) +
+                                androidx.compose.animation.scaleIn(initialScale = 0.98f, animationSpec = androidx.compose.animation.core.tween(380)))
                                 .togetherWith(
                                     androidx.compose.animation.fadeOut(androidx.compose.animation.core.tween(250)) +
                                         androidx.compose.animation.scaleOut(targetScale = 1.02f, animationSpec = androidx.compose.animation.core.tween(250))
                                 )
                         },
-                        label = "splash_transition",
+                        label = "app_stage_transition",
                         modifier = Modifier.fillMaxSize()
-                    ) { splashDone ->
-                        if (!splashDone) {
-                            com.masum.fathom.ui.splash.SplashScreen(
-                                onSplashFinished = { isSplashDone = true }
-                            )
-                        } else if (!sanctuarySettings.hasCompletedOnboarding) {
-                            com.masum.fathom.ui.onboarding.OnboardingScreen(
-                                onComplete = { name, tradition, personalizeFeed ->
-                                    sanctuaryPreferences.completeOnboarding(name, tradition, personalizeFeed)
-                                    if (personalizeFeed && tradition != null) {
-                                        val traditionId = when (tradition) {
-                                            "Sanatana Dharma" -> com.masum.fathom.core.model.TraditionId.HINDUISM
-                                            "Islam" -> com.masum.fathom.core.model.TraditionId.ISLAM
-                                            "Christianity" -> com.masum.fathom.core.model.TraditionId.CHRISTIANITY
-                                            "Buddhism" -> com.masum.fathom.core.model.TraditionId.BUDDHISM
-                                            "Taoism" -> com.masum.fathom.core.model.TraditionId.TAOISM
-                                            else -> null
+                    ) { stage ->
+                        when (stage) {
+                            "SPLASH" -> {
+                                com.masum.fathom.ui.splash.SplashScreen(
+                                    onSplashFinished = { isSplashDone = true }
+                                )
+                            }
+                            "ONBOARDING" -> {
+                                com.masum.fathom.ui.onboarding.OnboardingScreen(
+                                    onComplete = { name, tradition, personalizeFeed ->
+                                        sanctuaryPreferences.completeOnboarding(name, tradition, personalizeFeed)
+                                        if (personalizeFeed && tradition != null) {
+                                            val traditionId = when (tradition) {
+                                                "Sanatana Dharma" -> com.masum.fathom.core.model.TraditionId.HINDUISM
+                                                "Islam" -> com.masum.fathom.core.model.TraditionId.ISLAM
+                                                "Christianity" -> com.masum.fathom.core.model.TraditionId.CHRISTIANITY
+                                                "Buddhism" -> com.masum.fathom.core.model.TraditionId.BUDDHISM
+                                                "Taoism" -> com.masum.fathom.core.model.TraditionId.TAOISM
+                                                else -> null
+                                            }
+                                            feedViewModel.setTraditionFocus(traditionId)
                                         }
-                                        feedViewModel.setTraditionFocus(traditionId)
                                     }
-                                }
-                            )
-                        } else {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .background(FathomTheme.colors.background)
-                            ) {
+                                )
+                            }
+                            else -> {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .background(FathomTheme.colors.background)
+                                ) {
                                 androidx.compose.animation.AnimatedContent(
                                     targetState = selectedNav,
                                     transitionSpec = {
@@ -309,6 +318,7 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+}
 
     override fun onNewIntent(intent: android.content.Intent) {
         super.onNewIntent(intent)

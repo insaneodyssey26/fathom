@@ -1,7 +1,5 @@
 package com.masum.fathom.ui.feed
 
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -24,6 +22,8 @@ import androidx.compose.foundation.pager.VerticalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -41,12 +41,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import kotlinx.coroutines.launch
 import com.adamglin.PhosphorIcons
 import com.adamglin.phosphoricons.Fill
@@ -62,6 +65,8 @@ import com.adamglin.phosphoricons.regular.ShareNetwork
 import com.adamglin.phosphoricons.regular.Sliders
 import com.adamglin.phosphoricons.regular.Sparkle
 import com.adamglin.phosphoricons.regular.SpeakerHigh
+import com.adamglin.phosphoricons.regular.Warning
+import com.adamglin.phosphoricons.regular.X
 import com.masum.fathom.core.audio.LocalSacredAudioEngine
 import com.masum.fathom.core.audio.SacredAudioState
 import com.masum.fathom.core.subscription.LocalOpenPaywall
@@ -86,6 +91,7 @@ fun FeedScreen(
 
     var showScriptureSheet by remember { mutableStateOf(false) }
     var showFilterSheet by remember { mutableStateOf(false) }
+    var showBetaDialog by remember { mutableStateOf(false) }
 
     when (state) {
         is FeedUiState.Loading -> {
@@ -183,17 +189,55 @@ fun FeedScreen(
                     ) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(0.dp)
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            Text(
-                                text = "fathom",
-                                style = FathomTheme.typography.brandTitle,
-                                color = FathomTheme.colors.textPrimary
-                            )
-                            Text(
-                                text = ".",
-                                style = FathomTheme.typography.brandTitle.copy(color = FathomTheme.colors.accentGold)
-                            )
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(0.dp)
+                            ) {
+                                Text(
+                                    text = "fathom",
+                                    style = FathomTheme.typography.brandTitle,
+                                    color = FathomTheme.colors.textPrimary
+                                )
+                                Text(
+                                    text = ".",
+                                    style = FathomTheme.typography.brandTitle.copy(color = FathomTheme.colors.accentGold)
+                                )
+                            }
+
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(FathomTheme.colors.surfaceElevated)
+                                    .border(1.dp, FathomTheme.colors.accentGold.copy(alpha = 0.35f), RoundedCornerShape(8.dp))
+                                    .clickable {
+                                        haptics.light()
+                                        showBetaDialog = true
+                                    }
+                                    .padding(horizontal = 6.dp, vertical = 2.5.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = PhosphorIcons.Regular.Warning,
+                                        contentDescription = null,
+                                        tint = FathomTheme.colors.accentGold,
+                                        modifier = Modifier.size(11.dp)
+                                    )
+                                    Text(
+                                        text = "BETA",
+                                        fontFamily = JakartaFontFamily,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 8.5.sp,
+                                        letterSpacing = 0.5.sp,
+                                        color = FathomTheme.colors.accentGold
+                                    )
+                                }
+                            }
                         }
 
                         Row(
@@ -254,7 +298,7 @@ fun FeedScreen(
                             ) {
                                 Icon(
                                     imageVector = PhosphorIcons.Regular.Sliders,
-                                    contentDescription = "Sanctuary Settings",
+                                    contentDescription = "Preferences",
                                     tint = FathomTheme.colors.textSecondary,
                                     modifier = Modifier.size(18.dp)
                                 )
@@ -479,6 +523,84 @@ fun FeedScreen(
                         onChangeTheme = { onEvent(FeedUiEvent.OnChangeTheme(it)) },
                         onDismiss = { showFilterSheet = false }
                     )
+                }
+
+                if (showBetaDialog) {
+                    Dialog(
+                        onDismissRequest = { showBetaDialog = false }
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(20.dp))
+                                .background(FathomTheme.colors.surfaceElevated)
+                                .border(1.dp, FathomTheme.colors.accentGold.copy(alpha = 0.35f), RoundedCornerShape(20.dp))
+                                .padding(24.dp)
+                        ) {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.spacedBy(14.dp)
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(52.dp)
+                                        .clip(CircleShape)
+                                        .background(FathomTheme.colors.accentGold.copy(alpha = 0.15f))
+                                        .border(1.dp, FathomTheme.colors.accentGold.copy(alpha = 0.45f), CircleShape),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = PhosphorIcons.Regular.Warning,
+                                        contentDescription = null,
+                                        tint = FathomTheme.colors.accentGold,
+                                        modifier = Modifier.size(24.dp)
+                                    )
+                                }
+
+                                Text(
+                                    text = "Closed Beta Preview",
+                                    fontFamily = JakartaFontFamily,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 17.sp,
+                                    color = FathomTheme.colors.textPrimary,
+                                    textAlign = TextAlign.Center
+                                )
+
+                                Text(
+                                    text = "Fathom is currently in closed beta testing. You might encounter bugs, incomplete features, or ongoing UI polish as updates are released.\n\nAll features are completely open and free for testing. Thank you so much for testing Fathom!",
+                                    fontFamily = JakartaFontFamily,
+                                    fontSize = 12.5.sp,
+                                    lineHeight = 18.sp,
+                                    color = FathomTheme.colors.textSecondary,
+                                    textAlign = TextAlign.Center
+                                )
+
+                                Spacer(modifier = Modifier.height(2.dp))
+
+                                Button(
+                                    onClick = {
+                                        haptics.light()
+                                        showBetaDialog = false
+                                    },
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(44.dp),
+                                    shape = RoundedCornerShape(12.dp),
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = FathomTheme.colors.accentGold,
+                                        contentColor = Color.Black
+                                    )
+                                ) {
+                                    Text(
+                                        text = "Understood",
+                                        fontFamily = JakartaFontFamily,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 13.sp
+                                    )
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
