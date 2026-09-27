@@ -64,6 +64,7 @@ fun ScriptureSelectorSheet(
     onSelectBook: (String?) -> Unit,
     onDismiss: () -> Unit
 ) {
+    val haptics = com.masum.fathom.core.haptics.LocalFathomHaptics.current
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val groupedByTradition = remember(availableBooks) { availableBooks.groupBy { it.traditionId } }
     val activeTradition = availableBooks.find { it.id == selectedBookId }?.traditionId
@@ -119,6 +120,7 @@ fun ScriptureSelectorSheet(
             AllScripturesMinimalRow(
                 isSelected = isAllSelected,
                 onClick = {
+                    haptics.light()
                     onSelectBook(null)
                     onDismiss()
                 }
@@ -227,6 +229,7 @@ private fun TraditionAccordionSection(
     onToggleExpand: () -> Unit,
     onSelectBook: (String) -> Unit
 ) {
+    val haptics = com.masum.fathom.core.haptics.LocalFathomHaptics.current
     val interactionSource = remember { MutableInteractionSource() }
     val chevronRotation by animateFloatAsState(
         targetValue = if (isExpanded) 180f else 0f,
@@ -253,7 +256,10 @@ private fun TraditionAccordionSection(
                 .clickable(
                     interactionSource = interactionSource,
                     indication = null,
-                    onClick = onToggleExpand
+                    onClick = {
+                        haptics.light()
+                        onToggleExpand()
+                    }
                 )
                 .padding(horizontal = 14.dp, vertical = 12.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -316,7 +322,10 @@ private fun TraditionAccordionSection(
                             .clickable(
                                 interactionSource = bookInteraction,
                                 indication = null,
-                                onClick = { onSelectBook(book.id) }
+                                onClick = {
+                                    haptics.light()
+                                    onSelectBook(book.id)
+                                }
                             )
                             .padding(horizontal = 10.dp, vertical = 9.dp),
                         horizontalArrangement = Arrangement.SpaceBetween,

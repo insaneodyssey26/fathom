@@ -54,6 +54,7 @@ import com.adamglin.phosphoricons.Regular
 import com.adamglin.phosphoricons.regular.FloppyDisk
 import com.adamglin.phosphoricons.regular.ShareNetwork
 import com.adamglin.phosphoricons.regular.X
+import com.masum.fathom.core.haptics.LocalFathomHaptics
 import com.masum.fathom.core.model.Passage
 import com.masum.fathom.ui.theme.FathomTheme
 import com.masum.fathom.ui.theme.JakartaFontFamily
@@ -69,6 +70,7 @@ fun QuoteCardModal(
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val haptics = LocalFathomHaptics.current
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
@@ -121,7 +123,10 @@ fun QuoteCardModal(
                 }
 
                 IconButton(
-                    onClick = onDismiss,
+                    onClick = {
+                        haptics.light()
+                        onDismiss()
+                    },
                     modifier = Modifier.size(32.dp)
                 ) {
                     Icon(
@@ -187,7 +192,10 @@ fun QuoteCardModal(
                                     color = if (isSelected) FathomTheme.colors.accentGold else FathomTheme.colors.borderSubtle,
                                     shape = RoundedCornerShape(10.dp)
                                 )
-                                .clickable { selectedFormat = format }
+                                .clickable {
+                                    haptics.light()
+                                    selectedFormat = format
+                                }
                                 .padding(vertical = 10.dp),
                             contentAlignment = Alignment.Center
                         ) {
@@ -232,7 +240,10 @@ fun QuoteCardModal(
                                     color = if (isSelected) FathomTheme.colors.accentGold else FathomTheme.colors.borderSubtle,
                                     shape = RoundedCornerShape(10.dp)
                                 )
-                                .clickable { selectedTheme = theme }
+                                .clickable {
+                                    haptics.light()
+                                    selectedTheme = theme
+                                }
                                 .padding(vertical = 10.dp, horizontal = 8.dp),
                             horizontalArrangement = Arrangement.Center,
                             verticalAlignment = Alignment.CenterVertically
@@ -286,7 +297,10 @@ fun QuoteCardModal(
                             )
                             Switch(
                                 checked = includeOriginal,
-                                onCheckedChange = { includeOriginal = it },
+                                onCheckedChange = {
+                                    haptics.light()
+                                    includeOriginal = it
+                                },
                                 colors = SwitchDefaults.colors(
                                     checkedThumbColor = FathomTheme.colors.accentGold,
                                     checkedTrackColor = FathomTheme.colors.accentGold.copy(alpha = 0.35f),
@@ -313,7 +327,10 @@ fun QuoteCardModal(
                             )
                             Switch(
                                 checked = includeThemes,
-                                onCheckedChange = { includeThemes = it },
+                                onCheckedChange = {
+                                    haptics.light()
+                                    includeThemes = it
+                                },
                                 colors = SwitchDefaults.colors(
                                     checkedThumbColor = FathomTheme.colors.accentGold,
                                     checkedTrackColor = FathomTheme.colors.accentGold.copy(alpha = 0.35f),
@@ -334,6 +351,7 @@ fun QuoteCardModal(
             ) {
                 OutlinedButton(
                     onClick = {
+                        haptics.light()
                         if (!isProcessing) {
                             isProcessing = true
                             coroutineScope.launch {
@@ -348,6 +366,7 @@ fun QuoteCardModal(
                                     )
                                 }
                                 QuoteCardRenderer.saveToGallery(context, bitmap, passage)
+                                haptics.success()
                                 isProcessing = false
                             }
                         }
@@ -378,6 +397,7 @@ fun QuoteCardModal(
 
                 Button(
                     onClick = {
+                        haptics.light()
                         if (!isProcessing) {
                             isProcessing = true
                             coroutineScope.launch {

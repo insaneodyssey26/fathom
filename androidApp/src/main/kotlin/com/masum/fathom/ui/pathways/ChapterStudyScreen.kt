@@ -81,6 +81,7 @@ import com.adamglin.phosphoricons.regular.X
 import androidx.compose.runtime.collectAsState
 import com.masum.fathom.core.audio.LocalSacredAudioEngine
 import com.masum.fathom.core.audio.SacredAudioState
+import com.masum.fathom.core.haptics.LocalFathomHaptics
 import com.masum.fathom.core.model.Passage
 import com.masum.fathom.ui.components.SacredDivider
 import com.masum.fathom.ui.theme.FathomTheme
@@ -101,6 +102,7 @@ fun ChapterStudyScreen(
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val haptics = LocalFathomHaptics.current
     val audioEngine = LocalSacredAudioEngine.current
     val coroutineScope = rememberCoroutineScope()
     var showJumpModal by remember { mutableStateOf(false) }
@@ -155,7 +157,10 @@ fun ChapterStudyScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     IconButton(
-                        onClick = onDismiss,
+                        onClick = {
+                            haptics.light()
+                            onDismiss()
+                        },
                         modifier = Modifier
                             .clip(CircleShape)
                             .background(FathomTheme.colors.surfaceElevated)
@@ -206,6 +211,7 @@ fun ChapterStudyScreen(
 
                         IconButton(
                             onClick = {
+                                haptics.light()
                                 audioEngine.toggle(currentPassage)
                             },
                             modifier = Modifier
@@ -272,7 +278,10 @@ fun ChapterStudyScreen(
                                     .clip(RoundedCornerShape(8.dp))
                                     .background(FathomTheme.colors.surfaceElevated)
                                     .border(1.dp, FathomTheme.colors.borderSubtle, RoundedCornerShape(8.dp))
-                                    .clickable { showJumpModal = true }
+                                    .clickable {
+                                        haptics.light()
+                                        showJumpModal = true
+                                    }
                                     .padding(horizontal = 10.dp, vertical = 4.dp)
                             ) {
                                 Row(
@@ -351,7 +360,10 @@ fun ChapterStudyScreen(
                                 passage = passage,
                                 index = page + 1,
                                 total = totalPages,
-                                onOpenInfo = { onOpenPassageContext(passage) }
+                                onOpenInfo = {
+                                    haptics.light()
+                                    onOpenPassageContext(passage)
+                                }
                             )
                         }
                     }
@@ -366,6 +378,7 @@ fun ChapterStudyScreen(
                         if (currentPage > 0) {
                             OutlinedButton(
                                 onClick = {
+                                    haptics.light()
                                     coroutineScope.launch {
                                         pagerState.animateScrollToPage(
                                             page = currentPage - 1,
@@ -406,6 +419,7 @@ fun ChapterStudyScreen(
                         if (currentPage < totalPages - 1) {
                             Button(
                                 onClick = {
+                                    haptics.light()
                                     coroutineScope.launch {
                                         pagerState.animateScrollToPage(
                                             page = currentPage + 1,
@@ -442,7 +456,10 @@ fun ChapterStudyScreen(
                             }
                         } else {
                             Button(
-                                onClick = onCompleteChapter,
+                                onClick = {
+                                    haptics.success()
+                                    onCompleteChapter()
+                                },
                                 modifier = Modifier
                                     .weight(1f)
                                     .height(52.dp),
@@ -499,6 +516,7 @@ private fun JumpToVerseModal(
     onSelectVerse: (Int) -> Unit,
     onDismiss: () -> Unit
 ) {
+    val haptics = LocalFathomHaptics.current
     Dialog(
         onDismissRequest = onDismiss,
         properties = DialogProperties(usePlatformDefaultWidth = false)
@@ -510,7 +528,10 @@ private fun JumpToVerseModal(
                 .clickable(
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null,
-                    onClick = onDismiss
+                    onClick = {
+                        haptics.light()
+                        onDismiss()
+                    }
                 )
                 .padding(24.dp),
             contentAlignment = Alignment.Center
@@ -571,7 +592,10 @@ private fun JumpToVerseModal(
                         }
 
                         IconButton(
-                            onClick = onDismiss,
+                            onClick = {
+                                haptics.light()
+                                onDismiss()
+                            },
                             modifier = Modifier
                                 .clip(CircleShape)
                                 .background(FathomTheme.colors.surface)
@@ -625,6 +649,7 @@ private fun JumpToVerseModal(
                                             shape = RoundedCornerShape(12.dp)
                                         )
                                         .clickable {
+                                            haptics.light()
                                             onSelectVerse(verseNum - 1)
                                         },
                                     contentAlignment = Alignment.Center
@@ -653,6 +678,7 @@ private fun InteractiveWisdomCard(
     total: Int,
     onOpenInfo: () -> Unit
 ) {
+    val haptics = LocalFathomHaptics.current
     var isExpanded by remember { mutableStateOf(false) }
     val scrollState = rememberScrollState()
 
@@ -695,7 +721,10 @@ private fun InteractiveWisdomCard(
                     horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     IconButton(
-                        onClick = onOpenInfo,
+                        onClick = {
+                            haptics.light()
+                            onOpenInfo()
+                        },
                         modifier = Modifier
                             .clip(CircleShape)
                             .background(FathomTheme.colors.surface)
@@ -766,7 +795,10 @@ private fun InteractiveWisdomCard(
                         .clip(RoundedCornerShape(12.dp))
                         .background(FathomTheme.colors.surface)
                         .border(1.dp, FathomTheme.colors.borderSubtle, RoundedCornerShape(12.dp))
-                        .clickable { isExpanded = !isExpanded }
+                        .clickable {
+                            haptics.light()
+                            isExpanded = !isExpanded
+                        }
                         .padding(12.dp)
                 ) {
                     Column {

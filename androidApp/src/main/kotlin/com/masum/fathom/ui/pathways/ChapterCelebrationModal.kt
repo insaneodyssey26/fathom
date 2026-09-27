@@ -55,6 +55,7 @@ import com.adamglin.phosphoricons.regular.Crown
 import com.adamglin.phosphoricons.regular.Flame
 import com.adamglin.phosphoricons.regular.Sparkle
 import com.adamglin.phosphoricons.regular.X
+import com.masum.fathom.core.haptics.LocalFathomHaptics
 import com.masum.fathom.ui.components.SacredDivider
 import com.masum.fathom.ui.theme.FathomTheme
 import com.masum.fathom.ui.theme.JakartaFontFamily
@@ -65,6 +66,7 @@ fun ChapterCelebrationModal(
     reward: CompletionReward,
     onDismiss: () -> Unit
 ) {
+    val haptics = LocalFathomHaptics.current
     val infiniteTransition = rememberInfiniteTransition(label = "celebration_pulse")
     val pulseScale by infiniteTransition.animateFloat(
         initialValue = 0.98f,
@@ -87,7 +89,10 @@ fun ChapterCelebrationModal(
                 .clickable(
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null,
-                    onClick = onDismiss
+                    onClick = {
+                        haptics.light()
+                        onDismiss()
+                    }
                 )
                 .padding(24.dp),
             contentAlignment = Alignment.Center
@@ -287,7 +292,10 @@ fun ChapterCelebrationModal(
                     Spacer(modifier = Modifier.height(22.dp))
 
                     Button(
-                        onClick = onDismiss,
+                        onClick = {
+                            haptics.success()
+                            onDismiss()
+                        },
                         colors = ButtonDefaults.buttonColors(
                             containerColor = FathomTheme.colors.accentGold,
                             contentColor = Color.Black

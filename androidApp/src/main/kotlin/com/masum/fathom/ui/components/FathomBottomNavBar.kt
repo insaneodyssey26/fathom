@@ -176,6 +176,7 @@ private fun NavBarItem(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val haptics = com.masum.fathom.core.haptics.LocalFathomHaptics.current
     val interactionSource = remember { MutableInteractionSource() }
 
     val contentColor by animateColorAsState(
@@ -197,7 +198,10 @@ private fun NavBarItem(
             .clickable(
                 interactionSource = interactionSource,
                 indication = null,
-                onClick = onClick
+                onClick = {
+                    haptics.light()
+                    onClick()
+                }
             ),
         contentAlignment = Alignment.Center
     ) {

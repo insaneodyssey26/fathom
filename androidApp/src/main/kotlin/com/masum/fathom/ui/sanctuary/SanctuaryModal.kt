@@ -74,6 +74,7 @@ import com.adamglin.phosphoricons.regular.ShareNetwork
 import com.adamglin.phosphoricons.regular.Sparkle
 import com.adamglin.phosphoricons.regular.SpeakerHigh
 import com.adamglin.phosphoricons.regular.Crown
+import com.masum.fathom.core.haptics.LocalFathomHaptics
 import com.masum.fathom.core.notification.DailyNotificationScheduler
 import com.masum.fathom.core.sanctuary.ByokProvider
 import com.masum.fathom.core.sanctuary.SanctuaryDataEngine
@@ -100,6 +101,7 @@ fun SanctuaryModal(
     dataEngine: SanctuaryDataEngine,
     onDismiss: () -> Unit
 ) {
+    val haptics = LocalFathomHaptics.current
     val context = LocalContext.current
     val activity = context as? Activity
     val updateEngine = LocalAppUpdateEngine.current
@@ -209,7 +211,10 @@ fun SanctuaryModal(
                         color = if (subscriptionState.isPro) FathomTheme.colors.accentGold.copy(alpha = 0.5f) else FathomTheme.colors.borderSubtle,
                         shape = RoundedCornerShape(16.dp)
                     )
-                    .clickable { openPaywall() }
+                    .clickable {
+                        haptics.medium()
+                        openPaywall()
+                    }
                     .padding(16.dp)
             ) {
                 Row(
@@ -321,8 +326,10 @@ fun SanctuaryModal(
                             )
                             .clickable {
                                 if (isLocked) {
+                                    haptics.medium()
                                     openPaywall()
                                 } else {
+                                    haptics.light()
                                     preferences.updateTheme(theme)
                                 }
                             }
@@ -453,6 +460,7 @@ fun SanctuaryModal(
                     Switch(
                         checked = settings.dailyNotificationEnabled,
                         onCheckedChange = { enabled ->
+                            haptics.light()
                             preferences.updateNotificationTime(
                                 enabled = enabled,
                                 hour = settings.notificationHour,
@@ -508,6 +516,7 @@ fun SanctuaryModal(
                                         .background(FathomTheme.colors.surface)
                                         .border(1.dp, FathomTheme.colors.borderSubtle, RoundedCornerShape(8.dp))
                                         .clickable {
+                                            haptics.light()
                                             val nextHour = (settings.notificationHour - 1 + 24) % 24
                                             preferences.updateNotificationTime(true, nextHour, settings.notificationMinute)
                                             DailyNotificationScheduler.scheduleDailyReminder(context, nextHour, settings.notificationMinute)
@@ -539,6 +548,7 @@ fun SanctuaryModal(
                                         .background(FathomTheme.colors.surface)
                                         .border(1.dp, FathomTheme.colors.borderSubtle, RoundedCornerShape(8.dp))
                                         .clickable {
+                                            haptics.light()
                                             val nextHour = (settings.notificationHour + 1) % 24
                                             preferences.updateNotificationTime(true, nextHour, settings.notificationMinute)
                                             DailyNotificationScheduler.scheduleDailyReminder(context, nextHour, settings.notificationMinute)
@@ -604,6 +614,7 @@ fun SanctuaryModal(
                                     shape = RoundedCornerShape(10.dp)
                                 )
                                 .clickable {
+                                    haptics.light()
                                     preferences.updateByokSettings(prov, settings.byokApiKey, settings.byokVoiceId)
                                 }
                                 .padding(vertical = 8.dp),
@@ -671,6 +682,7 @@ fun SanctuaryModal(
 
                         TextButton(
                             onClick = {
+                                haptics.light()
                                 preferences.updateByokSettings(settings.byokProvider, byokKeyInput, settings.byokVoiceId)
                                 Toast.makeText(context, "API Key Saved Securely", Toast.LENGTH_SHORT).show()
                             }
@@ -748,6 +760,7 @@ fun SanctuaryModal(
                             .background(FathomTheme.colors.surface)
                             .border(1.dp, FathomTheme.colors.borderSubtle, RoundedCornerShape(10.dp))
                             .clickable {
+                                haptics.light()
                                 coroutineScope.launch {
                                     val json = dataEngine.exportBackupJson()
                                     val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager
@@ -780,7 +793,10 @@ fun SanctuaryModal(
                             .clip(RoundedCornerShape(10.dp))
                             .background(FathomTheme.colors.surface)
                             .border(1.dp, FathomTheme.colors.borderSubtle, RoundedCornerShape(10.dp))
-                            .clickable { showRestoreDialog = true }
+                            .clickable {
+                                haptics.light()
+                                showRestoreDialog = true
+                            }
                             .padding(vertical = 10.dp),
                         contentAlignment = Alignment.Center
                     ) {
@@ -861,6 +877,7 @@ fun SanctuaryModal(
                                         .clip(RoundedCornerShape(8.dp))
                                         .background(FathomTheme.colors.accentGold)
                                         .clickable {
+                                            haptics.medium()
                                             if (activity != null) {
                                                 val avail = updateStatus as AppUpdateStatus.Available
                                                 updateEngine.startFlexibleUpdate(activity, avail.info)
@@ -882,7 +899,10 @@ fun SanctuaryModal(
                                     modifier = Modifier
                                         .clip(RoundedCornerShape(8.dp))
                                         .background(FathomTheme.colors.accentGold)
-                                        .clickable { updateEngine.completeUpdate() }
+                                        .clickable {
+                                            haptics.success()
+                                            updateEngine.completeUpdate()
+                                        }
                                         .padding(horizontal = 12.dp, vertical = 6.dp)
                                 ) {
                                     Text(
@@ -900,7 +920,10 @@ fun SanctuaryModal(
                                         .clip(RoundedCornerShape(8.dp))
                                         .background(FathomTheme.colors.surface)
                                         .border(1.dp, FathomTheme.colors.borderSubtle, RoundedCornerShape(8.dp))
-                                        .clickable { updateEngine.checkForUpdates(manual = true) }
+                                        .clickable {
+                                            haptics.light()
+                                            updateEngine.checkForUpdates(manual = true)
+                                        }
                                         .padding(horizontal = 10.dp, vertical = 6.dp)
                                 ) {
                                     Row(
@@ -962,7 +985,10 @@ fun SanctuaryModal(
 
     if (showRestoreDialog) {
         AlertDialog(
-            onDismissRequest = { showRestoreDialog = false },
+            onDismissRequest = {
+                haptics.light()
+                showRestoreDialog = false
+            },
             containerColor = FathomTheme.colors.surface,
             title = {
                 Text(
@@ -1005,13 +1031,16 @@ fun SanctuaryModal(
             confirmButton = {
                 TextButton(
                     onClick = {
+                        haptics.light()
                         coroutineScope.launch {
                             val res = dataEngine.restoreBackupJson(restoreJsonInput)
                             if (res.isSuccess) {
+                                haptics.success()
                                 Toast.makeText(context, "Restored ${res.getOrNull()} items successfully!", Toast.LENGTH_SHORT).show()
                                 showRestoreDialog = false
                                 storageStats = dataEngine.getStorageStats()
                             } else {
+                                haptics.error()
                                 Toast.makeText(context, "Invalid backup JSON format", Toast.LENGTH_SHORT).show()
                             }
                         }
@@ -1021,7 +1050,10 @@ fun SanctuaryModal(
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showRestoreDialog = false }) {
+                TextButton(onClick = {
+                    haptics.light()
+                    showRestoreDialog = false
+                }) {
                     Text("CANCEL", fontFamily = JakartaFontFamily, color = FathomTheme.colors.textSecondary)
                 }
             }

@@ -175,6 +175,7 @@ private fun DirectoryAndSearchRootView(
     searchListState: androidx.compose.foundation.lazy.LazyListState,
     onEvent: (SearchUiEvent) -> Unit
 ) {
+    val haptics = com.masum.fathom.core.haptics.LocalFathomHaptics.current
     val subscriptionState = LocalSubscriptionState.current
     val openPaywall = LocalOpenPaywall.current
 
@@ -224,7 +225,10 @@ private fun DirectoryAndSearchRootView(
                                 color = if (subscriptionState.isPro) FathomTheme.colors.accentGold else FathomTheme.colors.borderSubtle,
                                 shape = RoundedCornerShape(20.dp)
                             )
-                            .clickable { openPaywall() }
+                            .clickable {
+                                haptics.medium()
+                                openPaywall()
+                            }
                             .padding(horizontal = 9.dp, vertical = 5.dp),
                         contentAlignment = Alignment.Center
                     ) {
@@ -387,8 +391,12 @@ private fun SearchInputBar(
         )
 
         if (query.isNotEmpty()) {
+            val haptics = com.masum.fathom.core.haptics.LocalFathomHaptics.current
             IconButton(
-                onClick = { onQueryChange("") },
+                onClick = {
+                    haptics.light()
+                    onQueryChange("")
+                },
                 modifier = Modifier.size(20.dp)
             ) {
                 Icon(
@@ -709,6 +717,7 @@ private fun SearchPassageCard(
 
         val audioEngine = LocalSacredAudioEngine.current
         val playbackState by audioEngine.playbackState.collectAsState()
+        val haptics = com.masum.fathom.core.haptics.LocalFathomHaptics.current
         val isSpeakingThis = (playbackState as? SacredAudioState.Playing)?.passage?.id == passage.id
 
         Row(
@@ -718,7 +727,10 @@ private fun SearchPassageCard(
         ) {
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 IconButton(
-                    onClick = { audioEngine.toggle(passage) },
+                    onClick = {
+                        haptics.medium()
+                        audioEngine.toggle(passage)
+                    },
                     modifier = Modifier.size(32.dp)
                 ) {
                     Icon(
@@ -730,7 +742,10 @@ private fun SearchPassageCard(
                 }
 
                 IconButton(
-                    onClick = onOpenShare,
+                    onClick = {
+                        haptics.light()
+                        onOpenShare()
+                    },
                     modifier = Modifier.size(32.dp)
                 ) {
                     Icon(
@@ -742,7 +757,10 @@ private fun SearchPassageCard(
                 }
 
                 IconButton(
-                    onClick = onOpenContext,
+                    onClick = {
+                        haptics.light()
+                        onOpenContext()
+                    },
                     modifier = Modifier.size(32.dp)
                 ) {
                     Icon(
@@ -754,7 +772,14 @@ private fun SearchPassageCard(
                 }
 
                 IconButton(
-                    onClick = onToggleBookmark,
+                    onClick = {
+                        if (!isBookmarked) {
+                            haptics.success()
+                        } else {
+                            haptics.light()
+                        }
+                        onToggleBookmark()
+                    },
                     modifier = Modifier.size(32.dp)
                 ) {
                     Icon(
@@ -767,7 +792,10 @@ private fun SearchPassageCard(
             }
 
             TextButton(
-                onClick = onOpenContext,
+                onClick = {
+                    haptics.light()
+                    onOpenContext()
+                },
                 contentPadding = PaddingValues(horizontal = 4.dp)
             ) {
                 Text(

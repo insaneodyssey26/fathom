@@ -74,6 +74,7 @@ fun FeedScreen(
     modifier: Modifier = Modifier
 ) {
     val coroutineScope = rememberCoroutineScope()
+    val haptics = com.masum.fathom.core.haptics.LocalFathomHaptics.current
     val subscriptionState = LocalSubscriptionState.current
     val openPaywall = LocalOpenPaywall.current
     val audioEngine = LocalSacredAudioEngine.current
@@ -207,7 +208,10 @@ fun FeedScreen(
                                         color = if (state.selectedBookId != null) FathomTheme.colors.accentGold.copy(alpha = 0.7f) else FathomTheme.colors.borderSubtle,
                                         shape = RoundedCornerShape(20.dp)
                                     )
-                                    .clickable { showScriptureSheet = true }
+                                    .clickable {
+                                        haptics.light()
+                                        showScriptureSheet = true
+                                    }
                                     .padding(horizontal = 11.dp, vertical = 7.dp),
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.spacedBy(6.dp)
@@ -246,7 +250,10 @@ fun FeedScreen(
                                         color = if (subscriptionState.isPro) FathomTheme.colors.accentGold else FathomTheme.colors.borderSubtle,
                                         shape = RoundedCornerShape(20.dp)
                                     )
-                                    .clickable { openPaywall() }
+                                    .clickable {
+                                        haptics.medium()
+                                        openPaywall()
+                                    }
                                     .padding(horizontal = 9.dp, vertical = 6.dp),
                                 contentAlignment = Alignment.Center
                             ) {
@@ -272,7 +279,10 @@ fun FeedScreen(
                             }
 
                             IconButton(
-                                onClick = { showFilterSheet = true },
+                                onClick = {
+                                    haptics.light()
+                                    showFilterSheet = true
+                                },
                                 modifier = Modifier
                                     .clip(CircleShape)
                                     .background(FathomTheme.colors.surfaceElevated)
@@ -343,6 +353,7 @@ fun FeedScreen(
                                 IconButton(
                                     onClick = {
                                         if (hasPrevious) {
+                                            haptics.light()
                                             coroutineScope.launch {
                                                 pagerState.animateScrollToPage(pagerState.currentPage - 1)
                                             }
@@ -365,6 +376,7 @@ fun FeedScreen(
                                 IconButton(
                                     onClick = {
                                         if (hasNext) {
+                                            haptics.light()
                                             coroutineScope.launch {
                                                 pagerState.animateScrollToPage(pagerState.currentPage + 1)
                                             }
@@ -385,7 +397,10 @@ fun FeedScreen(
                                 }
 
                                 IconButton(
-                                    onClick = { audioEngine.toggle(currentPassage) },
+                                    onClick = {
+                                        haptics.medium()
+                                        audioEngine.toggle(currentPassage)
+                                    },
                                     modifier = Modifier
                                         .clip(CircleShape)
                                         .background(if (isSpeakingCurrent) FathomTheme.colors.accentGold.copy(alpha = 0.2f) else FathomTheme.colors.surfaceElevated)
@@ -400,7 +415,10 @@ fun FeedScreen(
                                 }
 
                                 IconButton(
-                                    onClick = { onEvent(FeedUiEvent.OnOpenShare(currentPassage)) },
+                                    onClick = {
+                                        haptics.light()
+                                        onEvent(FeedUiEvent.OnOpenShare(currentPassage))
+                                    },
                                     modifier = Modifier
                                         .clip(CircleShape)
                                         .background(FathomTheme.colors.surfaceElevated)
@@ -415,7 +433,10 @@ fun FeedScreen(
                                 }
 
                                 IconButton(
-                                    onClick = { onEvent(FeedUiEvent.OnOpenContext(currentPassage)) },
+                                    onClick = {
+                                        haptics.light()
+                                        onEvent(FeedUiEvent.OnOpenContext(currentPassage))
+                                    },
                                     modifier = Modifier
                                         .clip(CircleShape)
                                         .background(FathomTheme.colors.surfaceElevated)
@@ -430,7 +451,14 @@ fun FeedScreen(
                                 }
 
                                 IconButton(
-                                    onClick = { onEvent(FeedUiEvent.OnToggleBookmark(currentPassage)) },
+                                    onClick = {
+                                        if (!isCurrentBookmarked) {
+                                            haptics.success()
+                                        } else {
+                                            haptics.light()
+                                        }
+                                        onEvent(FeedUiEvent.OnToggleBookmark(currentPassage))
+                                    },
                                     modifier = Modifier
                                         .clip(CircleShape)
                                         .background(FathomTheme.colors.surfaceElevated)

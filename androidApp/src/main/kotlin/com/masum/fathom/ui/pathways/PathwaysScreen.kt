@@ -52,6 +52,7 @@ import com.adamglin.phosphoricons.regular.CaretDown
 import com.adamglin.phosphoricons.regular.Crown
 import com.adamglin.phosphoricons.regular.Sliders
 import com.adamglin.phosphoricons.regular.Sparkle
+import com.masum.fathom.core.haptics.LocalFathomHaptics
 import com.masum.fathom.core.model.TraditionId
 import com.masum.fathom.core.sanctuary.LocalOpenSanctuary
 import com.masum.fathom.ui.components.TraditionBadge
@@ -67,6 +68,7 @@ fun PathwaysScreen(
     onEvent: (PathwaysUiEvent) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val haptics = LocalFathomHaptics.current
     val openSanctuary = LocalOpenSanctuary.current
     var showScriptureSheet by remember { mutableStateOf(false) }
 
@@ -201,7 +203,10 @@ fun PathwaysScreen(
                                             color = FathomTheme.colors.accentGold.copy(alpha = 0.7f),
                                             shape = RoundedCornerShape(20.dp)
                                         )
-                                        .clickable { showScriptureSheet = true }
+                                        .clickable {
+                                            haptics.light()
+                                            showScriptureSheet = true
+                                        }
                                         .padding(horizontal = 12.dp, vertical = 7.dp),
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.spacedBy(6.dp)
@@ -231,14 +236,17 @@ fun PathwaysScreen(
                                         .clip(RoundedCornerShape(20.dp))
                                         .background(
                                             if (subscriptionState.isPro) FathomTheme.colors.accentGold.copy(alpha = 0.16f)
-                                            else FathomTheme.colors.surfaceElevated
+                                             else FathomTheme.colors.surfaceElevated
                                         )
                                         .border(
                                             width = 1.dp,
                                             color = if (subscriptionState.isPro) FathomTheme.colors.accentGold else FathomTheme.colors.borderSubtle,
                                             shape = RoundedCornerShape(20.dp)
                                         )
-                                        .clickable { openPaywall() }
+                                        .clickable {
+                                            haptics.medium()
+                                            openPaywall()
+                                        }
                                         .padding(horizontal = 9.dp, vertical = 6.dp),
                                     contentAlignment = Alignment.Center
                                 ) {
@@ -264,7 +272,10 @@ fun PathwaysScreen(
                                 }
 
                                 IconButton(
-                                    onClick = openSanctuary,
+                                    onClick = {
+                                        haptics.light()
+                                        openSanctuary()
+                                    },
                                     modifier = Modifier
                                         .clip(CircleShape)
                                         .background(FathomTheme.colors.surfaceElevated)
@@ -314,7 +325,10 @@ fun PathwaysScreen(
                                                 color = FathomTheme.colors.accentGold.copy(alpha = 0.45f),
                                                 shape = RoundedCornerShape(16.dp)
                                             )
-                                            .clickable { openPaywall() }
+                                            .clickable {
+                                                haptics.medium()
+                                                openPaywall()
+                                            }
                                             .padding(14.dp)
                                     ) {
                                         Row(
@@ -421,8 +435,10 @@ fun PathwaysScreen(
                                     chapters = pathway.chapters,
                                     onOpenChapter = { chNum ->
                                         if (chNum > 1 && !subscriptionState.isPro) {
+                                            haptics.medium()
                                             openPaywall()
                                         } else {
+                                            haptics.light()
                                             onEvent(PathwaysUiEvent.OnOpenChapter(chNum))
                                         }
                                     }
@@ -438,12 +454,16 @@ fun PathwaysScreen(
                     availableBooks = state.availableBooks,
                     selectedBookId = state.selectedBook.id,
                     onSelectBook = { bookId ->
+                        haptics.light()
                         if (bookId != null) {
                             onEvent(PathwaysUiEvent.OnSelectBook(bookId))
                         }
                         showScriptureSheet = false
                     },
-                    onDismiss = { showScriptureSheet = false }
+                    onDismiss = {
+                        haptics.light()
+                        showScriptureSheet = false
+                    }
                 )
             }
 

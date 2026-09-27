@@ -87,6 +87,7 @@ import com.adamglin.phosphoricons.regular.TrashSimple
 import com.adamglin.phosphoricons.regular.Trophy
 import com.adamglin.phosphoricons.regular.User
 import com.adamglin.phosphoricons.regular.X
+import com.masum.fathom.core.haptics.LocalFathomHaptics
 import com.masum.fathom.core.model.Passage
 import com.masum.fathom.core.model.TraditionId
 import com.masum.fathom.core.sanctuary.LocalOpenSanctuary
@@ -296,6 +297,7 @@ private fun YouTopBar(
     onNavigateBack: () -> Unit,
     state: LibraryUiState.Success?
 ) {
+    val haptics = com.masum.fathom.core.haptics.LocalFathomHaptics.current
     val openSanctuary = LocalOpenSanctuary.current
     val subscriptionState = LocalSubscriptionState.current
     val openPaywall = LocalOpenPaywall.current
@@ -338,7 +340,10 @@ private fun YouTopBar(
                 horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 IconButton(
-                    onClick = onNavigateBack,
+                    onClick = {
+                        haptics.light()
+                        onNavigateBack()
+                    },
                     modifier = Modifier
                         .clip(CircleShape)
                         .background(FathomTheme.colors.surfaceElevated)
@@ -406,7 +411,10 @@ private fun YouTopBar(
                         color = if (subscriptionState.isPro) FathomTheme.colors.accentGold else FathomTheme.colors.borderSubtle,
                         shape = RoundedCornerShape(20.dp)
                     )
-                    .clickable { openPaywall() }
+                    .clickable {
+                        haptics.medium()
+                        openPaywall()
+                    }
                     .padding(horizontal = 9.dp, vertical = 5.dp),
                 contentAlignment = Alignment.Center
             ) {
@@ -432,7 +440,10 @@ private fun YouTopBar(
             }
 
             IconButton(
-                onClick = openSanctuary,
+                onClick = {
+                    haptics.light()
+                    openSanctuary()
+                },
                 modifier = Modifier
                     .clip(CircleShape)
                     .background(FathomTheme.colors.surfaceElevated)
@@ -458,6 +469,7 @@ private fun YouHubView(
     onNavigateToTimeline: () -> Unit,
     onEvent: (LibraryUiEvent) -> Unit
 ) {
+    val haptics = LocalFathomHaptics.current
     val subscriptionState = LocalSubscriptionState.current
     val openPaywall = LocalOpenPaywall.current
 
@@ -582,7 +594,10 @@ private fun YouHubView(
                                     .clip(RoundedCornerShape(12.dp))
                                     .background(FathomTheme.colors.accentGold.copy(alpha = 0.15f))
                                     .border(1.dp, FathomTheme.colors.accentGold.copy(alpha = 0.5f), RoundedCornerShape(12.dp))
-                                    .clickable { openPaywall() }
+                                    .clickable {
+                                        haptics.medium()
+                                        openPaywall()
+                                    }
                                     .padding(horizontal = 10.dp, vertical = 6.dp)
                             ) {
                                 Text(
@@ -696,7 +711,10 @@ private fun YouHubView(
                         .clip(RoundedCornerShape(16.dp))
                         .background(FathomTheme.colors.surfaceElevated)
                         .border(1.dp, FathomTheme.colors.borderSubtle, RoundedCornerShape(16.dp))
-                        .clickable(onClick = onNavigateToSaved)
+                        .clickable {
+                            haptics.light()
+                            onNavigateToSaved()
+                        }
                         .padding(16.dp)
                 ) {
                     Column {
@@ -754,7 +772,10 @@ private fun YouHubView(
                         .clip(RoundedCornerShape(16.dp))
                         .background(FathomTheme.colors.surfaceElevated)
                         .border(1.dp, FathomTheme.colors.borderSubtle, RoundedCornerShape(16.dp))
-                        .clickable(onClick = onNavigateToJournal)
+                        .clickable {
+                            haptics.light()
+                            onNavigateToJournal()
+                        }
                         .padding(16.dp)
                 ) {
                     Column {
@@ -836,6 +857,7 @@ private fun HistoryStatsContent(
     onNavigateToTimeline: () -> Unit,
     onEvent: (LibraryUiEvent) -> Unit
 ) {
+    val haptics = LocalFathomHaptics.current
     val context = LocalContext.current
     val traditionCounts = remember(history) {
         history.mapNotNull { it.passage?.traditionId }
@@ -989,7 +1011,10 @@ private fun HistoryStatsContent(
                             color = if (isExplored) FathomTheme.colors.accentGold.copy(alpha = 0.4f) else FathomTheme.colors.borderSubtle,
                             shape = RoundedCornerShape(12.dp)
                         )
-                        .clickable { onNavigateToCanon(tradition) }
+                        .clickable {
+                            haptics.light()
+                            onNavigateToCanon(tradition)
+                        }
                         .padding(horizontal = 12.dp, vertical = 9.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -1191,7 +1216,10 @@ private fun HistoryStatsContent(
 
             if (history.isNotEmpty()) {
                 TextButton(
-                    onClick = onNavigateToTimeline,
+                    onClick = {
+                        haptics.light()
+                        onNavigateToTimeline()
+                    },
                     contentPadding = PaddingValues(horizontal = 4.dp, vertical = 0.dp)
                 ) {
                     Row(
@@ -2360,6 +2388,7 @@ private fun NoteEditDialog(
     onDismiss: () -> Unit,
     onSave: (String) -> Unit
 ) {
+    val haptics = LocalFathomHaptics.current
     var noteText by remember { mutableStateOf("") }
 
     AlertDialog(
@@ -2443,6 +2472,7 @@ private fun NoteEditDialog(
             TextButton(
                 onClick = {
                     if (noteText.isNotBlank()) {
+                        haptics.success()
                         onSave(noteText)
                     }
                 },
@@ -2458,7 +2488,12 @@ private fun NoteEditDialog(
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) {
+            TextButton(
+                onClick = {
+                    haptics.light()
+                    onDismiss()
+                }
+            ) {
                 Text(
                     text = "CANCEL",
                     fontFamily = JakartaFontFamily,

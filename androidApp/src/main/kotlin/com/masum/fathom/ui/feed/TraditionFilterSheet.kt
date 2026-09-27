@@ -65,6 +65,7 @@ fun TraditionFilterSheet(
     onChangeTheme: (ReadingTheme) -> Unit,
     onDismiss: () -> Unit
 ) {
+    val haptics = com.masum.fathom.core.haptics.LocalFathomHaptics.current
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val maxHeight = (LocalConfiguration.current.screenHeightDp * 0.78f).dp
 
@@ -95,7 +96,10 @@ fun TraditionFilterSheet(
                 TraditionOptionRow(
                     tradition = tradition,
                     isSelected = isSelected,
-                    onToggle = { onToggleTradition(tradition) }
+                    onToggle = {
+                        haptics.light()
+                        onToggleTradition(tradition)
+                    }
                 )
             }
 
@@ -119,7 +123,10 @@ fun TraditionFilterSheet(
                             color = FathomTheme.colors.accentGold,
                             modifier = Modifier
                                 .clip(RoundedCornerShape(4.dp))
-                                .clickable { onSelectBook(null) }
+                                .clickable {
+                                    haptics.light()
+                                    onSelectBook(null)
+                                }
                                 .padding(horizontal = 6.dp, vertical = 2.dp)
                         )
                     }
@@ -135,6 +142,7 @@ fun TraditionFilterSheet(
                             .clip(RoundedCornerShape(8.dp))
                             .background(if (isBookSelected) FathomTheme.colors.surfaceElevated else androidx.compose.ui.graphics.Color.Transparent)
                             .clickable {
+                                haptics.light()
                                 onSelectBook(if (isBookSelected) null else book.id)
                             }
                             .padding(vertical = 9.dp, horizontal = 8.dp),
@@ -184,7 +192,10 @@ fun TraditionFilterSheet(
                     ThemeOptionButton(
                         theme = theme,
                         isCurrent = isCurrent,
-                        onClick = { onChangeTheme(theme) },
+                        onClick = {
+                            haptics.light()
+                            onChangeTheme(theme)
+                        },
                         modifier = Modifier.weight(1f)
                     )
                 }

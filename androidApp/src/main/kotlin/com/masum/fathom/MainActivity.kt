@@ -160,6 +160,7 @@ class MainActivity : ComponentActivity() {
                 }
             }
 
+            val fathomHaptics = remember { com.masum.fathom.core.haptics.FathomHaptics(context) }
             val audioEngine = remember { com.masum.fathom.core.audio.SacredAudioEngine(context) }
             androidx.compose.runtime.DisposableEffect(audioEngine) {
                 onDispose {
@@ -168,6 +169,7 @@ class MainActivity : ComponentActivity() {
             }
 
             androidx.compose.runtime.CompositionLocalProvider(
+                com.masum.fathom.core.haptics.LocalFathomHaptics provides fathomHaptics,
                 com.masum.fathom.core.audio.LocalSacredAudioEngine provides audioEngine,
                 com.masum.fathom.core.sanctuary.LocalSanctuaryPreferences provides sanctuaryPreferences,
                 com.masum.fathom.core.sanctuary.LocalSanctuaryDataEngine provides sanctuaryDataEngine,

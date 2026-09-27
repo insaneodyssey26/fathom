@@ -74,6 +74,7 @@ fun SanctuaryPaywallSheet(
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val haptics = com.masum.fathom.core.haptics.LocalFathomHaptics.current
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val subscriptionManager = LocalSubscriptionManager.current
     val context = LocalContext.current
@@ -127,7 +128,10 @@ fun SanctuaryPaywallSheet(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 IconButton(
-                    onClick = onDismiss,
+                    onClick = {
+                        haptics.light()
+                        onDismiss()
+                    },
                     modifier = Modifier
                         .size(36.dp)
                         .clip(CircleShape)
@@ -143,6 +147,7 @@ fun SanctuaryPaywallSheet(
 
                 TextButton(
                     onClick = {
+                        haptics.light()
                         val restored = subscriptionManager.restorePurchases()
                         if (restored) {
                             Toast.makeText(context, "Sanctuary+ Patronage Restored", Toast.LENGTH_SHORT).show()
@@ -292,19 +297,28 @@ fun SanctuaryPaywallSheet(
                 SubscriptionTierCard(
                     tier = SubscriptionTier.ANNUAL,
                     isSelected = selectedTier == SubscriptionTier.ANNUAL,
-                    onClick = { selectedTier = SubscriptionTier.ANNUAL }
+                    onClick = {
+                        haptics.light()
+                        selectedTier = SubscriptionTier.ANNUAL
+                    }
                 )
 
                 SubscriptionTierCard(
                     tier = SubscriptionTier.SIX_MONTH,
                     isSelected = selectedTier == SubscriptionTier.SIX_MONTH,
-                    onClick = { selectedTier = SubscriptionTier.SIX_MONTH }
+                    onClick = {
+                        haptics.light()
+                        selectedTier = SubscriptionTier.SIX_MONTH
+                    }
                 )
 
                 SubscriptionTierCard(
                     tier = SubscriptionTier.MONTHLY,
                     isSelected = selectedTier == SubscriptionTier.MONTHLY,
-                    onClick = { selectedTier = SubscriptionTier.MONTHLY }
+                    onClick = {
+                        haptics.light()
+                        selectedTier = SubscriptionTier.MONTHLY
+                    }
                 )
             }
 
@@ -325,6 +339,7 @@ fun SanctuaryPaywallSheet(
 
                 Button(
                     onClick = {
+                        haptics.heavy()
                         subscriptionManager.launchDodoCheckout(selectedTier)
                         subscriptionManager.purchaseTier(selectedTier)
                         Toast.makeText(context, "Welcome to Sanctuary+", Toast.LENGTH_SHORT).show()
