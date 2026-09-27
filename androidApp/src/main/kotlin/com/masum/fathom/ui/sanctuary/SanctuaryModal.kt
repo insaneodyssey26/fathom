@@ -73,11 +73,14 @@ import com.adamglin.phosphoricons.regular.FloppyDisk
 import com.adamglin.phosphoricons.regular.ShareNetwork
 import com.adamglin.phosphoricons.regular.Sparkle
 import com.adamglin.phosphoricons.regular.SpeakerHigh
+import com.adamglin.phosphoricons.regular.Crown
 import com.masum.fathom.core.notification.DailyNotificationScheduler
 import com.masum.fathom.core.sanctuary.ByokProvider
 import com.masum.fathom.core.sanctuary.SanctuaryDataEngine
 import com.masum.fathom.core.sanctuary.SanctuaryPreferences
 import com.masum.fathom.core.sanctuary.SanctuaryStorageStats
+import com.masum.fathom.core.subscription.LocalOpenPaywall
+import com.masum.fathom.core.subscription.LocalSubscriptionState
 import com.masum.fathom.core.update.AppUpdateStatus
 import com.masum.fathom.core.update.LocalAppUpdateEngine
 import com.masum.fathom.ui.theme.FathomTheme
@@ -101,6 +104,8 @@ fun SanctuaryModal(
     val activity = context as? Activity
     val updateEngine = LocalAppUpdateEngine.current
     val updateStatus by updateEngine.updateStatus.collectAsState()
+    val subscriptionState = LocalSubscriptionState.current
+    val openPaywall = LocalOpenPaywall.current
     val coroutineScope = rememberCoroutineScope()
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val settings by preferences.settings.collectAsState()
@@ -176,6 +181,110 @@ fun SanctuaryModal(
                 }
             }
 
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(
+                        if (subscriptionState.isPro) {
+                            androidx.compose.ui.graphics.Brush.linearGradient(
+                                listOf(
+                                    FathomTheme.colors.accentGold.copy(alpha = 0.22f),
+                                    FathomTheme.colors.surfaceElevated
+                                )
+                            )
+                        } else {
+                            androidx.compose.ui.graphics.Brush.linearGradient(
+                                listOf(
+                                    FathomTheme.colors.surfaceElevated,
+                                    FathomTheme.colors.surface
+                                )
+                            )
+                        }
+                    )
+                    .border(
+                        width = 1.dp,
+                        color = if (subscriptionState.isPro) FathomTheme.colors.accentGold.copy(alpha = 0.5f) else FathomTheme.colors.borderSubtle,
+                        shape = RoundedCornerShape(16.dp)
+                    )
+                    .clickable { openPaywall() }
+                    .padding(16.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(40.dp)
+                                .clip(CircleShape)
+                                .background(FathomTheme.colors.accentGold.copy(alpha = 0.18f)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = PhosphorIcons.Regular.Crown,
+                                contentDescription = null,
+                                tint = FathomTheme.colors.accentGold,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+
+                        Column {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                Text(
+                                    text = if (subscriptionState.isPro) "SANCTUARY+ PATRON" else "FATHOM SANCTUARY+",
+                                    fontFamily = SyneFontFamily,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 13.sp,
+                                    letterSpacing = 0.8.sp,
+                                    color = if (subscriptionState.isPro) FathomTheme.colors.accentGold else FathomTheme.colors.textPrimary
+                                )
+                                if (!subscriptionState.isPro) {
+                                    Box(
+                                        modifier = Modifier
+                                            .clip(RoundedCornerShape(4.dp))
+                                            .background(FathomTheme.colors.accentGold)
+                                            .padding(horizontal = 5.dp, vertical = 1.dp)
+                                    ) {
+                                        Text(
+                                            text = "PRO",
+                                            fontFamily = JakartaFontFamily,
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 8.sp,
+                                            color = Color.Black
+                                        )
+                                    }
+                                }
+                            }
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                                text = if (subscriptionState.isPro) "Full wisdom archives, 4 themes & soundscapes active" else "Unlock all 4 sacred themes, soundscapes & study paths",
+                                fontFamily = JakartaFontFamily,
+                                fontSize = 11.5.sp,
+                                color = FathomTheme.colors.textTertiary
+                            )
+                        }
+                    }
+
+                    Icon(
+                        imageVector = PhosphorIcons.Regular.Sparkle,
+                        contentDescription = null,
+                        tint = FathomTheme.colors.accentGold,
+                        modifier = Modifier.size(16.dp)
+                    )
+                }
+            }
+
             Spacer(modifier = Modifier.height(20.dp))
 
             Text(
@@ -191,6 +300,8 @@ fun SanctuaryModal(
             ) {
                 ReadingTheme.entries.forEach { theme ->
                     val isSelected = settings.theme == theme
+                    val isPremiumTheme = theme != ReadingTheme.OBSIDIAN
+                    val isLocked = isPremiumTheme && !subscriptionState.isPro
                     val themeColors = when (theme) {
                         ReadingTheme.OBSIDIAN -> ObsidianColors
                         ReadingTheme.SEPIA -> SepiaColors
@@ -208,7 +319,13 @@ fun SanctuaryModal(
                                 color = if (isSelected) FathomTheme.colors.accentGold else FathomTheme.colors.borderSubtle,
                                 shape = RoundedCornerShape(14.dp)
                             )
-                            .clickable { preferences.updateTheme(theme) }
+                            .clickable {
+                                if (isLocked) {
+                                    openPaywall()
+                                } else {
+                                    preferences.updateTheme(theme)
+                                }
+                            }
                             .padding(horizontal = 16.dp, vertical = 12.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
@@ -242,19 +359,49 @@ fun SanctuaryModal(
                                 )
                             }
 
-                            Text(
-                                text = theme.displayName,
-                                fontFamily = JakartaFontFamily,
-                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                                fontSize = 14.sp,
-                                color = if (isSelected) FathomTheme.colors.textPrimary else FathomTheme.colors.textSecondary
-                            )
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                Text(
+                                    text = theme.displayName,
+                                    fontFamily = JakartaFontFamily,
+                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                    fontSize = 14.sp,
+                                    color = if (isSelected) FathomTheme.colors.textPrimary else FathomTheme.colors.textSecondary
+                                )
+
+                                if (isLocked) {
+                                    Box(
+                                        modifier = Modifier
+                                            .clip(RoundedCornerShape(4.dp))
+                                            .background(FathomTheme.colors.accentGold.copy(alpha = 0.15f))
+                                            .padding(horizontal = 5.dp, vertical = 1.dp)
+                                    ) {
+                                        Text(
+                                            text = "PLUS",
+                                            fontFamily = JakartaFontFamily,
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 8.sp,
+                                            letterSpacing = 0.4.sp,
+                                            color = FathomTheme.colors.accentGold
+                                        )
+                                    }
+                                }
+                            }
                         }
 
                         if (isSelected) {
                             Icon(
                                 imageVector = PhosphorIcons.Bold.Check,
                                 contentDescription = "Active Theme",
+                                tint = FathomTheme.colors.accentGold,
+                                modifier = Modifier.size(16.dp)
+                            )
+                        } else if (isLocked) {
+                            Icon(
+                                imageVector = PhosphorIcons.Regular.Crown,
+                                contentDescription = "Sanctuary+ Theme",
                                 tint = FathomTheme.colors.accentGold,
                                 modifier = Modifier.size(16.dp)
                             )

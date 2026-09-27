@@ -37,6 +37,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -47,6 +48,10 @@ import com.adamglin.phosphoricons.regular.BookBookmark
 import com.adamglin.phosphoricons.regular.CaretDown
 import com.adamglin.phosphoricons.regular.Sliders
 import com.adamglin.phosphoricons.regular.Sparkle
+import com.adamglin.phosphoricons.regular.Crown
+import com.masum.fathom.core.subscription.LocalOpenPaywall
+import com.masum.fathom.core.subscription.LocalSubscriptionState
+import com.masum.fathom.ui.theme.JakartaFontFamily
 import com.masum.fathom.ui.theme.FathomTheme
 
 @Composable
@@ -57,6 +62,8 @@ fun FeedScreen(
 ) {
     var showFilterSheet by remember { mutableStateOf(false) }
     var showScriptureSheet by remember { mutableStateOf(false) }
+    val subscriptionState = LocalSubscriptionState.current
+    val openPaywall = LocalOpenPaywall.current
 
     if (state is FeedUiState.Success) {
         if (state.selectedPassageForShare != null) {
@@ -207,6 +214,43 @@ fun FeedScreen(
                                 tint = FathomTheme.colors.textTertiary,
                                 modifier = Modifier.size(11.dp)
                             )
+                        }
+
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(20.dp))
+                                .background(
+                                    if (subscriptionState.isPro) FathomTheme.colors.accentGold.copy(alpha = 0.16f)
+                                    else FathomTheme.colors.surfaceElevated
+                                )
+                                .border(
+                                    width = 1.dp,
+                                    color = if (subscriptionState.isPro) FathomTheme.colors.accentGold else FathomTheme.colors.borderSubtle,
+                                    shape = RoundedCornerShape(20.dp)
+                                )
+                                .clickable { openPaywall() }
+                                .padding(horizontal = 9.dp, vertical = 6.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                Icon(
+                                    imageVector = PhosphorIcons.Regular.Crown,
+                                    contentDescription = "Sanctuary+ Pro",
+                                    tint = if (subscriptionState.isPro) FathomTheme.colors.accentGold else FathomTheme.colors.textSecondary,
+                                    modifier = Modifier.size(12.dp)
+                                )
+                                Text(
+                                    text = if (subscriptionState.isPro) "PATRON" else "PRO",
+                                    fontFamily = JakartaFontFamily,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 10.5.sp,
+                                    letterSpacing = 0.5.sp,
+                                    color = if (subscriptionState.isPro) FathomTheme.colors.accentGold else FathomTheme.colors.textSecondary
+                                )
+                            }
                         }
 
                         IconButton(

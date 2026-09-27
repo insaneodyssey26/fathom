@@ -45,6 +45,7 @@ import com.adamglin.phosphoricons.regular.BookBookmark
 import com.adamglin.phosphoricons.regular.Compass
 import com.adamglin.phosphoricons.regular.MagnifyingGlass
 import com.adamglin.phosphoricons.regular.Sparkle
+import com.adamglin.phosphoricons.regular.User
 import com.masum.fathom.NavigationItem
 import com.masum.fathom.ui.theme.FathomTheme
 
@@ -156,8 +157,8 @@ fun FathomBottomNavBar(
                 )
 
                 NavBarItem(
-                    label = "Library",
-                    icon = PhosphorIcons.Regular.BookBookmark,
+                    label = "You",
+                    icon = PhosphorIcons.Regular.User,
                     isSelected = selectedItem == NavigationItem.LIBRARY,
                     onClick = { onItemSelected(NavigationItem.LIBRARY) },
                     modifier = Modifier.weight(1f)

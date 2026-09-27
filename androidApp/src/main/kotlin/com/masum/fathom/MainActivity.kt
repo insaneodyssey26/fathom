@@ -138,6 +138,10 @@ class MainActivity : ComponentActivity() {
             val sanctuaryDataEngine = remember { com.masum.fathom.core.sanctuary.SanctuaryDataEngine(context, userRepo, passageRepo) }
             val sanctuarySettings by sanctuaryPreferences.settings.collectAsState()
 
+            val subscriptionManager = remember { com.masum.fathom.core.subscription.SubscriptionManager(context) }
+            val subscriptionState by subscriptionManager.subscriptionState.collectAsState()
+            var showPaywallModal by remember { mutableStateOf(false) }
+
             val updateEngine = remember { com.masum.fathom.core.update.AppUpdateEngine(context) }
             androidx.compose.runtime.DisposableEffect(updateEngine) {
                 updateEngine.checkForUpdates(manual = false)
@@ -177,6 +181,9 @@ class MainActivity : ComponentActivity() {
                 com.masum.fathom.core.sanctuary.LocalSanctuaryPreferences provides sanctuaryPreferences,
                 com.masum.fathom.core.sanctuary.LocalSanctuaryDataEngine provides sanctuaryDataEngine,
                 com.masum.fathom.core.sanctuary.LocalOpenSanctuary provides { showSanctuaryModal = true },
+                com.masum.fathom.core.subscription.LocalSubscriptionManager provides subscriptionManager,
+                com.masum.fathom.core.subscription.LocalSubscriptionState provides subscriptionState,
+                com.masum.fathom.core.subscription.LocalOpenPaywall provides { showPaywallModal = true },
                 com.masum.fathom.core.update.LocalAppUpdateEngine provides updateEngine
             ) {
                 FathomTheme(readingTheme = activeTheme) {
@@ -254,6 +261,12 @@ class MainActivity : ComponentActivity() {
                                 preferences = sanctuaryPreferences,
                                 dataEngine = sanctuaryDataEngine,
                                 onDismiss = { showSanctuaryModal = false }
+                            )
+                        }
+
+                        if (showPaywallModal) {
+                            com.masum.fathom.ui.subscription.SanctuaryPaywallSheet(
+                                onDismiss = { showPaywallModal = false }
                             )
                         }
                     }

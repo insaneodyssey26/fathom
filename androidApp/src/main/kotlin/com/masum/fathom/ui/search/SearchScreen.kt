@@ -69,10 +69,13 @@ import com.adamglin.phosphoricons.regular.BookmarkSimple
 import com.adamglin.phosphoricons.regular.CaretDown
 import com.adamglin.phosphoricons.regular.CaretRight
 import com.adamglin.phosphoricons.regular.CaretUp
+import com.adamglin.phosphoricons.regular.Crown
 import com.adamglin.phosphoricons.regular.Info
 import com.adamglin.phosphoricons.regular.MagnifyingGlass
 import com.adamglin.phosphoricons.regular.ShareNetwork
 import com.adamglin.phosphoricons.regular.Sparkle
+import com.masum.fathom.core.subscription.LocalOpenPaywall
+import com.masum.fathom.core.subscription.LocalSubscriptionState
 import com.adamglin.phosphoricons.regular.SpeakerHigh
 import com.adamglin.phosphoricons.regular.X
 import androidx.compose.runtime.collectAsState
@@ -172,6 +175,9 @@ private fun DirectoryAndSearchRootView(
     searchListState: androidx.compose.foundation.lazy.LazyListState,
     onEvent: (SearchUiEvent) -> Unit
 ) {
+    val subscriptionState = LocalSubscriptionState.current
+    val openPaywall = LocalOpenPaywall.current
+
     Column(modifier = Modifier.fillMaxSize()) {
         Column(
             modifier = Modifier
@@ -202,21 +208,63 @@ private fun DirectoryAndSearchRootView(
                     }
                 }
 
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(FathomTheme.colors.accentGold.copy(alpha = 0.12f))
-                        .border(1.dp, FathomTheme.colors.accentGold.copy(alpha = 0.35f), RoundedCornerShape(12.dp))
-                        .padding(horizontal = 8.dp, vertical = 4.dp)
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Text(
-                        text = "10K+ VERSES",
-                        fontFamily = JakartaFontFamily,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 9.5.sp,
-                        letterSpacing = 1.sp,
-                        color = FathomTheme.colors.accentGold
-                    )
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(20.dp))
+                            .background(
+                                if (subscriptionState.isPro) FathomTheme.colors.accentGold.copy(alpha = 0.16f)
+                                else FathomTheme.colors.surfaceElevated
+                            )
+                            .border(
+                                width = 1.dp,
+                                color = if (subscriptionState.isPro) FathomTheme.colors.accentGold else FathomTheme.colors.borderSubtle,
+                                shape = RoundedCornerShape(20.dp)
+                            )
+                            .clickable { openPaywall() }
+                            .padding(horizontal = 9.dp, vertical = 5.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Icon(
+                                imageVector = PhosphorIcons.Regular.Crown,
+                                contentDescription = "Sanctuary+ Pro",
+                                tint = if (subscriptionState.isPro) FathomTheme.colors.accentGold else FathomTheme.colors.textSecondary,
+                                modifier = Modifier.size(12.dp)
+                            )
+                            Text(
+                                text = if (subscriptionState.isPro) "PATRON" else "PRO",
+                                fontFamily = JakartaFontFamily,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 10.5.sp,
+                                letterSpacing = 0.5.sp,
+                                color = if (subscriptionState.isPro) FathomTheme.colors.accentGold else FathomTheme.colors.textSecondary
+                            )
+                        }
+                    }
+
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(FathomTheme.colors.accentGold.copy(alpha = 0.12f))
+                            .border(1.dp, FathomTheme.colors.accentGold.copy(alpha = 0.35f), RoundedCornerShape(12.dp))
+                            .padding(horizontal = 8.dp, vertical = 5.dp)
+                    ) {
+                        Text(
+                            text = "10K+ VERSES",
+                            fontFamily = JakartaFontFamily,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 9.5.sp,
+                            letterSpacing = 1.sp,
+                            color = FathomTheme.colors.accentGold
+                        )
+                    }
                 }
             }
 

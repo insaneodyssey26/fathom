@@ -110,6 +110,8 @@ fun PathwaysScreen(
 
         is PathwaysUiState.Success -> {
             val pathway = state.currentPathway
+            val subscriptionState = com.masum.fathom.core.subscription.LocalSubscriptionState.current
+            val openPaywall = com.masum.fathom.core.subscription.LocalOpenPaywall.current
 
             AnimatedContent(
                 targetState = state.activeChapterForReading,
@@ -224,6 +226,43 @@ fun PathwaysScreen(
                                     )
                                 }
 
+                                Box(
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(20.dp))
+                                        .background(
+                                            if (subscriptionState.isPro) FathomTheme.colors.accentGold.copy(alpha = 0.16f)
+                                            else FathomTheme.colors.surfaceElevated
+                                        )
+                                        .border(
+                                            width = 1.dp,
+                                            color = if (subscriptionState.isPro) FathomTheme.colors.accentGold else FathomTheme.colors.borderSubtle,
+                                            shape = RoundedCornerShape(20.dp)
+                                        )
+                                        .clickable { openPaywall() }
+                                        .padding(horizontal = 9.dp, vertical = 6.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = PhosphorIcons.Regular.Crown,
+                                            contentDescription = "Sanctuary+ Pro",
+                                            tint = if (subscriptionState.isPro) FathomTheme.colors.accentGold else FathomTheme.colors.textSecondary,
+                                            modifier = Modifier.size(12.dp)
+                                        )
+                                        Text(
+                                            text = if (subscriptionState.isPro) "PATRON" else "PRO",
+                                            fontFamily = JakartaFontFamily,
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 10.5.sp,
+                                            letterSpacing = 0.5.sp,
+                                            color = if (subscriptionState.isPro) FathomTheme.colors.accentGold else FathomTheme.colors.textSecondary
+                                        )
+                                    }
+                                }
+
                                 IconButton(
                                     onClick = openSanctuary,
                                     modifier = Modifier
@@ -254,6 +293,89 @@ fun PathwaysScreen(
                                     pathway = pathway,
                                     onOpenScripturePicker = { showScriptureSheet = true }
                                 )
+                            }
+
+                            if (!subscriptionState.isPro) {
+                                item {
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .clip(RoundedCornerShape(16.dp))
+                                            .background(
+                                                Brush.linearGradient(
+                                                    listOf(
+                                                        FathomTheme.colors.accentGold.copy(alpha = 0.18f),
+                                                        FathomTheme.colors.surfaceElevated
+                                                    )
+                                                )
+                                            )
+                                            .border(
+                                                width = 1.dp,
+                                                color = FathomTheme.colors.accentGold.copy(alpha = 0.45f),
+                                                shape = RoundedCornerShape(16.dp)
+                                            )
+                                            .clickable { openPaywall() }
+                                            .padding(14.dp)
+                                    ) {
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Row(
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                            ) {
+                                                Box(
+                                                    modifier = Modifier
+                                                        .size(36.dp)
+                                                        .clip(CircleShape)
+                                                        .background(FathomTheme.colors.accentGold.copy(alpha = 0.2f)),
+                                                    contentAlignment = Alignment.Center
+                                                ) {
+                                                    Icon(
+                                                        imageVector = PhosphorIcons.Regular.Crown,
+                                                        contentDescription = null,
+                                                        tint = FathomTheme.colors.accentGold,
+                                                        modifier = Modifier.size(18.dp)
+                                                    )
+                                                }
+
+                                                Column {
+                                                    Text(
+                                                        text = "Chapter 1 Free · Unlock All ${pathway.totalChapters} Chapters",
+                                                        fontFamily = JakartaFontFamily,
+                                                        fontWeight = FontWeight.Bold,
+                                                        fontSize = 12.5.sp,
+                                                        color = FathomTheme.colors.textPrimary
+                                                    )
+                                                    Text(
+                                                        text = "Master the full sacred road with Sanctuary+",
+                                                        fontFamily = JakartaFontFamily,
+                                                        fontSize = 11.sp,
+                                                        color = FathomTheme.colors.accentGold
+                                                    )
+                                                }
+                                            }
+
+                                            Box(
+                                                modifier = Modifier
+                                                    .clip(RoundedCornerShape(8.dp))
+                                                    .background(FathomTheme.colors.accentGold)
+                                                    .padding(horizontal = 9.dp, vertical = 4.dp)
+                                            ) {
+                                                Text(
+                                                    text = "UNLOCK",
+                                                    fontFamily = JakartaFontFamily,
+                                                    fontWeight = FontWeight.Bold,
+                                                    fontSize = 10.sp,
+                                                    letterSpacing = 0.5.sp,
+                                                    color = androidx.compose.ui.graphics.Color.Black
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
                             }
 
                             item {
@@ -297,7 +419,13 @@ fun PathwaysScreen(
                             item {
                                 SacredRoadStream(
                                     chapters = pathway.chapters,
-                                    onOpenChapter = { chNum -> onEvent(PathwaysUiEvent.OnOpenChapter(chNum)) }
+                                    onOpenChapter = { chNum ->
+                                        if (chNum > 1 && !subscriptionState.isPro) {
+                                            openPaywall()
+                                        } else {
+                                            onEvent(PathwaysUiEvent.OnOpenChapter(chNum))
+                                        }
+                                    }
                                 )
                             }
                         }
