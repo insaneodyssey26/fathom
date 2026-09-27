@@ -771,7 +771,7 @@ private fun SearchPassageCard(
                 contentPadding = PaddingValues(horizontal = 4.dp)
             ) {
                 Text(
-                    text = "EXEGESIS",
+                    text = "INSIGHTS",
                     fontFamily = JakartaFontFamily,
                     fontWeight = FontWeight.Bold,
                     fontSize = 11.5.sp,

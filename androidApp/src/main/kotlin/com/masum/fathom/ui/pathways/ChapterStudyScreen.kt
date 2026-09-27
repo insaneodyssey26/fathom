@@ -786,8 +786,8 @@ private fun InteractiveWisdomCard(
                                     modifier = Modifier.size(14.dp)
                                 )
                                 Text(
-                                    text = if (isExpanded) "Philosophical Exegesis" else "Tap to Reveal Exegesis",
-                                    fontFamily = SyneFontFamily,
+                                    text = if (isExpanded) "Passage Insights & Meaning" else "Tap to Reveal Meaning",
+                                    fontFamily = JakartaFontFamily,
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 11.5.sp,
                                     color = FathomTheme.colors.accentGold

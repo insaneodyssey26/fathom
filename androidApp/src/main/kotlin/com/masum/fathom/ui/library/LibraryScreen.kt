@@ -303,9 +303,9 @@ private fun YouTopBar(
     val title = when (subScreen) {
         is YouSubScreen.Hub -> "you"
         is YouSubScreen.SavedPassages -> "Saved Passages"
-        is YouSubScreen.JournalReflections -> "Sacred Reflections"
-        is YouSubScreen.TimelineFull -> "Reading Timeline"
-        is YouSubScreen.CanonDetail -> "${subScreen.traditionId.displayName} Sanctuary"
+        is YouSubScreen.JournalReflections -> "Personal Notes"
+        is YouSubScreen.TimelineFull -> "Reading History"
+        is YouSubScreen.CanonDetail -> "${subScreen.traditionId.displayName} Traditions"
     }
 
     Row(
@@ -353,9 +353,9 @@ private fun YouTopBar(
                 }
                 Text(
                     text = title,
-                    fontFamily = SyneFontFamily,
+                    fontFamily = JakartaFontFamily,
                     fontWeight = FontWeight.Bold,
-                    fontSize = 17.5.sp,
+                    fontSize = 17.sp,
                     color = FathomTheme.colors.textPrimary,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
@@ -529,13 +529,13 @@ private fun YouHubView(
 
                             Column {
                                 Text(
-                                    text = "Seeker of Wisdom",
-                                    fontFamily = SyneFontFamily,
+                                    text = "Reader of Wisdom",
+                                    fontFamily = JakartaFontFamily,
                                     fontWeight = FontWeight.Bold,
-                                    fontSize = 18.sp,
+                                    fontSize = 17.5.sp,
                                     color = FathomTheme.colors.textPrimary
                                 )
-                                Spacer(modifier = Modifier.height(2.dp))
+                                Spacer(modifier = Modifier.height(3.dp))
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.spacedBy(6.dp)
@@ -609,9 +609,9 @@ private fun YouHubView(
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Text(
                                 text = "${state.currentStreakDays}D",
-                                fontFamily = SyneFontFamily,
+                                fontFamily = JakartaFontFamily,
                                 fontWeight = FontWeight.Bold,
-                                fontSize = 20.sp,
+                                fontSize = 21.sp,
                                 color = FathomTheme.colors.accentGold
                             )
                             Text(
@@ -634,13 +634,13 @@ private fun YouHubView(
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Text(
                                 text = "${state.totalReadCount}",
-                                fontFamily = SyneFontFamily,
+                                fontFamily = JakartaFontFamily,
                                 fontWeight = FontWeight.Bold,
-                                fontSize = 20.sp,
+                                fontSize = 21.sp,
                                 color = FathomTheme.colors.textPrimary
                             )
                             Text(
-                                text = "CONTEMPLATIONS",
+                                text = "READINGS",
                                 fontFamily = JakartaFontFamily,
                                 fontWeight = FontWeight.SemiBold,
                                 fontSize = 10.sp,
@@ -659,9 +659,9 @@ private fun YouHubView(
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Text(
                                 text = "${state.history.size}",
-                                fontFamily = SyneFontFamily,
+                                fontFamily = JakartaFontFamily,
                                 fontWeight = FontWeight.Bold,
-                                fontSize = 20.sp,
+                                fontSize = 21.sp,
                                 color = FathomTheme.colors.textPrimary
                             )
                             Text(
@@ -680,7 +680,7 @@ private fun YouHubView(
             Spacer(modifier = Modifier.height(16.dp))
 
             Text(
-                text = "SANCTUARY VAULT",
+                text = "SAVED & NOTES",
                 style = FathomTheme.typography.canonicalHeader,
                 color = FathomTheme.colors.accentGold
             )
@@ -732,16 +732,17 @@ private fun YouHubView(
 
                         Text(
                             text = "${state.bookmarks.size}",
-                            fontFamily = SyneFontFamily,
+                            fontFamily = JakartaFontFamily,
                             fontWeight = FontWeight.Bold,
-                            fontSize = 22.sp,
+                            fontSize = 24.sp,
                             color = FathomTheme.colors.textPrimary
                         )
+                        Spacer(modifier = Modifier.height(2.dp))
                         Text(
                             text = "Saved Passages",
                             fontFamily = JakartaFontFamily,
                             fontWeight = FontWeight.SemiBold,
-                            fontSize = 12.sp,
+                            fontSize = 12.5.sp,
                             color = FathomTheme.colors.textSecondary
                         )
                     }
@@ -789,16 +790,17 @@ private fun YouHubView(
 
                         Text(
                             text = "${state.notes.size}",
-                            fontFamily = SyneFontFamily,
+                            fontFamily = JakartaFontFamily,
                             fontWeight = FontWeight.Bold,
-                            fontSize = 22.sp,
+                            fontSize = 24.sp,
                             color = FathomTheme.colors.textPrimary
                         )
+                        Spacer(modifier = Modifier.height(2.dp))
                         Text(
-                            text = "Sacred Reflections",
+                            text = "Personal Notes",
                             fontFamily = JakartaFontFamily,
                             fontWeight = FontWeight.SemiBold,
-                            fontSize = 12.sp,
+                            fontSize = 12.5.sp,
                             color = FathomTheme.colors.textSecondary
                         )
                     }
@@ -867,7 +869,7 @@ private fun HistoryStatsContent(
                             modifier = Modifier.size(14.dp)
                         )
                         Text(
-                            text = "WEEKLY HEATMAP",
+                            text = "WEEKLY ACTIVITY",
                             fontFamily = JakartaFontFamily,
                             fontWeight = FontWeight.Bold,
                             fontSize = 10.5.sp,
@@ -952,12 +954,12 @@ private fun HistoryStatsContent(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "CANONS EXPLORED",
+                text = "TRADITIONS EXPLORED",
                 style = FathomTheme.typography.canonicalHeader,
                 color = FathomTheme.colors.accentGold
             )
             Text(
-                text = "Tap canon to view",
+                text = "Tap to open",
                 fontFamily = JakartaFontFamily,
                 fontSize = 10.5.sp,
                 color = FathomTheme.colors.textTertiary
@@ -1032,7 +1034,7 @@ private fun HistoryStatsContent(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "CONTEMPLATIVE MILESTONES",
+                    text = "READING ACHIEVEMENTS",
                     style = FathomTheme.typography.canonicalHeader,
                     color = FathomTheme.colors.accentGold
                 )
@@ -1181,7 +1183,7 @@ private fun HistoryStatsContent(
                     modifier = Modifier.size(14.dp)
                 )
                 Text(
-                    text = "RECENT CONTEMPLATIONS",
+                    text = "RECENT READINGS",
                     style = FathomTheme.typography.canonicalHeader,
                     color = FathomTheme.colors.accentGold
                 )
@@ -1222,25 +1224,25 @@ private fun HistoryStatsContent(
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(14.dp))
                     .background(FathomTheme.colors.surfaceElevated)
-                    .border(
-                        width = 1.dp,
-                        color = FathomTheme.colors.borderSubtle,
-                        shape = RoundedCornerShape(14.dp)
-                    )
-                    .padding(24.dp),
+                .border(
+                    width = 1.dp,
+                    color = FathomTheme.colors.borderSubtle,
+                    shape = RoundedCornerShape(14.dp)
+                )
+                .padding(24.dp),
                 contentAlignment = Alignment.Center
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
                         text = "No Reading History Yet",
-                        fontFamily = SyneFontFamily,
+                        fontFamily = JakartaFontFamily,
                         fontWeight = FontWeight.Bold,
                         fontSize = 16.sp,
                         color = FathomTheme.colors.textPrimary
                     )
                     Spacer(modifier = Modifier.height(6.dp))
                     Text(
-                        text = "Verses you contemplate in the daily stream and scriptures will appear here in chronological order.",
+                        text = "Verses you read in the daily stream and scriptures will appear here in order.",
                         fontFamily = JakartaFontFamily,
                         fontSize = 13.sp,
                         color = FathomTheme.colors.textTertiary,
@@ -1261,7 +1263,7 @@ private fun HistoryStatsContent(
 
         Spacer(modifier = Modifier.height(16.dp))
         Text(
-            text = "OFFLINE INTEGRITY",
+            text = "PRIVACY & STORAGE",
             style = FathomTheme.typography.canonicalHeader,
             color = FathomTheme.colors.accentGold
         )
@@ -1298,7 +1300,7 @@ private fun HistoryStatsContent(
             }
             Spacer(modifier = Modifier.height(6.dp))
             Text(
-                text = "All your bookmarks, notes, marginalia, and reading history reside in private local SQLite databases on your device.",
+                text = "All your bookmarks, notes, and reading history stay privately on your device.",
                 fontFamily = JakartaFontFamily,
                 fontSize = 13.5.sp,
                 lineHeight = 20.sp,
@@ -1371,10 +1373,10 @@ private fun CanonDetailView(
                     Spacer(modifier = Modifier.height(10.dp))
 
                     Text(
-                        text = "${traditionId.displayName} Sanctuary",
-                        fontFamily = SyneFontFamily,
+                        text = "${traditionId.displayName} Scriptures",
+                        fontFamily = JakartaFontFamily,
                         fontWeight = FontWeight.Bold,
-                        fontSize = 20.sp,
+                        fontSize = 19.sp,
                         color = FathomTheme.colors.textPrimary
                     )
 
@@ -1388,9 +1390,9 @@ private fun CanonDetailView(
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Text(
                                 text = "${canonHistory.size}",
-                                fontFamily = SyneFontFamily,
+                                fontFamily = JakartaFontFamily,
                                 fontWeight = FontWeight.Bold,
-                                fontSize = 20.sp,
+                                fontSize = 21.sp,
                                 color = FathomTheme.colors.accentGold
                             )
                             Text(
@@ -1413,9 +1415,9 @@ private fun CanonDetailView(
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Text(
                                 text = "${canonBookmarks.size}",
-                                fontFamily = SyneFontFamily,
+                                fontFamily = JakartaFontFamily,
                                 fontWeight = FontWeight.Bold,
-                                fontSize = 20.sp,
+                                fontSize = 21.sp,
                                 color = FathomTheme.colors.textPrimary
                             )
                             Text(
@@ -1438,13 +1440,13 @@ private fun CanonDetailView(
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Text(
                                 text = "${canonNotes.size}",
-                                fontFamily = SyneFontFamily,
+                                fontFamily = JakartaFontFamily,
                                 fontWeight = FontWeight.Bold,
-                                fontSize = 20.sp,
+                                fontSize = 21.sp,
                                 color = FathomTheme.colors.textPrimary
                             )
                             Text(
-                                text = "REFLECTIONS",
+                                text = "NOTES",
                                 fontFamily = JakartaFontFamily,
                                 fontWeight = FontWeight.SemiBold,
                                 fontSize = 10.sp,
@@ -1462,7 +1464,7 @@ private fun CanonDetailView(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                val sections = listOf("VERSES READ (${canonHistory.size})", "SAVED (${canonBookmarks.size})", "JOURNAL (${canonNotes.size})")
+                val sections = listOf("VERSES READ (${canonHistory.size})", "SAVED (${canonBookmarks.size})", "NOTES (${canonNotes.size})")
                 sections.forEachIndexed { index, label ->
                     val isSelected = selectedSection == index
                     Box(
@@ -1545,7 +1547,7 @@ private fun CanonDetailView(
                     item {
                         EmptyCanonState(
                             title = "No Notes in ${traditionId.displayName}",
-                            body = "Marginalia reflections written on ${traditionId.displayName} verses will appear here."
+                            body = "Personal notes written on ${traditionId.displayName} verses will appear here."
                         )
                     }
                 } else {
@@ -1597,7 +1599,7 @@ private fun FullTimelineView(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "No reading records match your filter.",
+                        text = "No reading records match your search.",
                         style = FathomTheme.typography.commentaryBody,
                         color = FathomTheme.colors.textTertiary,
                         textAlign = TextAlign.Center
@@ -1631,7 +1633,7 @@ private fun EmptyCanonState(title: String, body: String) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(
                 text = title,
-                fontFamily = SyneFontFamily,
+                fontFamily = JakartaFontFamily,
                 fontWeight = FontWeight.Bold,
                 fontSize = 16.sp,
                 color = FathomTheme.colors.textPrimary
@@ -1774,7 +1776,7 @@ private fun PassageHistoryCard(
                 ) {
                     Icon(
                         imageVector = PhosphorIcons.Regular.NotePencil,
-                        contentDescription = "Write Reflection",
+                        contentDescription = "Write Note",
                         tint = FathomTheme.colors.textSecondary,
                         modifier = Modifier.size(16.dp)
                     )
@@ -1786,7 +1788,7 @@ private fun PassageHistoryCard(
                 contentPadding = PaddingValues(horizontal = 8.dp)
             ) {
                 Text(
-                    text = "EXEGESIS",
+                    text = "INSIGHTS",
                     fontFamily = JakartaFontFamily,
                     fontWeight = FontWeight.Bold,
                     fontSize = 11.5.sp,
@@ -1835,7 +1837,7 @@ private fun ReflectionsItemCard(
             ) {
                 Icon(
                     imageVector = PhosphorIcons.Regular.TrashSimple,
-                    contentDescription = "Delete Reflection",
+                    contentDescription = "Delete Note",
                     tint = FathomTheme.colors.textTertiary,
                     modifier = Modifier.size(16.dp)
                 )
@@ -1879,7 +1881,7 @@ private fun ReflectionsItemCard(
                     contentPadding = PaddingValues(horizontal = 4.dp)
                 ) {
                     Text(
-                        text = "OPEN CONTEXT",
+                        text = "VIEW INSIGHTS",
                         fontFamily = JakartaFontFamily,
                         fontWeight = FontWeight.Bold,
                         fontSize = 11.5.sp,
@@ -1940,7 +1942,7 @@ private fun SearchBarAndFilters(
                 decorationBox = { innerTextField ->
                     if (searchQuery.isEmpty()) {
                         Text(
-                            text = "Search saved wisdom & insights...",
+                            text = "Search saved wisdom & notes...",
                             fontFamily = JakartaFontFamily,
                             fontSize = 13.5.sp,
                             color = FathomTheme.colors.textTertiary
@@ -2035,7 +2037,7 @@ private fun BookmarksList(
                 Text(
                     text = "No Saved Passages",
                     style = FathomTheme.typography.commentaryTitle.copy(
-                        fontFamily = SyneFontFamily,
+                        fontFamily = JakartaFontFamily,
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold
                     ),
@@ -2043,7 +2045,7 @@ private fun BookmarksList(
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = "Tap the bookmark icon on any passage in the feed to save it to your sacred sanctuary.",
+                    text = "Tap the bookmark icon on any passage in the feed to save it to your library.",
                     style = FathomTheme.typography.commentaryBody,
                     color = FathomTheme.colors.textTertiary,
                     textAlign = TextAlign.Center
@@ -2213,7 +2215,7 @@ private fun BookmarksList(
                             ) {
                                 Icon(
                                     imageVector = PhosphorIcons.Regular.NotePencil,
-                                    contentDescription = "Write Reflection",
+                                    contentDescription = "Write Note",
                                     tint = FathomTheme.colors.textSecondary,
                                     modifier = Modifier.size(16.dp)
                                 )
@@ -2225,7 +2227,7 @@ private fun BookmarksList(
                             contentPadding = PaddingValues(horizontal = 8.dp)
                         ) {
                             Text(
-                                text = "EXEGESIS",
+                                text = "INSIGHTS",
                                 fontFamily = JakartaFontFamily,
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 11.5.sp,
@@ -2322,9 +2324,9 @@ private fun ReflectionsList(
         ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(
-                    text = "No Personal Reflections",
+                    text = "No Personal Notes",
                     style = FathomTheme.typography.commentaryTitle.copy(
-                        fontFamily = SyneFontFamily,
+                        fontFamily = JakartaFontFamily,
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold
                     ),
@@ -2332,7 +2334,7 @@ private fun ReflectionsList(
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = "Tap the pencil icon on any saved passage to record your personal contemplations and marginalia notes.",
+                    text = "Tap the pencil icon on any saved passage to record your personal notes and reflections.",
                     style = FathomTheme.typography.commentaryBody,
                     color = FathomTheme.colors.textTertiary,
                     textAlign = TextAlign.Center
@@ -2366,7 +2368,7 @@ private fun NoteEditDialog(
         title = {
             Column {
                 Text(
-                    text = "SACRED MARGINALIA",
+                    text = "PERSONAL NOTE",
                     style = FathomTheme.typography.caption.copy(
                         fontSize = 11.sp,
                         letterSpacing = 1.3.sp,
@@ -2378,7 +2380,7 @@ private fun NoteEditDialog(
                 Text(
                     text = passage.canonicalReference,
                     style = FathomTheme.typography.commentaryTitle.copy(
-                        fontFamily = SyneFontFamily,
+                        fontFamily = JakartaFontFamily,
                         fontSize = 17.sp,
                         fontWeight = FontWeight.Bold
                     ),
@@ -2426,7 +2428,7 @@ private fun NoteEditDialog(
                     decorationBox = { innerTextField ->
                         if (noteText.isEmpty()) {
                             Text(
-                                text = "Write your contemplation, lesson, or marginalia note...",
+                                text = "Write your reflection or personal note...",
                                 fontFamily = JakartaFontFamily,
                                 fontSize = 14.sp,
                                 color = FathomTheme.colors.textTertiary
@@ -2447,7 +2449,7 @@ private fun NoteEditDialog(
                 enabled = noteText.isNotBlank()
             ) {
                 Text(
-                    text = "SAVE REFLECTION",
+                    text = "SAVE NOTE",
                     fontFamily = JakartaFontFamily,
                     fontWeight = FontWeight.Bold,
                     fontSize = 12.sp,

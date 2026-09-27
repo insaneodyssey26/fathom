@@ -330,7 +330,7 @@ fun PassageContextSheet(
 
             Column(modifier = Modifier.fillMaxWidth()) {
                 Text(
-                    text = "EXEGESIS & CONTEXT",
+                    text = "SCRIPTURE INSIGHTS & CONTEXT",
                     style = FathomTheme.typography.caption.copy(
                         fontSize = 11.sp,
                         letterSpacing = 1.3.sp,

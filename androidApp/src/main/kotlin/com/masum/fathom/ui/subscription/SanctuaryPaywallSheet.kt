@@ -95,12 +95,12 @@ fun SanctuaryPaywallSheet(
             PaywallFeature(
                 icon = PhosphorIcons.Regular.BookOpen,
                 title = "Full Pathways Scripture Mastery",
-                description = "Master scriptures chronologically across all 18+ chapters with quizzes and certificates."
+                description = "Study scriptures step-by-step across all chapters with reflections, quizzes, and certificates."
             ),
             PaywallFeature(
                 icon = PhosphorIcons.Regular.NotePencil,
-                title = "Unlimited Reflections & Socratic AI",
-                description = "Boundless sacred marginalia notes, tag search indexing, and deep conversational exegesis."
+                title = "Unlimited Notes & Deep Insights",
+                description = "Unlimited personal notes, tag indexing, and deep conversational passage explanations."
             )
         )
     }
