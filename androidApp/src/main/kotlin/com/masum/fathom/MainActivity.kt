@@ -25,6 +25,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.cash.sqldelight.driver.android.AndroidSqliteDriver
@@ -220,9 +221,20 @@ class MainActivity : ComponentActivity() {
                 }
             }
 
+            val ambienceEngine = remember { com.masum.fathom.core.audio.SanctuaryAmbienceEngine(context) }
+            androidx.compose.runtime.DisposableEffect(ambienceEngine) {
+                onDispose {
+                    ambienceEngine.release()
+                }
+            }
+
+            var showAmbienceSheet by remember { mutableStateOf(false) }
+
             androidx.compose.runtime.CompositionLocalProvider(
                 com.masum.fathom.core.haptics.LocalFathomHaptics provides fathomHaptics,
                 com.masum.fathom.core.audio.LocalSacredAudioEngine provides audioEngine,
+                com.masum.fathom.core.audio.LocalSanctuaryAmbienceEngine provides ambienceEngine,
+                com.masum.fathom.core.audio.LocalOpenAmbience provides { showAmbienceSheet = true },
                 com.masum.fathom.core.sanctuary.LocalSanctuaryPreferences provides sanctuaryPreferences,
                 com.masum.fathom.core.sanctuary.LocalSanctuaryDataEngine provides sanctuaryDataEngine,
                 com.masum.fathom.core.sanctuary.LocalOpenSanctuary provides { showSanctuaryModal = true },
@@ -327,6 +339,13 @@ class MainActivity : ComponentActivity() {
                                         .align(Alignment.BottomCenter)
                                         .fillMaxWidth()
                                 ) {
+                                    com.masum.fathom.ui.components.AmbienceFloatingPill(
+                                        onClick = { showAmbienceSheet = true },
+                                        modifier = Modifier
+                                            .align(Alignment.CenterHorizontally)
+                                            .padding(bottom = 8.dp)
+                                    )
+
                                     com.masum.fathom.ui.components.SacredAudioPlayerBar(
                                         isNavbarVisible = !isStudyingChapter
                                     )
@@ -370,6 +389,12 @@ class MainActivity : ComponentActivity() {
                                             sanctuaryPreferences.markWhatsNewSeen(currentVersionCode)
                                             showWhatsNewModal = false
                                         }
+                                    )
+                                }
+
+                                if (showAmbienceSheet) {
+                                    com.masum.fathom.ui.components.AmbienceSoundscapeSheet(
+                                        onDismiss = { showAmbienceSheet = false }
                                     )
                                 }
                             }

@@ -67,7 +67,10 @@ import com.adamglin.phosphoricons.regular.Sparkle
 import com.adamglin.phosphoricons.regular.SpeakerHigh
 import com.adamglin.phosphoricons.regular.Warning
 import com.adamglin.phosphoricons.regular.X
+import com.adamglin.phosphoricons.regular.Waves
+import com.masum.fathom.core.audio.LocalOpenAmbience
 import com.masum.fathom.core.audio.LocalSacredAudioEngine
+import com.masum.fathom.core.audio.LocalSanctuaryAmbienceEngine
 import com.masum.fathom.core.audio.SacredAudioState
 import com.masum.fathom.core.model.TraditionId
 import com.masum.fathom.core.subscription.LocalOpenPaywall
@@ -85,10 +88,13 @@ fun FeedScreen(
     val coroutineScope = rememberCoroutineScope()
     val haptics = com.masum.fathom.core.haptics.LocalFathomHaptics.current
     val openSanctuary = com.masum.fathom.core.sanctuary.LocalOpenSanctuary.current
+    val openAmbience = LocalOpenAmbience.current
     val subscriptionState = LocalSubscriptionState.current
     val openPaywall = LocalOpenPaywall.current
     val audioEngine = LocalSacredAudioEngine.current
     val playbackState by audioEngine.playbackState.collectAsState()
+    val ambienceEngine = LocalSanctuaryAmbienceEngine.current
+    val ambienceState by ambienceEngine.state.collectAsState()
 
     var showScriptureSheet by remember { mutableStateOf(false) }
     var showFilterSheet by remember { mutableStateOf(false) }
@@ -241,75 +247,51 @@ fun FeedScreen(
                             }
                         }
 
+                        val activeBook = state.availableBooks.find { it.id == state.selectedBookId }
+                        val activeTitle = when {
+                            activeBook != null -> activeBook.title
+                            state.selectedTraditions.size == 1 -> state.selectedTraditions.first().displayName
+                            state.selectedTraditions.size < TraditionId.entries.size -> "Filtered (${state.selectedTraditions.size})"
+                            else -> "All Scriptures"
+                        }
+                        val isFiltered = state.selectedBookId != null || (state.selectedTraditions.isNotEmpty() && state.selectedTraditions.size < TraditionId.entries.size)
+
                         Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            val activeBook = state.availableBooks.find { it.id == state.selectedBookId }
-                            val activeTitle = when {
-                                activeBook != null -> activeBook.title
-                                state.selectedTraditions.size == 1 -> state.selectedTraditions.first().displayName
-                                state.selectedTraditions.size < TraditionId.entries.size -> "Filtered (${state.selectedTraditions.size})"
-                                else -> "All Scriptures"
-                            }
-                            val isFiltered = state.selectedBookId != null || (state.selectedTraditions.isNotEmpty() && state.selectedTraditions.size < TraditionId.entries.size)
-
-                            Row(
-                                modifier = Modifier
-                                    .clip(RoundedCornerShape(20.dp))
-                                    .background(FathomTheme.colors.surfaceElevated)
-                                    .border(
-                                        width = 1.dp,
-                                        color = if (isFiltered) FathomTheme.colors.accentGold.copy(alpha = 0.7f) else FathomTheme.colors.borderSubtle,
-                                        shape = RoundedCornerShape(20.dp)
-                                    )
-                                    .clickable {
-                                        haptics.light()
-                                        showScriptureSheet = true
-                                    }
-                                    .padding(horizontal = 12.dp, vertical = 7.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(6.dp)
-                            ) {
-                                Icon(
-                                    imageVector = if (isFiltered) PhosphorIcons.Regular.BookBookmark else PhosphorIcons.Regular.Sparkle,
-                                    contentDescription = null,
-                                    tint = if (isFiltered) FathomTheme.colors.accentGold else FathomTheme.colors.textSecondary,
-                                    modifier = Modifier.size(13.dp)
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(20.dp))
+                                .background(FathomTheme.colors.surfaceElevated)
+                                .border(
+                                    width = 1.dp,
+                                    color = if (isFiltered) FathomTheme.colors.accentGold.copy(alpha = 0.7f) else FathomTheme.colors.borderSubtle,
+                                    shape = RoundedCornerShape(20.dp)
                                 )
-                                Text(
-                                    text = activeTitle,
-                                    style = FathomTheme.typography.traditionBadge.copy(fontSize = 11.sp),
-                                    color = if (isFiltered) FathomTheme.colors.accentGold else FathomTheme.colors.textPrimary,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                    modifier = Modifier.widthIn(max = 140.dp)
-                                )
-                                Icon(
-                                    imageVector = PhosphorIcons.Regular.CaretDown,
-                                    contentDescription = null,
-                                    tint = FathomTheme.colors.textTertiary,
-                                    modifier = Modifier.size(11.dp)
-                                )
-                            }
-
-                            IconButton(
-                                onClick = {
+                                .clickable {
                                     haptics.light()
-                                    openSanctuary()
-                                },
-                                modifier = Modifier
-                                    .clip(CircleShape)
-                                    .background(FathomTheme.colors.surfaceElevated)
-                                    .size(38.dp)
-                            ) {
-                                Icon(
-                                    imageVector = PhosphorIcons.Regular.Sliders,
-                                    contentDescription = "Preferences",
-                                    tint = FathomTheme.colors.textSecondary,
-                                    modifier = Modifier.size(18.dp)
-                                )
-                            }
+                                    showScriptureSheet = true
+                                }
+                                .padding(horizontal = 14.dp, vertical = 7.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Icon(
+                                imageVector = if (isFiltered) PhosphorIcons.Regular.BookBookmark else PhosphorIcons.Regular.Sparkle,
+                                contentDescription = null,
+                                tint = if (isFiltered) FathomTheme.colors.accentGold else FathomTheme.colors.textSecondary,
+                                modifier = Modifier.size(13.dp)
+                            )
+                            Text(
+                                text = activeTitle,
+                                style = FathomTheme.typography.traditionBadge.copy(fontSize = 11.sp),
+                                color = if (isFiltered) FathomTheme.colors.accentGold else FathomTheme.colors.textPrimary,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                            Icon(
+                                imageVector = PhosphorIcons.Regular.CaretDown,
+                                contentDescription = null,
+                                tint = FathomTheme.colors.textTertiary,
+                                modifier = Modifier.size(11.dp)
+                            )
                         }
                     }
 
@@ -437,6 +419,21 @@ fun FeedScreen(
                                         imageVector = PhosphorIcons.Regular.SpeakerHigh,
                                         contentDescription = "Audio Recitation",
                                         tint = if (isSpeakingCurrent) FathomTheme.colors.accentGold else FathomTheme.colors.textSecondary,
+                                        modifier = Modifier.size(17.dp)
+                                    )
+                                }
+
+                                IconButton(
+                                    onClick = {
+                                        haptics.light()
+                                        openAmbience()
+                                    },
+                                    modifier = Modifier.size(38.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = PhosphorIcons.Regular.Waves,
+                                        contentDescription = "Soundscapes & Sleep Timer",
+                                        tint = if (ambienceState.isPlaying) FathomTheme.colors.accentGold else FathomTheme.colors.textSecondary,
                                         modifier = Modifier.size(17.dp)
                                     )
                                 }
