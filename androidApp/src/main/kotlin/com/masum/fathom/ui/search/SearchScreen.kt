@@ -88,6 +88,7 @@ import com.masum.fathom.core.audio.SacredAudioState
 import com.masum.fathom.core.haptics.LocalFathomHaptics
 import com.masum.fathom.core.model.Book
 import com.masum.fathom.core.model.Passage
+import com.masum.fathom.core.model.SacredTopic
 import com.masum.fathom.core.model.TraditionId
 import com.masum.fathom.core.subscription.LocalOpenPaywall
 import com.masum.fathom.core.subscription.LocalSubscriptionState
@@ -114,6 +115,8 @@ fun SearchScreen(
         BackHandler { onEvent(SearchUiEvent.OnCloseContext) }
     } else if (state.selectedBook != null) {
         BackHandler { onEvent(SearchUiEvent.OnSelectBook(null)) }
+    } else if (state.selectedTopic != null) {
+        BackHandler { onEvent(SearchUiEvent.OnSelectTopic(null)) }
     } else if (state.searchQuery.isNotEmpty()) {
         BackHandler { onEvent(SearchUiEvent.OnQueryChange("")) }
     }
@@ -272,9 +275,10 @@ private fun DirectoryAndSearchRootView(
             if (state.searchQuery.isEmpty()) {
                 Spacer(modifier = Modifier.height(10.dp))
                 ThematicSuggestionsRow(
-                    onSelectTheme = { theme ->
+                    selectedTopic = state.selectedTopic,
+                    onSelectTopic = { topic ->
                         haptics.light()
-                        onEvent(SearchUiEvent.OnQueryChange(theme))
+                        onEvent(SearchUiEvent.OnSelectTopic(topic))
                     }
                 )
             }
@@ -296,12 +300,22 @@ private fun DirectoryAndSearchRootView(
                     listState = searchListState,
                     onEvent = onEvent
                 )
+            } else if (state.selectedTopic != null) {
+                TopicalPassagesView(
+                    topic = state.selectedTopic,
+                    passages = state.topicPassages,
+                    isLoading = state.isLoadingTopic,
+                    bookmarkedIds = state.bookmarkedPassageIds,
+                    listState = searchListState,
+                    onEvent = onEvent
+                )
             } else {
                 ScripturesDirectoryView(
                     books = state.allBooks,
                     selectedTradition = state.selectedTradition,
                     listState = directoryListState,
-                    onSelectBook = { onEvent(SearchUiEvent.OnSelectBook(it)) }
+                    onSelectBook = { onEvent(SearchUiEvent.OnSelectBook(it)) },
+                    onSelectTopic = { onEvent(SearchUiEvent.OnSelectTopic(it)) }
                 )
             }
 
@@ -524,21 +538,12 @@ private fun CanonFilterRow(
 }
 @Composable
 private fun ThematicSuggestionsRow(
-    onSelectTheme: (String) -> Unit,
+    selectedTopic: SacredTopic?,
+    onSelectTopic: (SacredTopic?) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val themes = remember {
-        listOf(
-            "Stillness",
-            "Duty",
-            "Peace",
-            "Courage",
-            "Light",
-            "Surrender",
-            "Truth",
-            "Devotion"
-        )
-    }
+    val haptics = LocalFathomHaptics.current
+    val topics = remember { SacredTopic.entries }
 
     Row(
         modifier = modifier
@@ -555,7 +560,7 @@ private fun ThematicSuggestionsRow(
         )
 
         Text(
-            text = "THEMES:",
+            text = "TOPICS:",
             fontFamily = JakartaFontFamily,
             fontWeight = FontWeight.Bold,
             fontSize = 9.5.sp,
@@ -565,21 +570,181 @@ private fun ThematicSuggestionsRow(
 
         Spacer(modifier = Modifier.width(2.dp))
 
-        themes.forEach { theme ->
+        topics.forEach { topic ->
+            val isSelected = selectedTopic == topic
             Box(
                 modifier = Modifier
                     .clip(RoundedCornerShape(12.dp))
-                    .background(FathomTheme.colors.surface)
-                    .border(1.dp, FathomTheme.colors.borderSubtle, RoundedCornerShape(12.dp))
-                    .clickable { onSelectTheme(theme) }
+                    .background(
+                        if (isSelected) FathomTheme.colors.accentGold.copy(alpha = 0.2f)
+                        else FathomTheme.colors.surface
+                    )
+                    .border(
+                        1.dp,
+                        if (isSelected) FathomTheme.colors.accentGold.copy(alpha = 0.8f)
+                        else FathomTheme.colors.borderSubtle,
+                        RoundedCornerShape(12.dp)
+                    )
+                    .clickable {
+                        haptics.light()
+                        if (isSelected) onSelectTopic(null) else onSelectTopic(topic)
+                    }
                     .padding(horizontal = 9.dp, vertical = 4.dp)
             ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Icon(
+                        imageVector = topic.icon,
+                        contentDescription = null,
+                        tint = if (isSelected) FathomTheme.colors.accentGold else FathomTheme.colors.textTertiary,
+                        modifier = Modifier.size(12.dp)
+                    )
+                    Text(
+                        text = topic.title,
+                        fontFamily = JakartaFontFamily,
+                        fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
+                        fontSize = 11.sp,
+                        color = if (isSelected) FathomTheme.colors.accentGold else FathomTheme.colors.textTertiary
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun TopicalPassagesView(
+    topic: SacredTopic,
+    passages: List<Passage>,
+    isLoading: Boolean,
+    bookmarkedIds: Set<String>,
+    listState: androidx.compose.foundation.lazy.LazyListState,
+    onEvent: (SearchUiEvent) -> Unit
+) {
+    val haptics = LocalFathomHaptics.current
+
+    if (isLoading) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            CircularProgressIndicator(color = FathomTheme.colors.accentGold)
+        }
+    } else if (passages.isEmpty()) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(32.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(
-                    text = theme,
-                    fontFamily = JakartaFontFamily,
-                    fontSize = 11.sp,
-                    color = FathomTheme.colors.textTertiary
+                    text = "No Passages Found",
+                    style = FathomTheme.typography.commentaryTitle.copy(
+                        fontFamily = JakartaFontFamily,
+                        fontSize = 18.sp
+                    ),
+                    color = FathomTheme.colors.textPrimary
                 )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "No cross-tradition passages found for this theme with current filter.",
+                    style = FathomTheme.typography.commentaryBody,
+                    color = FathomTheme.colors.textTertiary,
+                    textAlign = TextAlign.Center
+                )
+            }
+        }
+    } else {
+        LazyColumn(
+            state = listState,
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(start = 20.dp, top = 20.dp, end = 20.dp, bottom = 96.dp)
+        ) {
+            item {
+                Column(modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(32.dp)
+                                    .clip(CircleShape)
+                                    .background(FathomTheme.colors.accentGold.copy(alpha = 0.15f)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = topic.icon,
+                                    contentDescription = null,
+                                    tint = FathomTheme.colors.accentGold,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            }
+                            Text(
+                                text = topic.title.uppercase(),
+                                style = FathomTheme.typography.canonicalHeader,
+                                color = FathomTheme.colors.accentGold
+                            )
+                        }
+
+                        IconButton(
+                            onClick = {
+                                haptics.light()
+                                onEvent(SearchUiEvent.OnSelectTopic(null))
+                            },
+                            modifier = Modifier
+                                .size(28.dp)
+                                .clip(CircleShape)
+                                .background(FathomTheme.colors.surfaceElevated)
+                        ) {
+                            Icon(
+                                imageVector = PhosphorIcons.Regular.X,
+                                contentDescription = "Close Topic",
+                                tint = FathomTheme.colors.textSecondary,
+                                modifier = Modifier.size(14.dp)
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(6.dp))
+
+                    Text(
+                        text = topic.subtitle,
+                        fontFamily = JakartaFontFamily,
+                        fontSize = 13.sp,
+                        color = FathomTheme.colors.textSecondary
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Text(
+                        text = "${passages.size} CROSS-TRADITION VERSES",
+                        fontFamily = JakartaFontFamily,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 10.sp,
+                        letterSpacing = 1.sp,
+                        color = FathomTheme.colors.accentGold.copy(alpha = 0.8f)
+                    )
+                }
+            }
+
+            items(passages, key = { it.id }) { passage ->
+                SearchPassageCard(
+                    passage = passage,
+                    isBookmarked = passage.id in bookmarkedIds,
+                    onToggleBookmark = { onEvent(SearchUiEvent.OnToggleBookmark(passage)) },
+                    onOpenContext = { onEvent(SearchUiEvent.OnOpenContext(passage)) },
+                    onOpenShare = { onEvent(SearchUiEvent.OnOpenShare(passage)) }
+                )
+                Spacer(modifier = Modifier.height(14.dp))
             }
         }
     }
@@ -828,7 +993,8 @@ private fun ScripturesDirectoryView(
     books: List<Book>,
     selectedTradition: TraditionId?,
     listState: androidx.compose.foundation.lazy.LazyListState,
-    onSelectBook: (Book) -> Unit
+    onSelectBook: (Book) -> Unit,
+    onSelectTopic: (SacredTopic) -> Unit
 ) {
     val haptics = LocalFathomHaptics.current
     val filteredBooks = if (selectedTradition != null) {
@@ -840,13 +1006,159 @@ private fun ScripturesDirectoryView(
     LazyColumn(
         state = listState,
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(start = 20.dp, top = 20.dp, end = 20.dp, bottom = 120.dp)
+        contentPadding = PaddingValues(start = 20.dp, top = 16.dp, end = 20.dp, bottom = 120.dp)
     ) {
+        item {
+            Column(modifier = Modifier.fillMaxWidth().padding(bottom = 20.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "TOPICAL EXPLORER",
+                        style = FathomTheme.typography.canonicalHeader,
+                        color = FathomTheme.colors.accentGold
+                    )
+                    Text(
+                        text = "Cross-Tradition",
+                        fontFamily = JakartaFontFamily,
+                        fontSize = 11.sp,
+                        color = FathomTheme.colors.textTertiary
+                    )
+                }
+
+                val topics = SacredTopic.entries
+                for (i in 0 until topics.size step 2) {
+                    val topic1 = topics[i]
+                    val topic2 = if (i + 1 < topics.size) topics[i + 1] else null
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .clip(RoundedCornerShape(18.dp))
+                                .background(
+                                    Brush.verticalGradient(
+                                        listOf(
+                                            FathomTheme.colors.surfaceElevated,
+                                            FathomTheme.colors.surface
+                                        )
+                                    )
+                                )
+                                .border(1.dp, FathomTheme.colors.borderSubtle, RoundedCornerShape(18.dp))
+                                .clickable {
+                                    haptics.light()
+                                    onSelectTopic(topic1)
+                                }
+                                .padding(14.dp)
+                        ) {
+                            Column {
+                                Box(
+                                    modifier = Modifier
+                                        .size(34.dp)
+                                        .clip(CircleShape)
+                                        .background(FathomTheme.colors.accentGold.copy(alpha = 0.15f)),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = topic1.icon,
+                                        contentDescription = null,
+                                        tint = FathomTheme.colors.accentGold,
+                                        modifier = Modifier.size(17.dp)
+                                    )
+                                }
+                                Spacer(modifier = Modifier.height(10.dp))
+                                Text(
+                                    text = topic1.title,
+                                    fontFamily = JakartaFontFamily,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 14.sp,
+                                    color = FathomTheme.colors.textPrimary
+                                )
+                                Spacer(modifier = Modifier.height(3.dp))
+                                Text(
+                                    text = topic1.subtitle,
+                                    fontFamily = JakartaFontFamily,
+                                    fontSize = 11.sp,
+                                    lineHeight = 15.sp,
+                                    color = FathomTheme.colors.textTertiary,
+                                    maxLines = 2,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            }
+                        }
+
+                        if (topic2 != null) {
+                            Box(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .clip(RoundedCornerShape(18.dp))
+                                    .background(
+                                        Brush.verticalGradient(
+                                            listOf(
+                                                FathomTheme.colors.surfaceElevated,
+                                                FathomTheme.colors.surface
+                                            )
+                                        )
+                                    )
+                                    .border(1.dp, FathomTheme.colors.borderSubtle, RoundedCornerShape(18.dp))
+                                    .clickable {
+                                        haptics.light()
+                                        onSelectTopic(topic2)
+                                    }
+                                    .padding(14.dp)
+                            ) {
+                                Column {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(34.dp)
+                                            .clip(CircleShape)
+                                            .background(FathomTheme.colors.accentGold.copy(alpha = 0.15f)),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Icon(
+                                            imageVector = topic2.icon,
+                                            contentDescription = null,
+                                            tint = FathomTheme.colors.accentGold,
+                                            modifier = Modifier.size(17.dp)
+                                        )
+                                    }
+                                    Spacer(modifier = Modifier.height(10.dp))
+                                    Text(
+                                        text = topic2.title,
+                                        fontFamily = JakartaFontFamily,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 14.sp,
+                                        color = FathomTheme.colors.textPrimary
+                                    )
+                                    Spacer(modifier = Modifier.height(3.dp))
+                                    Text(
+                                        text = topic2.subtitle,
+                                        fontFamily = JakartaFontFamily,
+                                        fontSize = 11.sp,
+                                        lineHeight = 15.sp,
+                                        color = FathomTheme.colors.textTertiary,
+                                        maxLines = 2,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                }
+                            }
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(10.dp))
+                }
+            }
+        }
+
         item {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = 14.dp),
+                    .padding(top = 8.dp, bottom = 14.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {

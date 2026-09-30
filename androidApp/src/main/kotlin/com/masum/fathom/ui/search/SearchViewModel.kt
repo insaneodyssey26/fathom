@@ -5,11 +5,14 @@ import androidx.lifecycle.viewModelScope
 import com.masum.fathom.core.common.result.FathomResult
 import com.masum.fathom.core.model.Book
 import com.masum.fathom.core.model.Passage
+import com.masum.fathom.core.model.SacredTopic
 import com.masum.fathom.core.model.TraditionId
 import com.masum.fathom.core.model.user.Bookmark
 import com.masum.fathom.core.repository.PassageRepository
 import com.masum.fathom.core.repository.UserDataRepository
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -28,6 +31,7 @@ class SearchViewModel(
     val uiState: StateFlow<SearchUiState> = _uiState.asStateFlow()
 
     private var searchJob: Job? = null
+    private var topicJob: Job? = null
 
     init {
         loadAllBooks()
@@ -38,6 +42,7 @@ class SearchViewModel(
         when (event) {
             is SearchUiEvent.OnQueryChange -> handleQueryChange(event.query)
             is SearchUiEvent.OnSelectTradition -> handleSelectTradition(event.traditionId)
+            is SearchUiEvent.OnSelectTopic -> handleSelectTopic(event.topic)
             is SearchUiEvent.OnSelectBook -> handleSelectBook(event.book)
             is SearchUiEvent.OnSelectChapter -> handleSelectChapter(event.chapter)
             is SearchUiEvent.OnToggleBookmark -> handleToggleBookmark(event.passage)
@@ -96,6 +101,45 @@ class SearchViewModel(
         _uiState.update { it.copy(selectedTradition = traditionId) }
         if (_uiState.value.searchQuery.isNotBlank()) {
             handleQueryChange(_uiState.value.searchQuery)
+        } else if (_uiState.value.selectedTopic != null) {
+            loadTopicPassages(_uiState.value.selectedTopic!!, traditionId)
+        }
+    }
+
+    private fun handleSelectTopic(topic: SacredTopic?) {
+        _uiState.update { it.copy(selectedTopic = topic) }
+        if (topic == null) {
+            _uiState.update { it.copy(topicPassages = emptyList(), isLoadingTopic = false) }
+            return
+        }
+        loadTopicPassages(topic, _uiState.value.selectedTradition)
+    }
+
+    private fun loadTopicPassages(topic: SacredTopic, traditionId: TraditionId?) {
+        topicJob?.cancel()
+        topicJob = viewModelScope.launch {
+            _uiState.update { it.copy(isLoadingTopic = true) }
+            
+            val deferreds = topic.searchTerms.map { term ->
+                async {
+                    when (val res = passageRepository.searchPassages(term, traditionId, limit = 30)) {
+                        is FathomResult.Success -> res.data
+                        is FathomResult.Failure -> emptyList()
+                    }
+                }
+            }
+            val allResults = deferreds.awaitAll().flatten()
+            val distinctPassages = allResults.distinctBy { it.id }
+            val sortedPassages = distinctPassages.sortedByDescending { passage ->
+                val text = (passage.translation + " " + (passage.originalText ?: "")).lowercase()
+                topic.keywords.count { kw -> text.contains(kw.lowercase()) }
+            }
+            _uiState.update {
+                it.copy(
+                    topicPassages = sortedPassages,
+                    isLoadingTopic = false
+                )
+            }
         }
     }
 
@@ -121,23 +165,32 @@ class SearchViewModel(
                 when (val result = passageRepository.getChaptersForBook(book.id)) {
                     is FathomResult.Success -> {
                         val chapters = result.data
-                        _uiState.update { it.copy(availableChapters = chapters) }
-                        if (chapters.isNotEmpty()) {
-                            handleSelectChapter(chapters.first())
+                        val initialChapter = chapters.firstOrNull() ?: 1
+                        _uiState.update {
+                            it.copy(
+                                availableChapters = chapters,
+                                selectedChapter = initialChapter
+                            )
+                        }
+                        handleSelectChapter(initialChapter)
+                    }
+                    is FathomResult.Failure -> {
+                        _uiState.update {
+                            it.copy(
+                                availableChapters = emptyList(),
+                                selectedChapter = null
+                            )
                         }
                     }
-                    is FathomResult.Failure -> Unit
                 }
             }
-        } else {
-            _uiState.update { it.copy(selectedBook = book) }
         }
     }
 
     private fun handleSelectChapter(chapter: Int?) {
         val currentBook = _uiState.value.selectedBook ?: return
         if (chapter == null) {
-            _uiState.update { it.copy(selectedChapter = null, chapterPassages = emptyList(), isLoadingChapter = false) }
+            _uiState.update { it.copy(selectedChapter = null, chapterPassages = emptyList()) }
             return
         }
 

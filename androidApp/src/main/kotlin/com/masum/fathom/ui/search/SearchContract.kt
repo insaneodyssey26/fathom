@@ -3,12 +3,16 @@ package com.masum.fathom.ui.search
 import androidx.compose.runtime.Immutable
 import com.masum.fathom.core.model.Book
 import com.masum.fathom.core.model.Passage
+import com.masum.fathom.core.model.SacredTopic
 import com.masum.fathom.core.model.TraditionId
 
 @Immutable
 data class SearchUiState(
     val searchQuery: String = "",
     val selectedTradition: TraditionId? = null,
+    val selectedTopic: SacredTopic? = null,
+    val topicPassages: List<Passage> = emptyList(),
+    val isLoadingTopic: Boolean = false,
     val searchResults: List<Passage> = emptyList(),
     val isSearching: Boolean = false,
     val allBooks: List<Book> = emptyList(),
@@ -26,6 +30,7 @@ data class SearchUiState(
 sealed interface SearchUiEvent {
     data class OnQueryChange(val query: String) : SearchUiEvent
     data class OnSelectTradition(val traditionId: TraditionId?) : SearchUiEvent
+    data class OnSelectTopic(val topic: SacredTopic?) : SearchUiEvent
     data class OnSelectBook(val book: Book?) : SearchUiEvent
     data class OnSelectChapter(val chapter: Int?) : SearchUiEvent
     data class OnToggleBookmark(val passage: Passage) : SearchUiEvent
