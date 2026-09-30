@@ -94,9 +94,21 @@ fun WhatsNewModal(
     val releases = remember {
         listOf(
             ReleaseNote(
+                version = "v1.3.0",
+                title = "Ambient Soundscapes, Semantic Topical Explorer & Sacred Road Checkpoints",
+                isCurrent = true,
+                highlights = listOf(
+                    "High-Fidelity Ambient Soundscapes: 6 immersive looping soundscapes including Tibetan Singing Bowl, Himalayan Monks Chanting, Monastery Rain, Temple Bells & Stream, Binaural 432Hz Solfeggio Tone, and Deep Om Drone.",
+                    "Contemplative Sleep Timer: Built-in timer with smooth fade-out presets (15m, 30m, 45m, 60m) and custom duration controls.",
+                    "Cross-Tradition Semantic Topical Explorer: Explore sacred wisdom categorized across 8 curated life themes (Peace & Anxiety, Courage & Strength, Forgiveness & Grace, Grief & Solace, Wisdom & Purpose, Gratitude & Joy, Surrender & Trust, Stillness & Presence).",
+                    "Topical Search Bento Grid: Discover curated existential themes with quick-filter pills, high-density keyword matching across all 7 traditions, and dedicated passage views.",
+                    "Refined Sacred Road Checkpoints: Minimal circular milestone nodes with glowing golden accents and responsive lateral labels tailored to any screen width."
+                )
+            ),
+            ReleaseNote(
                 version = "v1.2.0",
                 title = "Sacred Pathways, Daily Wisdom Widget, Journey Analytics & Tactile Haptics",
-                isCurrent = true,
+                isCurrent = false,
                 highlights = listOf(
                     "Sacred Daily Wisdom Widget: Live glancing home screen widget with automatic midnight updates, quick manual refresh, and direct jump to scripture.",
                     "Interactive Sacred Pathways: Guided chapter-by-chapter reading trees with milestone progression and celebration cards.",

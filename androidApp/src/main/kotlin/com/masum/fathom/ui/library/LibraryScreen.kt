@@ -1024,8 +1024,8 @@ private fun HistoryStatsContent(
                 context.packageManager.getPackageInfo(context.packageName, 0).versionName
             }
         } catch (_: Exception) {
-            "1.2.0"
-        } ?: "1.2.0"
+            "1.3.0"
+        } ?: "1.3.0"
     }
     val traditionCounts = remember(history) {
         history.mapNotNull { it.passage?.traditionId }

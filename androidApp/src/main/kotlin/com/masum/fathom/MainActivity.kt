@@ -162,10 +162,10 @@ class MainActivity : ComponentActivity() {
             }
             val currentVersionCode = remember(packageInfo) {
                 if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
-                    packageInfo?.longVersionCode?.toInt() ?: 3
+                    packageInfo?.longVersionCode?.toInt() ?: 4
                 } else {
                     @Suppress("DEPRECATION")
-                    packageInfo?.versionCode ?: 3
+                    packageInfo?.versionCode ?: 4
                 }
             }
 

@@ -4,6 +4,17 @@ All notable changes to the Fathom project are documented in this file.
 
 ---
 
+## [1.3.0] - 2026-09-30
+
+### Added
+- **High-Fidelity Ambient Soundscapes Suite**: 6 curated contemplative background soundscapes (Tibetan Singing Bowl, Himalayan Monks Chanting, Gentle Rain on Monastery, Temple Bells & Stream, Binaural 432Hz Solfeggio Tone, Deep Om Drone) with seamless looping and independent background audio mixing.
+- **Contemplative Sleep Timer**: Dedicated audio sleep timer with quick-action presets (15m, 30m, 45m, 60m, custom), gentle audio fade-out, and a pulsing status pill in the top app bar.
+- **Cross-Tradition Semantic Topical Explorer**: Curated life themes and existential topics (Peace & Anxiety, Courage & Strength, Forgiveness & Grace, Grief & Solace, Wisdom & Purpose, Gratitude & Joy, Surrender & Trust, Stillness & Presence).
+- **Search Bento Grid Directory**: Interactive visual directory in the Search screen with quick filter pills, high-density multi-term keyword search across all 7 canonical traditions, and dedicated passage views.
+- **Responsive Sacred Road Milestone Nodes**: Redesigned checkpoint nodes with minimal glowing tokens (Temple, Gateway, Sanctuary, Disciple) and adaptive non-overlapping lateral labels tailored for both compact and large displays.
+
+---
+
 ## [1.2.0] - 2026-09-27
 
 ### Added
