@@ -7,6 +7,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -16,6 +17,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
@@ -34,6 +36,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -47,9 +50,8 @@ import com.adamglin.phosphoricons.regular.Star
 import com.masum.fathom.ui.theme.FathomTheme
 import com.masum.fathom.ui.theme.JakartaFontFamily
 
-private val ITEM_TOTAL_HEIGHT = 168.dp
-private val CIRCLE_CENTER_OFFSET = 35.dp
-private val HORIZONTAL_AMP = 62.dp
+private val ITEM_TOTAL_HEIGHT = 130.dp
+private val CIRCLE_CENTER_OFFSET = 30.dp
 
 @Composable
 fun SacredRoadStream(
@@ -57,15 +59,20 @@ fun SacredRoadStream(
     onOpenChapter: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val totalHeight = (chapters.size * ITEM_TOTAL_HEIGHT.value + 50).dp
+    val totalHeight = (chapters.size * ITEM_TOTAL_HEIGHT.value + 40).dp
 
-    Box(
+    BoxWithConstraints(
         modifier = modifier
             .fillMaxWidth()
             .height(totalHeight)
     ) {
+        val width = maxWidth
+        val horizontalAmp = (width * 0.15f).coerceIn(36.dp, 60.dp)
+        val sideLabelWidth = ((width / 2) - 46.dp).coerceIn(90.dp, 140.dp)
+
         SacredCurvedRiverCanvas(
             chapters = chapters,
+            amplitude = horizontalAmp,
             modifier = Modifier.fillMaxSize()
         )
 
@@ -76,17 +83,28 @@ fun SacredRoadStream(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             chapters.forEachIndexed { index, chapter ->
-                val xOffset = when (index % 4) {
-                    0 -> 0.dp
-                    1 -> -HORIZONTAL_AMP
-                    2 -> 0.dp
-                    3 -> HORIZONTAL_AMP
+                val stepType = index % 4
+                val isLeftOffset = stepType == 1
+                val isRightOffset = stepType == 3
+                val xOffset = when {
+                    isLeftOffset -> -horizontalAmp
+                    isRightOffset -> horizontalAmp
                     else -> 0.dp
+                }
+
+                val labelOnLeft = when (stepType) {
+                    0 -> false
+                    1 -> false
+                    2 -> true
+                    3 -> true
+                    else -> false
                 }
 
                 SacredMilestoneItem(
                     chapter = chapter,
                     horizontalOffset = xOffset,
+                    labelWidth = sideLabelWidth,
+                    labelOnLeft = labelOnLeft,
                     onClick = { onOpenChapter(chapter.chapterNumber) },
                     modifier = Modifier.height(ITEM_TOTAL_HEIGHT)
                 )
@@ -98,6 +116,7 @@ fun SacredRoadStream(
 @Composable
 private fun SacredCurvedRiverCanvas(
     chapters: List<ChapterProgress>,
+    amplitude: Dp,
     modifier: Modifier = Modifier
 ) {
     val goldColor = FathomTheme.colors.accentGold
@@ -109,7 +128,7 @@ private fun SacredCurvedRiverCanvas(
         val topPaddingPx = 10.dp.toPx()
         val circleCenterPx = CIRCLE_CENTER_OFFSET.toPx()
         val stepY = ITEM_TOTAL_HEIGHT.toPx()
-        val ampPx = HORIZONTAL_AMP.toPx()
+        val ampPx = amplitude.toPx()
 
         if (chapters.size < 2) return@Canvas
 
@@ -168,7 +187,7 @@ private fun SacredCurvedRiverCanvas(
             color = subtleColor.copy(alpha = 0.45f),
             style = Stroke(
                 width = 2.dp.toPx(),
-                pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 10f), 0f),
+                pathEffect = PathEffect.dashPathEffect(floatArrayOf(8f, 8f), 0f),
                 cap = StrokeCap.Round
             )
         )
@@ -176,7 +195,7 @@ private fun SacredCurvedRiverCanvas(
         if (hasStartedCompleted) {
             drawPath(
                 path = completedPath,
-                color = goldColor.copy(alpha = 0.22f),
+                color = goldColor.copy(alpha = 0.2f),
                 style = Stroke(
                     width = 8.dp.toPx(),
                     cap = StrokeCap.Round
@@ -195,7 +214,7 @@ private fun SacredCurvedRiverCanvas(
                     endY = size.height
                 ),
                 style = Stroke(
-                    width = 3.dp.toPx(),
+                    width = 2.5.dp.toPx(),
                     cap = StrokeCap.Round
                 )
             )
@@ -207,36 +226,31 @@ private fun SacredCurvedRiverCanvas(
 fun SacredMilestoneItem(
     chapter: ChapterProgress,
     horizontalOffset: Dp,
+    labelWidth: Dp,
+    labelOnLeft: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val nodeSize = 58.dp
+    val nodeSize = 54.dp
 
-    Column(
+    Box(
         modifier = modifier
             .fillMaxWidth()
             .offset(x = horizontalOffset),
-        horizontalAlignment = Alignment.CenterHorizontally
+        contentAlignment = Alignment.TopCenter
     ) {
         Box(
-            modifier = Modifier.size(70.dp),
+            modifier = Modifier.size(60.dp),
             contentAlignment = Alignment.Center
         ) {
             if (chapter.isCurrent) {
                 Box(
                     modifier = Modifier
-                        .size(70.dp)
+                        .size(60.dp)
                         .clip(CircleShape)
-                        .background(FathomTheme.colors.accentGold.copy(alpha = 0.12f))
+                        .background(FathomTheme.colors.accentGold.copy(alpha = 0.14f))
                         .border(1.dp, FathomTheme.colors.accentGold.copy(alpha = 0.35f), CircleShape)
                 )
-            }
-
-            val nodeShape = when (chapter.nodeType) {
-                MilestoneNodeType.TEMPLE -> RoundedCornerShape(18.dp)
-                MilestoneNodeType.GATEWAY -> RoundedCornerShape(20.dp)
-                MilestoneNodeType.SANCTUARY -> RoundedCornerShape(22.dp)
-                MilestoneNodeType.DISCIPLE -> CircleShape
             }
 
             Box(
@@ -244,11 +258,11 @@ fun SacredMilestoneItem(
                     .size(nodeSize)
                     .shadow(
                         elevation = if (chapter.isCurrent || chapter.isCompleted) 8.dp else 0.dp,
-                        shape = nodeShape,
-                        ambientColor = if (chapter.isCurrent || chapter.isCompleted) FathomTheme.colors.accentGold.copy(alpha = 0.35f) else Color.Transparent,
+                        shape = CircleShape,
+                        ambientColor = if (chapter.isCurrent || chapter.isCompleted) FathomTheme.colors.accentGold.copy(alpha = 0.3f) else Color.Transparent,
                         spotColor = if (chapter.isCurrent || chapter.isCompleted) FathomTheme.colors.accentGold.copy(alpha = 0.45f) else Color.Transparent
                     )
-                    .clip(nodeShape)
+                    .clip(CircleShape)
                     .background(
                         when {
                             chapter.isCompleted -> Brush.verticalGradient(
@@ -272,13 +286,13 @@ fun SacredMilestoneItem(
                         }
                     )
                     .border(
-                        width = if (chapter.isCurrent) 1.5.dp else if (chapter.isCompleted) 1.5.dp else 1.dp,
+                        width = if (chapter.isCurrent || chapter.isCompleted) 1.5.dp else 1.dp,
                         color = when {
                             chapter.isCompleted -> FathomTheme.colors.accentGold
                             chapter.isCurrent -> FathomTheme.colors.accentGold
                             else -> FathomTheme.colors.borderSubtle
                         },
-                        shape = nodeShape
+                        shape = CircleShape
                     )
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
@@ -296,9 +310,9 @@ fun SacredMilestoneItem(
                                 MilestoneNodeType.SANCTUARY -> PhosphorIcons.Regular.Star
                                 MilestoneNodeType.DISCIPLE -> PhosphorIcons.Regular.Check
                             },
-                            contentDescription = "Completed Chapter",
+                            contentDescription = "Completed",
                             tint = Color.Black,
-                            modifier = Modifier.size(22.dp)
+                            modifier = Modifier.size(19.dp)
                         )
                     }
 
@@ -312,7 +326,7 @@ fun SacredMilestoneItem(
                             },
                             contentDescription = "Active Chapter",
                             tint = FathomTheme.colors.accentGold,
-                            modifier = Modifier.size(21.dp)
+                            modifier = Modifier.size(19.dp)
                         )
                     }
 
@@ -321,87 +335,64 @@ fun SacredMilestoneItem(
                             text = "${chapter.chapterNumber}",
                             fontFamily = JakartaFontFamily,
                             fontWeight = FontWeight.Bold,
-                            fontSize = 15.sp,
-                            color = FathomTheme.colors.textSecondary
+                            fontSize = 13.5.sp,
+                            color = FathomTheme.colors.textTertiary
                         )
                     }
                 }
             }
         }
 
-        Spacer(modifier = Modifier.height(4.dp))
-
         Box(
             modifier = Modifier
-                .clip(RoundedCornerShape(18.dp))
-                .background(
-                    Brush.verticalGradient(
-                        listOf(
-                            FathomTheme.colors.surfaceElevated,
-                            FathomTheme.colors.surface
-                        )
-                    )
-                )
-                .border(
-                    width = 1.dp,
-                    color = if (chapter.isCurrent) FathomTheme.colors.accentGold.copy(alpha = 0.55f) else FathomTheme.colors.borderSubtle,
-                    shape = RoundedCornerShape(18.dp)
+                .width(labelWidth)
+                .offset(
+                    x = if (labelOnLeft) -(labelWidth / 2 + 38.dp) else (labelWidth / 2 + 38.dp),
+                    y = 8.dp
                 )
                 .clickable(
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null,
                     onClick = onClick
                 )
-                .padding(horizontal = 14.dp, vertical = 8.dp)
         ) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    if (chapter.nodeType == MilestoneNodeType.TEMPLE) {
-                        Icon(
-                            imageVector = PhosphorIcons.Regular.Crown,
-                            contentDescription = null,
-                            tint = FathomTheme.colors.accentGold,
-                            modifier = Modifier.size(12.dp)
-                        )
-                    } else if (chapter.nodeType == MilestoneNodeType.GATEWAY) {
-                        Icon(
-                            imageVector = PhosphorIcons.Regular.Flame,
-                            contentDescription = null,
-                            tint = FathomTheme.colors.accentGold,
-                            modifier = Modifier.size(12.dp)
-                        )
-                    }
-                    Text(
-                        text = chapter.title,
-                        fontFamily = JakartaFontFamily,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 12.5.sp,
-                        color = if (chapter.isCurrent) FathomTheme.colors.accentGold else FathomTheme.colors.textPrimary,
-                        textAlign = TextAlign.Center
-                    )
-                }
+            Column(
+                horizontalAlignment = if (labelOnLeft) Alignment.End else Alignment.Start,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    text = chapter.title,
+                    fontFamily = JakartaFontFamily,
+                    fontWeight = if (chapter.isCurrent) FontWeight.Bold else FontWeight.SemiBold,
+                    fontSize = 12.5.sp,
+                    color = if (chapter.isCurrent) FathomTheme.colors.accentGold else if (chapter.isCompleted) FathomTheme.colors.textPrimary else FathomTheme.colors.textSecondary,
+                    textAlign = if (labelOnLeft) TextAlign.End else TextAlign.Start,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
 
                 if (chapter.subtitle.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(1.dp))
                     Text(
                         text = chapter.subtitle,
                         fontFamily = JakartaFontFamily,
                         fontSize = 10.5.sp,
-                        color = FathomTheme.colors.textSecondary,
-                        textAlign = TextAlign.Center
+                        color = FathomTheme.colors.textTertiary,
+                        textAlign = if (labelOnLeft) TextAlign.End else TextAlign.Start,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                 }
 
-                Spacer(modifier = Modifier.height(3.dp))
+                Spacer(modifier = Modifier.height(2.dp))
 
                 Text(
                     text = "${chapter.totalVerses} Verses" + if (chapter.completedVerses > 0) " • ${chapter.completedVerses} read" else "",
                     fontFamily = JakartaFontFamily,
                     fontWeight = FontWeight.Medium,
-                    fontSize = 10.sp,
-                    color = if (chapter.isCompleted) FathomTheme.colors.accentGold else FathomTheme.colors.textTertiary
+                    fontSize = 9.5.sp,
+                    color = if (chapter.isCompleted) FathomTheme.colors.accentGold.copy(alpha = 0.85f) else FathomTheme.colors.textTertiary.copy(alpha = 0.7f),
+                    textAlign = if (labelOnLeft) TextAlign.End else TextAlign.Start
                 )
             }
         }
