@@ -64,7 +64,7 @@ import com.masum.fathom.ui.design.BreathingMark
 import com.masum.fathom.ui.design.QuietMessage
 import com.masum.fathom.ui.design.ScreenHeader
 import com.masum.fathom.ui.design.StateFrame
-import com.masum.fathom.ui.design.DepthGauge
+import com.masum.fathom.ui.design.JogPill
 import com.masum.fathom.ui.design.Equalizer
 import com.masum.fathom.ui.design.FathomButton
 import com.masum.fathom.ui.design.GlassIconButton
@@ -250,14 +250,8 @@ private fun FeedContent(
                 modifier = Modifier.align(Alignment.TopCenter).padding(start = shell.startInset)
             )
 
-            DepthGauge(
-                position = { pagerState.currentPage + pagerState.currentPageOffsetFraction },
-                count = state.passages.size,
+            JogPill(
                 hue = tone.hue,
-                onScrub = { target ->
-                    scrubJob?.cancel()
-                    scrubJob = scope.launch { pagerState.scrollToPage(target) }
-                },
                 onStep = { delta ->
                     val target = (pagerState.currentPage + delta).coerceIn(0, state.passages.lastIndex)
                     scrubJob?.cancel()
@@ -268,7 +262,7 @@ private fun FeedContent(
                     showGaugeHint = false
                     hints.edit().putBoolean("gauge_hint_seen", true).apply()
                 },
-                modifier = Modifier.align(Alignment.CenterEnd).padding(end = 2.dp, bottom = 40.dp)
+                modifier = Modifier.align(Alignment.CenterEnd).padding(end = 10.dp, bottom = 40.dp)
             )
 
             if (currentPassage != null) {
