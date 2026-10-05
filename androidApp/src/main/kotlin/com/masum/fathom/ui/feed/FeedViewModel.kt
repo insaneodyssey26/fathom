@@ -78,18 +78,20 @@ class FeedViewModel(
 
             when (val result = feedRepository.getFeedBatch(currentConfig, batchSize = 10)) {
                 is FathomResult.Success -> {
-                    if (result.data.isEmpty()) {
+                    val pinned = pinnedPassage
+                    val initial = if (pinned != null) listOf(pinned) + result.data.filter { it.id != pinned.id } else result.data
+                    if (initial.isEmpty()) {
                         _uiState.value = FeedUiState.Empty
                     } else {
                         _uiState.value = FeedUiState.Success(
-                            passages = result.data,
+                            passages = initial,
                             currentIndex = 0,
                             availableBooks = availableBooks,
                             selectedBookId = currentConfig.selectedBookId,
                             activeMode = currentConfig.mode,
                             selectedTraditions = currentConfig.selectedTraditions
                         )
-                        recordCurrentReading(result.data.first())
+                        recordCurrentReading(initial.first())
                     }
                 }
                 is FathomResult.Failure -> {
@@ -290,11 +292,14 @@ class FeedViewModel(
         }
     }
 
+    private var pinnedPassage: Passage? = null
+
     fun loadSpecificPassage(passageId: String) {
         viewModelScope.launch {
             when (val result = passageRepository.getPassage(passageId)) {
                 is FathomResult.Success -> {
                     val targetPassage = result.data
+                    pinnedPassage = targetPassage
                     _uiState.update { state ->
                         if (state is FeedUiState.Success) {
                             val existingIndex = state.passages.indexOfFirst { it.id == passageId }

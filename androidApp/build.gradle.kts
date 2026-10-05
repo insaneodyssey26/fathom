@@ -28,6 +28,7 @@ dependencies {
     implementation(libs.backdrop)
     implementation(libs.androidx.navigation3.runtime)
     implementation(libs.androidx.navigation3.ui)
+    implementation(libs.androidx.work.runtime)
     implementation(libs.androidx.graphics.shapes)
 
     implementation(libs.compose.uiToolingPreview)

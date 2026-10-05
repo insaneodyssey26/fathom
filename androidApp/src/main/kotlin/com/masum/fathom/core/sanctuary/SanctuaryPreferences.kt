@@ -7,6 +7,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
+enum class VerseSource { ALL_TRADITIONS, MY_TRADITION }
+
 enum class ByokProvider(val displayName: String) {
     NONE("Offline System TTS (Free)"),
     ELEVENLABS("ElevenLabs Neural API"),
@@ -22,6 +24,9 @@ data class SanctuarySettings(
     val dailyNotificationEnabled: Boolean = false,
     val notificationHour: Int = 7,
     val notificationMinute: Int = 0,
+    val verseSource: VerseSource = VerseSource.ALL_TRADITIONS,
+    val showVerseOnLockScreen: Boolean = false,
+    val updateAlertsEnabled: Boolean = true,
     val byokProvider: ByokProvider = ByokProvider.NONE,
     val byokApiKey: String = "",
     val byokVoiceId: String = "",
@@ -57,6 +62,11 @@ class SanctuaryPreferences(context: Context) {
         val hour = prefs.getInt("notification_hour", 7)
         val minute = prefs.getInt("notification_minute", 0)
 
+        val sourceName = prefs.getString("notification_verse_source", VerseSource.ALL_TRADITIONS.name) ?: VerseSource.ALL_TRADITIONS.name
+        val verseSource = runCatching { VerseSource.valueOf(sourceName) }.getOrDefault(VerseSource.ALL_TRADITIONS)
+        val lockScreen = prefs.getBoolean("notification_lock_screen", false)
+        val updateAlerts = prefs.getBoolean("update_alerts_enabled", true)
+
         val providerName = prefs.getString("byok_provider", ByokProvider.NONE.name) ?: ByokProvider.NONE.name
         val provider = try {
             ByokProvider.valueOf(providerName)
@@ -77,6 +87,9 @@ class SanctuaryPreferences(context: Context) {
             dailyNotificationEnabled = notifEnabled,
             notificationHour = hour,
             notificationMinute = minute,
+            verseSource = verseSource,
+            showVerseOnLockScreen = lockScreen,
+            updateAlertsEnabled = updateAlerts,
             byokProvider = provider,
             byokApiKey = apiKey,
             byokVoiceId = voiceId,
@@ -131,6 +144,21 @@ class SanctuaryPreferences(context: Context) {
             notificationHour = hour,
             notificationMinute = minute
         )
+    }
+
+    fun updateVerseSource(source: VerseSource) {
+        prefs.edit().putString("notification_verse_source", source.name).apply()
+        _settings.value = _settings.value.copy(verseSource = source)
+    }
+
+    fun updateLockScreenVerse(show: Boolean) {
+        prefs.edit().putBoolean("notification_lock_screen", show).apply()
+        _settings.value = _settings.value.copy(showVerseOnLockScreen = show)
+    }
+
+    fun updateUpdateAlerts(enabled: Boolean) {
+        prefs.edit().putBoolean("update_alerts_enabled", enabled).apply()
+        _settings.value = _settings.value.copy(updateAlertsEnabled = enabled)
     }
 
     fun updateByokSettings(provider: ByokProvider, apiKey: String, voiceId: String) {

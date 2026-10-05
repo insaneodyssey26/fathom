@@ -11,6 +11,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import com.masum.fathom.core.AppGraph
+import com.masum.fathom.core.notification.NotificationChannels
 import com.masum.fathom.core.widget.DailyWisdomWidgetProvider
 import com.masum.fathom.ui.shell.FathomApp
 
@@ -28,6 +29,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        NotificationChannels.register(applicationContext)
         launchPassageId = intent?.getStringExtra(DailyWisdomWidgetProvider.EXTRA_PASSAGE_ID)
 
         setContent {
