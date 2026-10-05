@@ -69,6 +69,7 @@ fun BookReader(
     chapterPassagesMap: Map<Int, List<Passage>>,
     isLoading: Boolean,
     bookmarkedIds: Set<String>,
+    onBack: () -> Unit,
     onEvent: (SearchUiEvent) -> Unit
 ) {
     val haptics = LocalFathomHaptics.current
@@ -164,7 +165,7 @@ fun BookReader(
                             contentDescription = "Back to scriptures",
                             onClick = {
                                 haptics.light()
-                                onEvent(SearchUiEvent.OnSelectBook(null))
+                                onBack()
                             }
                         )
                         Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {

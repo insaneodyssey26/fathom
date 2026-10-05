@@ -2,13 +2,13 @@ package com.masum.fathom.ui.shell
 
 import android.content.pm.PackageManager
 import android.os.Build
-import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutHorizontally
@@ -86,7 +86,22 @@ import com.masum.fathom.ui.onboarding.OnboardingScreen
 import com.masum.fathom.ui.pathways.PathwaysScreen
 import com.masum.fathom.ui.pathways.PathwaysUiState
 import com.masum.fathom.ui.pathways.PathwaysViewModel
-import com.masum.fathom.ui.sanctuary.SanctuaryModal
+import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.ContentTransform
+import androidx.navigation3.runtime.entryProvider
+import androidx.navigation3.scene.Scene
+import androidx.navigation3.ui.NavDisplay
+import com.masum.fathom.ui.design.BreathingMark
+import com.masum.fathom.ui.design.StateFrame
+import com.masum.fathom.ui.library.JournalPage
+import com.masum.fathom.ui.library.LibraryOverlays
+import com.masum.fathom.ui.pathways.PathwaysOverlays
+import com.masum.fathom.ui.pathways.PathwaysUiEvent
+import com.masum.fathom.ui.pathways.PathwaysChapterScreen
+import com.masum.fathom.ui.search.SearchBookScreen
+import com.masum.fathom.ui.search.SearchOverlays
+import com.masum.fathom.ui.search.SearchUiEvent
+import com.masum.fathom.ui.sanctuary.SanctuaryScreen
 import com.masum.fathom.ui.search.SearchScreen
 import com.masum.fathom.ui.search.SearchViewModel
 import com.masum.fathom.ui.splash.SplashScreen
@@ -159,11 +174,10 @@ fun FathomApp(graph: AppGraph, launchPassageId: String?) {
 
     val versionCode = remember(context) { currentVersionCode(context) }
 
-    var showSanctuary by remember { mutableStateOf(false) }
     var showPaywall by remember { mutableStateOf(false) }
     var showWhatsNew by remember { mutableStateOf(false) }
     var showAmbience by remember { mutableStateOf(false) }
-    var selectedNav by remember { mutableStateOf(NavigationItem.FEED) }
+    val navigator = rememberAppNavigator()
     var splashDone by remember { mutableStateOf(false) }
 
     LaunchedEffect(settings.hasCompletedOnboarding, versionCode) {
@@ -172,7 +186,7 @@ fun FathomApp(graph: AppGraph, launchPassageId: String?) {
 
     LaunchedEffect(launchPassageId) {
         if (!launchPassageId.isNullOrEmpty()) {
-            selectedNav = NavigationItem.FEED
+            navigator.resetToFeed()
             feedViewModel.loadSpecificPassage(launchPassageId)
         }
     }
@@ -183,8 +197,6 @@ fun FathomApp(graph: AppGraph, launchPassageId: String?) {
         }
     }
 
-    if (selectedNav != NavigationItem.FEED) BackHandler { selectedNav = NavigationItem.FEED }
-
     CompositionLocalProvider(
         LocalFathomHaptics provides haptics,
         LocalSacredAudioEngine provides audioEngine,
@@ -192,7 +204,7 @@ fun FathomApp(graph: AppGraph, launchPassageId: String?) {
         LocalOpenAmbience provides { showAmbience = true },
         LocalSanctuaryPreferences provides preferences,
         LocalSanctuaryDataEngine provides dataEngine,
-        LocalOpenSanctuary provides { showSanctuary = true },
+        LocalOpenSanctuary provides { navigator.push(AppRoute.Settings) },
         LocalSubscriptionManager provides subscriptionManager,
         LocalSubscriptionState provides subscriptionState,
         LocalOpenPaywall provides { showPaywall = true },
@@ -223,8 +235,7 @@ fun FathomApp(graph: AppGraph, launchPassageId: String?) {
                         }
                     )
                     AppStage.Main -> MainStage(
-                        selectedNav = selectedNav,
-                        onNavSelected = { selectedNav = it },
+                        navigator = navigator,
                         feedState = feedState,
                         onFeedEvent = feedViewModel::onEvent,
                         pathwaysState = pathwaysState,
@@ -234,8 +245,6 @@ fun FathomApp(graph: AppGraph, launchPassageId: String?) {
                         libraryState = libraryState,
                         onLibraryEvent = libraryViewModel::onEvent,
                         updateEngine = updateEngine,
-                        showSanctuary = showSanctuary,
-                        onDismissSanctuary = { showSanctuary = false },
                         showPaywall = showPaywall,
                         onDismissPaywall = { showPaywall = false },
                         showWhatsNew = showWhatsNew,
@@ -243,6 +252,7 @@ fun FathomApp(graph: AppGraph, launchPassageId: String?) {
                             preferences.markWhatsNewSeen(versionCode)
                             showWhatsNew = false
                         },
+                        onOpenWhatsNew = { showWhatsNew = true },
                         showAmbience = showAmbience,
                         onOpenAmbience = { showAmbience = true },
                         onDismissAmbience = { showAmbience = false },
@@ -258,8 +268,7 @@ fun FathomApp(graph: AppGraph, launchPassageId: String?) {
 @OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
 private fun MainStage(
-    selectedNav: NavigationItem,
-    onNavSelected: (NavigationItem) -> Unit,
+    navigator: AppNavigator,
     feedState: com.masum.fathom.ui.feed.FeedUiState,
     onFeedEvent: (com.masum.fathom.ui.feed.FeedUiEvent) -> Unit,
     pathwaysState: PathwaysUiState,
@@ -269,8 +278,7 @@ private fun MainStage(
     libraryState: com.masum.fathom.ui.library.LibraryUiState,
     onLibraryEvent: (com.masum.fathom.ui.library.LibraryUiEvent) -> Unit,
     updateEngine: AppUpdateEngine,
-    showSanctuary: Boolean,
-    onDismissSanctuary: () -> Unit,
+    onOpenWhatsNew: () -> Unit,
     showPaywall: Boolean,
     onDismissPaywall: () -> Unit,
     showWhatsNew: Boolean,
@@ -306,29 +314,107 @@ private fun MainStage(
         )
 
         val imeVisible = WindowInsets.isImeVisible
-        val isStudyingChapter = selectedNav == NavigationItem.PATHWAYS &&
-            (pathwaysState as? PathwaysUiState.Success)?.activeChapterForReading != null
+        val topRoute = navigator.top
+        val isStudyingChapter = topRoute is AppRoute.Chapter || topRoute == AppRoute.Settings
+        val selectedNav = navigator.currentTab
+        val onNavSelected: (NavigationItem) -> Unit = navigator::selectTab
+
+        val desiredChapter = (navigator.stack.firstOrNull { it is AppRoute.Chapter } as? AppRoute.Chapter)?.number
+        val activeChapter = (pathwaysState as? PathwaysUiState.Success)?.activeChapterForReading
+        val pathwaysReady = pathwaysState is PathwaysUiState.Success
+        LaunchedEffect(desiredChapter, activeChapter, pathwaysReady) {
+            if (!pathwaysReady) return@LaunchedEffect
+            if (desiredChapter != null && activeChapter != desiredChapter) {
+                onPathwaysEvent(PathwaysUiEvent.OnOpenChapter(desiredChapter))
+            } else if (desiredChapter == null && activeChapter != null) {
+                onPathwaysEvent(PathwaysUiEvent.OnCloseChapter)
+            }
+        }
+
+        val desiredBook = (navigator.stack.firstOrNull { it is AppRoute.Book } as? AppRoute.Book)?.id
+        val activeBook = searchState.selectedBook
+        LaunchedEffect(desiredBook, activeBook?.id, searchState.allBooks.size) {
+            if (desiredBook != null && activeBook?.id != desiredBook) {
+                searchState.allBooks.firstOrNull { it.id == desiredBook }?.let { onSearchEvent(SearchUiEvent.OnSelectBook(it)) }
+            } else if (desiredBook == null && activeBook != null) {
+                onSearchEvent(SearchUiEvent.OnSelectBook(null))
+            }
+        }
+        val lastBook = remember { mutableStateOf<com.masum.fathom.core.model.Book?>(null) }
+        if (activeBook != null) lastBook.value = activeBook
 
         CompositionLocalProvider(LocalBackdrop provides backdrop, LocalShell provides metrics, LocalNavTradition provides navTradition) {
             Box(modifier = Modifier.fillMaxSize().layerBackdrop(backdrop)) {
                 CompositionLocalProvider(LocalBackdrop provides null) {
-                AnimatedContent(
-                    targetState = selectedNav,
-                    transitionSpec = {
-                        val dir = if (targetState.ordinal >= initialState.ordinal) 1 else -1
-                        (fadeIn(tween(320, 60)) + slideInHorizontally(tween(420, 0, FathomMotion.Emphasized)) { dir * it / 14 })
-                            .togetherWith(fadeOut(tween(180)) + slideOutHorizontally(tween(320, 0, FathomMotion.Emphasized)) { -dir * it / 18 })
-                    },
-                    label = "screen_nav",
-                    modifier = Modifier.fillMaxSize()
-                ) { target ->
-                    when (target) {
-                        NavigationItem.FEED -> FeedScreen(state = feedState, onEvent = onFeedEvent)
-                        NavigationItem.PATHWAYS -> PathwaysScreen(state = pathwaysState, onEvent = onPathwaysEvent)
-                        NavigationItem.SEARCH -> SearchScreen(state = searchState, onEvent = onSearchEvent)
-                        NavigationItem.LIBRARY -> LibraryScreen(state = libraryState, onEvent = onLibraryEvent)
-                    }
-                }
+                    NavDisplay(
+                        backStack = navigator.stack,
+                        modifier = Modifier.fillMaxSize(),
+                        onBack = navigator::pop,
+                        transitionSpec = { routeTransition(forward = true) },
+                        popTransitionSpec = { routeTransition(forward = false) },
+                        predictivePopTransitionSpec = { _ ->
+                            (scaleIn(tween(300, easing = FathomMotion.Emphasized), initialScale = 0.94f))
+                                .togetherWith(fadeOut(tween(260, delayMillis = 180)) + scaleOut(tween(300, easing = FathomMotion.Emphasized), targetScale = 0.9f))
+                        },
+                        entryProvider = entryProvider {
+                            entry<AppRoute.Tab> { route ->
+                                when (route.item) {
+                                    NavigationItem.FEED -> FeedScreen(state = feedState, onEvent = onFeedEvent)
+                                    NavigationItem.PATHWAYS -> PathwaysScreen(
+                                        state = pathwaysState,
+                                        onEvent = onPathwaysEvent,
+                                        onOpenChapter = { navigator.push(AppRoute.Chapter(it)) }
+                                    )
+                                    NavigationItem.SEARCH -> SearchScreen(
+                                        state = searchState,
+                                        onEvent = onSearchEvent,
+                                        onOpenBook = { navigator.push(AppRoute.Book(it.id)) }
+                                    )
+                                    NavigationItem.LIBRARY -> LibraryScreen(
+                                        state = libraryState,
+                                        onEvent = onLibraryEvent,
+                                        page = JournalPage.Hub,
+                                        onNavigate = { navigator.push(AppRoute.Journal(it)) },
+                                        onBack = navigator::pop,
+                                        onOpenWhatsNew = onOpenWhatsNew
+                                    )
+                                }
+                            }
+                            entry<AppRoute.Chapter> { route ->
+                                PathwaysChapterScreen(
+                                    state = pathwaysState,
+                                    chapterNumber = route.number,
+                                    onEvent = onPathwaysEvent,
+                                    onComplete = {
+                                        navigator.pop()
+                                        onPathwaysEvent(PathwaysUiEvent.OnCompleteChapter(route.number))
+                                    },
+                                    onBack = navigator::pop
+                                )
+                            }
+                            entry<AppRoute.Book> { route ->
+                                val book = lastBook.value?.takeIf { it.id == route.id } ?: searchState.allBooks.firstOrNull { it.id == route.id }
+                                if (book != null) {
+                                    SearchBookScreen(state = searchState, book = book, onEvent = onSearchEvent, onBack = navigator::pop)
+                                } else {
+                                    StateFrame { BreathingMark() }
+                                }
+                            }
+                            entry<AppRoute.Journal> { route ->
+                                LibraryScreen(
+                                    state = libraryState,
+                                    onEvent = onLibraryEvent,
+                                    page = route.page,
+                                    onNavigate = { navigator.push(AppRoute.Journal(it)) },
+                                    onBack = navigator::pop,
+                                    onOpenWhatsNew = onOpenWhatsNew
+                                )
+                            }
+                            entry<AppRoute.Settings> {
+                                SanctuaryScreen(preferences = preferences, dataEngine = dataEngine, onDismiss = navigator::pop)
+                            }
+                        }
+                    )
                 }
             }
 
@@ -379,11 +465,38 @@ private fun MainStage(
 
             AppUpdateBanner(updateEngine = updateEngine, modifier = Modifier.align(Alignment.TopCenter))
 
-            if (showSanctuary) SanctuaryModal(preferences = preferences, dataEngine = dataEngine, onDismiss = onDismissSanctuary)
+            PathwaysOverlays(state = pathwaysState, onEvent = onPathwaysEvent)
+            SearchOverlays(state = searchState, onEvent = onSearchEvent)
+            LibraryOverlays(state = libraryState, onEvent = onLibraryEvent)
             if (showPaywall) SanctuaryPaywallSheet(onDismiss = onDismissPaywall)
             if (showWhatsNew) WhatsNewModal(onDismiss = onDismissWhatsNew)
             if (showAmbience) AmbienceSoundscapeSheet(onDismiss = onDismissAmbience)
         }
+    }
+}
+
+private fun AnimatedContentTransitionScope<Scene<AppRoute>>.routeTransition(forward: Boolean): ContentTransform {
+    val from = initialState.entries.lastOrNull()?.contentKey as? AppRoute
+    val to = targetState.entries.lastOrNull()?.contentKey as? AppRoute
+    val sign = if (forward) 1 else -1
+    return when {
+        from is AppRoute.Tab && to is AppRoute.Tab -> {
+            val dir = if (to.item.ordinal >= from.item.ordinal) 1 else -1
+            (fadeIn(tween(320, 60)) + slideInHorizontally(tween(420, 0, FathomMotion.Emphasized)) { dir * it / 14 })
+                .togetherWith(fadeOut(tween(180)) + slideOutHorizontally(tween(320, 0, FathomMotion.Emphasized)) { -dir * it / 18 })
+        }
+        to == AppRoute.Settings || from == AppRoute.Settings -> {
+            if (forward) {
+                (fadeIn(tween(300, 40)) + slideInVertically(tween(460, 0, FathomMotion.Emphasized)) { it / 10 })
+                    .togetherWith(fadeOut(tween(220)))
+            } else {
+                fadeIn(tween(260)).togetherWith(fadeOut(tween(200)) + slideOutVertically(tween(360, 0, FathomMotion.Emphasized)) { it / 10 })
+            }
+        }
+        forward -> (fadeIn(tween(320, 60)) + slideInHorizontally(tween(460, 0, FathomMotion.Emphasized)) { it / 5 })
+            .togetherWith(fadeOut(tween(200)) + slideOutHorizontally(tween(360, 0, FathomMotion.Emphasized)) { -it / 8 })
+        else -> (fadeIn(tween(320, 60)) + slideInHorizontally(tween(460, 0, FathomMotion.Emphasized)) { -it / 8 })
+            .togetherWith(fadeOut(tween(200)) + slideOutHorizontally(tween(360, 0, FathomMotion.Emphasized)) { it / 5 })
     }
 }
 

@@ -63,60 +63,59 @@ import com.masum.fathom.ui.theme.rememberTone
 fun SearchScreen(
     state: SearchUiState,
     onEvent: (SearchUiEvent) -> Unit,
+    onOpenBook: (com.masum.fathom.core.model.Book) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val directoryListState = rememberLazyListState()
     val searchListState = rememberLazyListState()
 
     when {
-        state.selectedPassageForShare != null -> BackHandler { onEvent(SearchUiEvent.OnCloseShare) }
-        state.selectedPassageForContext != null -> BackHandler { onEvent(SearchUiEvent.OnCloseContext) }
-        state.selectedBook != null -> BackHandler { onEvent(SearchUiEvent.OnSelectBook(null)) }
         state.selectedTopic != null -> BackHandler { onEvent(SearchUiEvent.OnSelectTopic(null)) }
         state.searchQuery.isNotEmpty() -> BackHandler { onEvent(SearchUiEvent.OnQueryChange("")) }
     }
 
     Box(modifier = modifier.fillMaxSize()) {
-        AnimatedContent(
-            targetState = state.selectedBook,
-            transitionSpec = {
-                if (targetState != null) {
-                    (slideInHorizontally(tween(460, 0, FathomMotion.Emphasized)) { it / 5 } + fadeIn(tween(320, 80)))
-                        .togetherWith(slideOutHorizontally(tween(360, 0, FathomMotion.Emphasized)) { -it / 8 } + fadeOut(tween(200)))
-                } else {
-                    (slideInHorizontally(tween(460, 0, FathomMotion.Emphasized)) { -it / 8 } + fadeIn(tween(320, 80)))
-                        .togetherWith(slideOutHorizontally(tween(360, 0, FathomMotion.Emphasized)) { it / 5 } + fadeOut(tween(200)))
-                }
-            },
-            label = "explore_transition",
-            modifier = Modifier.fillMaxSize()
-        ) { book ->
-            if (book != null) {
-                BookReader(
-                    book = book,
-                    chapters = state.availableChapters,
-                    selectedChapter = state.selectedChapter,
-                    chapterPassagesMap = state.chapterPassagesMap,
-                    isLoading = state.isLoadingChapter,
-                    bookmarkedIds = state.bookmarkedPassageIds,
-                    onEvent = onEvent
-                )
-            } else {
-                ExploreRoot(
-                    state = state,
-                    directoryListState = directoryListState,
-                    searchListState = searchListState,
-                    onEvent = onEvent
-                )
-            }
-        }
+        ExploreRoot(
+            state = state,
+            directoryListState = directoryListState,
+            searchListState = searchListState,
+            onOpenBook = onOpenBook,
+            onEvent = onEvent
+        )
+    }
+}
 
-        state.selectedPassageForContext?.let {
-            PassageContextSheet(passage = it, onDismiss = { onEvent(SearchUiEvent.OnCloseContext) })
-        }
-        state.selectedPassageForShare?.let {
-            QuoteCardModal(passage = it, onDismiss = { onEvent(SearchUiEvent.OnCloseShare) })
-        }
+@Composable
+fun SearchBookScreen(
+    state: SearchUiState,
+    book: com.masum.fathom.core.model.Book,
+    onEvent: (SearchUiEvent) -> Unit,
+    onBack: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Box(modifier = modifier.fillMaxSize()) {
+        BookReader(
+            book = book,
+            chapters = state.availableChapters,
+            selectedChapter = state.selectedChapter,
+            chapterPassagesMap = state.chapterPassagesMap,
+            isLoading = state.isLoadingChapter,
+            bookmarkedIds = state.bookmarkedPassageIds,
+            onBack = onBack,
+            onEvent = onEvent
+        )
+    }
+}
+
+@Composable
+fun SearchOverlays(state: SearchUiState, onEvent: (SearchUiEvent) -> Unit) {
+    if (state.selectedPassageForShare != null) BackHandler { onEvent(SearchUiEvent.OnCloseShare) }
+    else if (state.selectedPassageForContext != null) BackHandler { onEvent(SearchUiEvent.OnCloseContext) }
+    state.selectedPassageForContext?.let {
+        PassageContextSheet(passage = it, onDismiss = { onEvent(SearchUiEvent.OnCloseContext) })
+    }
+    state.selectedPassageForShare?.let {
+        QuoteCardModal(passage = it, onDismiss = { onEvent(SearchUiEvent.OnCloseShare) })
     }
 }
 
@@ -125,6 +124,7 @@ private fun ExploreRoot(
     state: SearchUiState,
     directoryListState: LazyListState,
     searchListState: LazyListState,
+    onOpenBook: (com.masum.fathom.core.model.Book) -> Unit,
     onEvent: (SearchUiEvent) -> Unit
 ) {
     val haptics = LocalFathomHaptics.current
@@ -169,7 +169,7 @@ private fun ExploreRoot(
                             when {
                                 searching -> resultsItems(state, onEvent)
                                 inTopic -> topicItems(state, state.selectedTopic!!, onEvent)
-                                else -> directoryItems(state, shell.widthClass != WidthClass.Compact, onEvent)
+                                else -> directoryItems(state, shell.widthClass != WidthClass.Compact, onOpenBook, onEvent)
                             }
                         }
                     }
@@ -213,6 +213,7 @@ private fun ExploreRoot(
 private fun androidx.compose.foundation.lazy.LazyListScope.directoryItems(
     state: SearchUiState,
     wide: Boolean,
+    onOpenBook: (com.masum.fathom.core.model.Book) -> Unit,
     onEvent: (SearchUiEvent) -> Unit
 ) {
     item(key = "topics_heading") {
@@ -231,7 +232,7 @@ private fun androidx.compose.foundation.lazy.LazyListScope.directoryItems(
         )
     }
     items(books, key = { it.id }) { book ->
-        BookRow(book = book, onClick = { onEvent(SearchUiEvent.OnSelectBook(book)) })
+        BookRow(book = book, onClick = { onOpenBook(book) })
     }
 }
 

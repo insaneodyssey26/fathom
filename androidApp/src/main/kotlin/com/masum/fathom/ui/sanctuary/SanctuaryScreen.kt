@@ -65,8 +65,6 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
 import com.adamglin.PhosphorIcons
 import com.adamglin.phosphoricons.Light
 import com.adamglin.phosphoricons.light.ArrowRight
@@ -107,7 +105,7 @@ import kotlinx.coroutines.launch
 import java.util.Locale
 
 @Composable
-fun SanctuaryModal(
+fun SanctuaryScreen(
     preferences: SanctuaryPreferences,
     dataEngine: SanctuaryDataEngine,
     onDismiss: () -> Unit
@@ -145,10 +143,7 @@ fun SanctuaryModal(
     val versionName = version?.versionName.orEmpty()
     val buildNumber = if (version != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) version.longVersionCode else 0L
 
-    Dialog(
-        onDismissRequest = onDismiss,
-        properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)
-    ) {
+    Box(Modifier.fillMaxSize()) {
         CompositionLocalProvider(LocalBackdrop provides null) {
             Atmosphere(tone = tone, modifier = Modifier.fillMaxSize()) {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {

@@ -235,11 +235,11 @@ private fun StudyContent(
                 Row(
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
-                        .fillMaxWidth()
                         .navigationBarsPadding()
                         .padding(horizontal = 20.dp)
                         .padding(bottom = 16.dp)
-                        .widthIn(max = 640.dp),
+                        .widthIn(max = 640.dp)
+                        .fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {

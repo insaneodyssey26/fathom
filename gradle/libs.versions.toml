@@ -17,6 +17,7 @@ kotlinx-coroutines = "1.10.1"
 material3 = "1.12.0-alpha03"
 sqldelight = "2.0.2"
 backdrop = "2.0.1"
+navigation3 = "1.2.0"
 graphics-shapes = "1.1.0"
 
 [libraries]
@@ -50,6 +51,8 @@ compose-uiToolingPreview = { module = "org.jetbrains.compose.ui:ui-tooling-previ
 play-app-update = { module = "com.google.android.play:app-update-ktx", version = "2.1.0" }
 backdrop = { module = "io.github.kyant0:backdrop", version.ref = "backdrop" }
 androidx-graphics-shapes = { module = "androidx.graphics:graphics-shapes", version.ref = "graphics-shapes" }
+androidx-navigation3-runtime = { module = "androidx.navigation3:navigation3-runtime", version.ref = "navigation3" }
+androidx-navigation3-ui = { module = "androidx.navigation3:navigation3-ui", version.ref = "navigation3" }
 androidx-profileinstaller = { module = "androidx.profileinstaller:profileinstaller", version = "1.4.1" }
 
 [plugins]

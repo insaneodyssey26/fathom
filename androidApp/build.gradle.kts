@@ -26,6 +26,8 @@ dependencies {
     implementation(libs.play.app.update)
     implementation(libs.androidx.profileinstaller)
     implementation(libs.backdrop)
+    implementation(libs.androidx.navigation3.runtime)
+    implementation(libs.androidx.navigation3.ui)
     implementation(libs.androidx.graphics.shapes)
 
     implementation(libs.compose.uiToolingPreview)
