@@ -19,6 +19,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -72,29 +74,33 @@ sealed interface JournalPage {
 fun LibraryScreen(
     state: LibraryUiState,
     onEvent: (LibraryUiEvent) -> Unit,
+    page: JournalPage,
+    onNavigate: (JournalPage) -> Unit,
+    onBack: () -> Unit,
+    onOpenWhatsNew: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     when (state) {
         is LibraryUiState.Loading -> StateFrame(modifier) { BreathingMark() }
         is LibraryUiState.Error -> StateFrame(modifier) { QuietMessage(title = "Something went quiet", body = state.message) }
-        is LibraryUiState.Success -> JournalRoot(state = state, onEvent = onEvent, modifier = modifier)
+        is LibraryUiState.Success -> JournalPageScreen(state = state, onEvent = onEvent, page = page, onNavigate = onNavigate, onBack = onBack, onOpenWhatsNew = onOpenWhatsNew, modifier = modifier)
     }
 }
 
 @Composable
-private fun JournalRoot(
+private fun JournalPageScreen(
     state: LibraryUiState.Success,
     onEvent: (LibraryUiEvent) -> Unit,
+    page: JournalPage,
+    onNavigate: (JournalPage) -> Unit,
+    onBack: () -> Unit,
+    onOpenWhatsNew: () -> Unit,
     modifier: Modifier
 ) {
     val haptics = LocalFathomHaptics.current
     val openSanctuary = LocalOpenSanctuary.current
-    val subscription = LocalSubscriptionState.current
-    val openPaywall = LocalOpenPaywall.current
     val density = LocalDensity.current
 
-    var page by remember { mutableStateOf<JournalPage>(JournalPage.Hub) }
-    var showWhatsNew by remember { mutableStateOf(false) }
     var panelHeight by remember { mutableIntStateOf(0) }
     val hubListState = rememberLazyListState()
 
@@ -104,64 +110,41 @@ private fun JournalRoot(
     NavToneEffect(focus)
     val panelDp = with(density) { panelHeight.toDp() }
 
-    fun leave() {
-        if (state.searchQuery.isNotEmpty()) onEvent(LibraryUiEvent.OnSearchQueryChanged(""))
-        if (state.selectedTraditionFilter != null) onEvent(LibraryUiEvent.OnFilterTradition(null))
-        page = JournalPage.Hub
+    if (page == JournalPage.Saved) LaunchedEffect(Unit) { onEvent(LibraryUiEvent.OnSelectTab(LibraryTab.BOOKMARKS)) }
+    if (page == JournalPage.Reflections) LaunchedEffect(Unit) { onEvent(LibraryUiEvent.OnSelectTab(LibraryTab.REFLECTIONS)) }
+    if (page != JournalPage.Hub) {
+        DisposableEffect(Unit) {
+            onDispose {
+                onEvent(LibraryUiEvent.OnSearchQueryChanged(""))
+                onEvent(LibraryUiEvent.OnFilterTradition(null))
+            }
+        }
     }
-
-    when {
-        state.selectedPassageForShare != null -> BackHandler { onEvent(LibraryUiEvent.OnCloseShare) }
-        state.selectedPassageForContext != null -> BackHandler { onEvent(LibraryUiEvent.OnCloseContext) }
-        state.selectedPassageForNote != null -> BackHandler { onEvent(LibraryUiEvent.OnCloseNoteDialog) }
-        page != JournalPage.Hub -> BackHandler { leave() }
-        state.searchQuery.isNotEmpty() -> BackHandler { onEvent(LibraryUiEvent.OnSearchQueryChanged("")) }
-    }
+    if (page == JournalPage.Hub && state.searchQuery.isNotEmpty()) BackHandler { onEvent(LibraryUiEvent.OnSearchQueryChanged("")) }
 
     CompositionLocalProvider(LocalTone provides tone) {
         GlassLayer(
             modifier = modifier.fillMaxSize(),
             background = {
                 Atmosphere(tone = tone, modifier = Modifier.fillMaxSize(), phase = { hubListState.firstVisibleItemIndex + hubListState.firstVisibleItemScrollOffset / 800f }) {
-                    AnimatedContent(
-                        targetState = page,
-                        transitionSpec = {
-                            if (targetState != JournalPage.Hub) {
-                                (slideInHorizontally(tween(460, 0, FathomMotion.Emphasized)) { it / 5 } + fadeIn(tween(320, 80)))
-                                    .togetherWith(slideOutHorizontally(tween(360, 0, FathomMotion.Emphasized)) { -it / 8 } + fadeOut(tween(200)))
-                            } else {
-                                (slideInHorizontally(tween(460, 0, FathomMotion.Emphasized)) { -it / 8 } + fadeIn(tween(320, 80)))
-                                    .togetherWith(slideOutHorizontally(tween(360, 0, FathomMotion.Emphasized)) { it / 5 } + fadeOut(tween(200)))
-                            }
-                        },
-                        label = "journal_pages",
-                        modifier = Modifier.fillMaxSize()
-                    ) { current ->
-                        val searching = state.searchQuery.isNotBlank() || state.selectedTraditionFilter != null
-                        when (current) {
-                            JournalPage.Hub -> JournalHub(
-                                state = state,
-                                listState = hubListState,
-                                topPadding = panelDp,
-                                onOpenSaved = {
-                                    onEvent(LibraryUiEvent.OnSelectTab(LibraryTab.BOOKMARKS))
-                                    page = JournalPage.Saved
-                                },
-                                onOpenReflections = {
-                                    onEvent(LibraryUiEvent.OnSelectTab(LibraryTab.REFLECTIONS))
-                                    page = JournalPage.Reflections
-                                },
-                                onOpenCanon = { page = JournalPage.Canon(it) },
-                                onOpenTimeline = { page = JournalPage.Timeline },
-                                onOpenWhatsNew = { showWhatsNew = true },
-                                onEditProfile = { onEvent(LibraryUiEvent.OnOpenEditProfile) },
-                                onOpenPassage = { onEvent(LibraryUiEvent.OnOpenContext(it)) }
-                            )
-                            JournalPage.Saved -> SavedList(state.bookmarks, searching, panelDp, onEvent)
-                            JournalPage.Reflections -> NotesList(state.notes, searching, panelDp, onEvent)
-                            JournalPage.Timeline -> TimelineList(state.history, panelDp) { onEvent(LibraryUiEvent.OnOpenContext(it)) }
-                            is JournalPage.Canon -> CanonDetail(current.traditionId, state.history, state.bookmarks, state.notes, panelDp, onEvent)
-                        }
+                    val searching = state.searchQuery.isNotBlank() || state.selectedTraditionFilter != null
+                    when (page) {
+                        JournalPage.Hub -> JournalHub(
+                            state = state,
+                            listState = hubListState,
+                            topPadding = panelDp,
+                            onOpenSaved = { onNavigate(JournalPage.Saved) },
+                            onOpenReflections = { onNavigate(JournalPage.Reflections) },
+                            onOpenCanon = { onNavigate(JournalPage.Canon(it)) },
+                            onOpenTimeline = { onNavigate(JournalPage.Timeline) },
+                            onOpenWhatsNew = onOpenWhatsNew,
+                            onEditProfile = { onEvent(LibraryUiEvent.OnOpenEditProfile) },
+                            onOpenPassage = { onEvent(LibraryUiEvent.OnOpenContext(it)) }
+                        )
+                        JournalPage.Saved -> SavedList(state.bookmarks, searching, panelDp, onEvent)
+                        JournalPage.Reflections -> NotesList(state.notes, searching, panelDp, onEvent)
+                        JournalPage.Timeline -> TimelineList(state.history, panelDp) { onEvent(LibraryUiEvent.OnOpenContext(it)) }
+                        is JournalPage.Canon -> CanonDetail(page.traditionId, state.history, state.bookmarks, state.notes, panelDp, onEvent)
                     }
                 }
             },
@@ -186,16 +169,16 @@ private fun JournalRoot(
                                 JournalPage.Timeline -> "${state.history.size} verses"
                                 else -> "Tradition"
                             },
-                            title = when (val p = page) {
+                            title = when (page) {
                                 JournalPage.Saved -> "Saved passages"
                                 JournalPage.Reflections -> "Reflections"
                                 JournalPage.Timeline -> "Reading history"
-                                is JournalPage.Canon -> p.traditionId.displayName
+                                is JournalPage.Canon -> page.traditionId.displayName
                                 JournalPage.Hub -> ""
                             },
                             onBack = {
                                 haptics.light()
-                                leave()
+                                onBack()
                             }
                         )
                         if (page == JournalPage.Saved || page == JournalPage.Reflections) {
@@ -215,35 +198,47 @@ private fun JournalRoot(
                 }
             }
         )
+    }
+}
 
-        state.selectedPassageForContext?.let {
-            PassageContextSheet(passage = it, onDismiss = { onEvent(LibraryUiEvent.OnCloseContext) })
-        }
-        state.selectedPassageForShare?.let {
-            QuoteCardModal(passage = it, onDismiss = { onEvent(LibraryUiEvent.OnCloseShare) })
-        }
-        state.selectedPassageForNote?.let { passage ->
-            NoteSheet(
-                passage = passage,
-                initial = state.notes.firstOrNull { it.note.passageId == passage.id }?.note?.content.orEmpty(),
-                onDismiss = { onEvent(LibraryUiEvent.OnCloseNoteDialog) },
-                onSave = { content ->
-                    val limitReached = !subscription.isPro &&
-                        state.notes.size >= subscription.freeNotesLimit &&
-                        state.notes.none { it.note.passageId == passage.id }
-                    if (limitReached) openPaywall() else onEvent(LibraryUiEvent.OnSaveNote(passage.id, content))
-                }
-            )
-        }
-        if (state.isEditingProfile) {
-            ProfileSheet(
-                currentName = state.userName,
-                currentTradition = state.userTradition,
-                onSave = { name, tradition -> onEvent(LibraryUiEvent.OnSaveProfile(name, tradition)) },
-                onDismiss = { onEvent(LibraryUiEvent.OnCloseEditProfile) }
-            )
-        }
-        if (showWhatsNew) WhatsNewModal(onDismiss = { showWhatsNew = false })
+@Composable
+fun LibraryOverlays(state: LibraryUiState, onEvent: (LibraryUiEvent) -> Unit) {
+    val success = state as? LibraryUiState.Success ?: return
+    val subscription = LocalSubscriptionState.current
+    val openPaywall = LocalOpenPaywall.current
+
+    when {
+        success.selectedPassageForShare != null -> BackHandler { onEvent(LibraryUiEvent.OnCloseShare) }
+        success.selectedPassageForContext != null -> BackHandler { onEvent(LibraryUiEvent.OnCloseContext) }
+        success.selectedPassageForNote != null -> BackHandler { onEvent(LibraryUiEvent.OnCloseNoteDialog) }
+    }
+
+    success.selectedPassageForContext?.let {
+        PassageContextSheet(passage = it, onDismiss = { onEvent(LibraryUiEvent.OnCloseContext) })
+    }
+    success.selectedPassageForShare?.let {
+        QuoteCardModal(passage = it, onDismiss = { onEvent(LibraryUiEvent.OnCloseShare) })
+    }
+    success.selectedPassageForNote?.let { passage ->
+        NoteSheet(
+            passage = passage,
+            initial = success.notes.firstOrNull { it.note.passageId == passage.id }?.note?.content.orEmpty(),
+            onDismiss = { onEvent(LibraryUiEvent.OnCloseNoteDialog) },
+            onSave = { content ->
+                val limitReached = !subscription.isPro &&
+                    success.notes.size >= subscription.freeNotesLimit &&
+                    success.notes.none { it.note.passageId == passage.id }
+                if (limitReached) openPaywall() else onEvent(LibraryUiEvent.OnSaveNote(passage.id, content))
+            }
+        )
+    }
+    if (success.isEditingProfile) {
+        ProfileSheet(
+            currentName = success.userName,
+            currentTradition = success.userTradition,
+            onSave = { name, tradition -> onEvent(LibraryUiEvent.OnSaveProfile(name, tradition)) },
+            onDismiss = { onEvent(LibraryUiEvent.OnCloseEditProfile) }
+        )
     }
 }
 

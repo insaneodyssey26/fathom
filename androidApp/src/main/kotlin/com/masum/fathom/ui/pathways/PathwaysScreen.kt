@@ -73,6 +73,7 @@ import com.masum.fathom.core.haptics.LocalFathomHaptics
 import com.masum.fathom.core.sanctuary.LocalOpenSanctuary
 import com.masum.fathom.ui.design.Atmosphere
 import com.masum.fathom.ui.design.BreathingMark
+import com.masum.fathom.ui.design.DockedTopPanel
 import com.masum.fathom.ui.design.ButtonStyle
 import com.masum.fathom.ui.design.FathomButton
 import com.masum.fathom.ui.design.Glyph
@@ -101,62 +102,24 @@ import kotlin.math.roundToInt
 fun PathwaysScreen(
     state: PathwaysUiState,
     onEvent: (PathwaysUiEvent) -> Unit,
+    onOpenChapter: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val haptics = LocalFathomHaptics.current
     var showScriptureSheet by remember { mutableStateOf(false) }
 
-    if (state is PathwaysUiState.Success) {
-        when {
-            state.selectedPassageForContext != null -> BackHandler { onEvent(PathwaysUiEvent.OnClosePassageContext) }
-            state.activeChapterForReading != null -> BackHandler { onEvent(PathwaysUiEvent.OnCloseChapter) }
-            showScriptureSheet -> BackHandler { showScriptureSheet = false }
-        }
-    }
-
     when (state) {
         is PathwaysUiState.Loading -> StateFrame(modifier) { BreathingMark() }
         is PathwaysUiState.Error -> StateFrame(modifier) { QuietMessage(title = "Something went quiet", body = state.message) }
         is PathwaysUiState.Success -> {
-            val pathway = state.currentPathway
+            if (showScriptureSheet) BackHandler { showScriptureSheet = false }
 
-            val lastPassages = remember { mutableStateOf(state.chapterPassages) }
-            if (state.chapterPassages.isNotEmpty()) lastPassages.value = state.chapterPassages
-
-            AnimatedContent(
-                targetState = state.activeChapterForReading,
-                transitionSpec = {
-                    if (targetState != null) {
-                        (slideInHorizontally(tween(460, 0, FathomMotion.Emphasized)) { it / 5 } + fadeIn(tween(320, 80)))
-                            .togetherWith(slideOutHorizontally(tween(360, 0, FathomMotion.Emphasized)) { -it / 8 } + fadeOut(tween(200)))
-                    } else {
-                        (slideInHorizontally(tween(460, 0, FathomMotion.Emphasized)) { -it / 8 } + fadeIn(tween(320, 80)))
-                            .togetherWith(slideOutHorizontally(tween(360, 0, FathomMotion.Emphasized)) { it / 5 } + fadeOut(tween(200)))
-                    }
-                },
-                label = "chapter_study_transition",
-                modifier = modifier.fillMaxSize()
-            ) { activeChapterNumber ->
-                if (activeChapterNumber != null) {
-                    val chapter = pathway.chapters.find { it.chapterNumber == activeChapterNumber }
-                    ChapterStudyScreen(
-                        chapterNumber = activeChapterNumber,
-                        chapterTitle = chapter?.title ?: "Chapter $activeChapterNumber",
-                        chapterSubtitle = chapter?.subtitle ?: "",
-                        bookTitle = state.selectedBook.title,
-                        passages = state.chapterPassages.ifEmpty { if (state.isLoadingChapter) emptyList() else lastPassages.value },
-                        isLoading = state.isLoadingChapter,
-                        onCompleteChapter = { onEvent(PathwaysUiEvent.OnCompleteChapter(activeChapterNumber)) },
-                        onOpenPassageContext = { onEvent(PathwaysUiEvent.OnOpenPassageContext(it)) },
-                        onDismiss = { onEvent(PathwaysUiEvent.OnCloseChapter) }
-                    )
-                } else {
-                    PathwaysHome(
-                        state = state,
-                        onOpenChapter = { onEvent(PathwaysUiEvent.OnOpenChapter(it)) },
-                        onOpenScriptures = { showScriptureSheet = true }
-                    )
-                }
+            Box(modifier.fillMaxSize()) {
+                PathwaysHome(
+                    state = state,
+                    onOpenChapter = onOpenChapter,
+                    onOpenScriptures = { showScriptureSheet = true }
+                )
             }
 
             if (showScriptureSheet) {
@@ -174,15 +137,54 @@ fun PathwaysScreen(
                     }
                 )
             }
-
-            state.selectedPassageForContext?.let {
-                PassageContextSheet(passage = it, onDismiss = { onEvent(PathwaysUiEvent.OnClosePassageContext) })
-            }
-
-            state.completionReward?.let {
-                ChapterCelebrationModal(reward = it, onDismiss = { onEvent(PathwaysUiEvent.OnDismissReward) })
-            }
         }
+    }
+}
+
+@Composable
+fun PathwaysChapterScreen(
+    state: PathwaysUiState,
+    chapterNumber: Int,
+    onEvent: (PathwaysUiEvent) -> Unit,
+    onComplete: () -> Unit,
+    onBack: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val success = state as? PathwaysUiState.Success
+    val lastPassages = remember { mutableStateOf(emptyList<com.masum.fathom.core.model.Passage>()) }
+    if (success != null && success.chapterPassages.isNotEmpty()) lastPassages.value = success.chapterPassages
+    val lastTitle = remember { mutableStateOf("") }
+    if (success != null) lastTitle.value = success.selectedBook.title
+
+    if (success == null) {
+        StateFrame(modifier) { BreathingMark() }
+        return
+    }
+
+    val chapter = success.currentPathway.chapters.find { it.chapterNumber == chapterNumber }
+    ChapterStudyScreen(
+        chapterNumber = chapterNumber,
+        chapterTitle = chapter?.title ?: "Chapter $chapterNumber",
+        chapterSubtitle = chapter?.subtitle ?: "",
+        bookTitle = lastTitle.value,
+        passages = success.chapterPassages.ifEmpty { if (success.isLoadingChapter) emptyList() else lastPassages.value },
+        isLoading = success.isLoadingChapter && lastPassages.value.isEmpty(),
+        onCompleteChapter = onComplete,
+        onOpenPassageContext = { onEvent(PathwaysUiEvent.OnOpenPassageContext(it)) },
+        onDismiss = onBack,
+        modifier = modifier
+    )
+}
+
+@Composable
+fun PathwaysOverlays(state: PathwaysUiState, onEvent: (PathwaysUiEvent) -> Unit) {
+    val success = state as? PathwaysUiState.Success ?: return
+    if (success.selectedPassageForContext != null) BackHandler { onEvent(PathwaysUiEvent.OnClosePassageContext) }
+    success.selectedPassageForContext?.let {
+        PassageContextSheet(passage = it, onDismiss = { onEvent(PathwaysUiEvent.OnClosePassageContext) })
+    }
+    success.completionReward?.let {
+        ChapterCelebrationModal(reward = it, onDismiss = { onEvent(PathwaysUiEvent.OnDismissReward) })
     }
 }
 
@@ -208,7 +210,8 @@ private fun PathwaysHome(
         BoxWithConstraints(Modifier.fillMaxSize()) {
             val wide = maxWidth >= 840.dp
             val heroInList = if (wide) 0 else 1
-            val topPad = 76.dp
+            var panelHeight by remember { androidx.compose.runtime.mutableIntStateOf(0) }
+            val topPad = with(androidx.compose.ui.platform.LocalDensity.current) { panelHeight.toDp() } + 4.dp
             val bottomPad = shell.bottomInset + 28.dp
 
             val jumpVisible by remember(currentIndex, heroInList) {
@@ -238,7 +241,6 @@ private fun PathwaysHome(
                                     modifier = Modifier
                                         .weight(0.42f)
                                         .fillMaxHeight()
-                                        .statusBarsPadding()
                                         .verticalScroll(rememberScrollState())
                                         .padding(start = 32.dp, end = 24.dp, top = topPad, bottom = bottomPad)
                                 ) {
@@ -249,8 +251,8 @@ private fun PathwaysHome(
                                     listState = listState,
                                     onOpenChapter = onOpenChapter,
                                     includeHero = false,
-                                    contentPadding = PaddingValues(top = topPad + 8.dp, bottom = bottomPad, end = 32.dp, start = 8.dp),
-                                    modifier = Modifier.weight(0.58f).fillMaxHeight().statusBarsPadding()
+                                    contentPadding = PaddingValues(top = topPad, bottom = bottomPad, end = 32.dp, start = 8.dp),
+                                    modifier = Modifier.weight(0.58f).fillMaxHeight()
                                 )
                             }
                         } else {
@@ -259,49 +261,50 @@ private fun PathwaysHome(
                                 listState = listState,
                                 onOpenChapter = onOpenChapter,
                                 includeHero = true,
-                                contentPadding = PaddingValues(top = topPad + 8.dp, bottom = bottomPad),
-                                modifier = Modifier.fillMaxSize().statusBarsPadding().padding(start = shell.startInset)
+                                contentPadding = PaddingValues(top = topPad, bottom = bottomPad),
+                                modifier = Modifier.fillMaxSize().padding(start = shell.startInset)
                             )
                         }
                     }
                 },
                 overlay = {
-                    ScreenHeader(
-                        title = "paths",
-                        traditionId = pathway.book.traditionId,
-                        modifier = Modifier.align(Alignment.TopCenter).padding(start = shell.startInset)
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .widthIn(max = 190.dp)
-                                .height(44.dp)
-                                .glass(RoundedCornerShape(50))
-                                .tappable(scale = 0.96f) {
-                                    haptics.light()
-                                    onOpenScriptures()
-                                }
-                                .padding(horizontal = 18.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    DockedTopPanel(onHeight = { panelHeight = it }, bottomPadding = 14.dp) {
+                        ScreenHeader(
+                            title = "paths",
+                            traditionId = pathway.book.traditionId
                         ) {
-                            Text(
-                                text = state.selectedBook.title,
-                                style = FathomTheme.typography.label,
-                                color = colors.textPrimary,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                                modifier = Modifier.weight(1f, fill = false)
-                            )
-                            Icon(PhosphorIcons.Light.CaretDown, null, tint = colors.textSecondary, modifier = Modifier.size(13.dp))
-                        }
-                        GlassIconButton(
-                            icon = PhosphorIcons.Light.Sliders,
-                            contentDescription = "Settings",
-                            onClick = {
-                                haptics.light()
-                                openSanctuary()
+                            Row(
+                                modifier = Modifier
+                                    .widthIn(max = 190.dp)
+                                    .height(44.dp)
+                                    .glass(RoundedCornerShape(50))
+                                    .tappable(scale = 0.96f) {
+                                        haptics.light()
+                                        onOpenScriptures()
+                                    }
+                                    .padding(horizontal = 18.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Text(
+                                    text = state.selectedBook.title,
+                                    style = FathomTheme.typography.label,
+                                    color = colors.textPrimary,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    modifier = Modifier.weight(1f, fill = false)
+                                )
+                                Icon(PhosphorIcons.Light.CaretDown, null, tint = colors.textSecondary, modifier = Modifier.size(13.dp))
                             }
-                        )
+                            GlassIconButton(
+                                icon = PhosphorIcons.Light.Sliders,
+                                contentDescription = "Settings",
+                                onClick = {
+                                    haptics.light()
+                                    openSanctuary()
+                                }
+                            )
+                        }
                     }
 
                     AnimatedVisibility(
@@ -500,14 +503,6 @@ private fun ChapterRow(
     val above = if (previous?.isCompleted == true) tone.hue else colors.hairline
     val below = if (done) tone.hue else colors.hairline
 
-    val pulse = rememberInfiniteTransition(label = "pulse")
-    val ring by pulse.animateFloat(
-        initialValue = 0f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(tween(2200, easing = FathomMotion.Settle), RepeatMode.Restart),
-        label = "ring"
-    )
-
     val railWidth = 56.dp
     val nodeY = 40.dp
     val ticksColor = if (done) tone.hue.copy(alpha = 0.55f) else colors.textTertiary.copy(alpha = 0.28f)
@@ -529,12 +524,6 @@ private fun ChapterRow(
     ) {
         Box(Modifier.width(railWidth).height(nodeY * 2), contentAlignment = Alignment.TopCenter) {
             Box(Modifier.padding(top = nodeY - 14.dp).size(28.dp), contentAlignment = Alignment.Center) {
-                if (current) {
-                    Canvas(Modifier.fillMaxSize().padding(0.dp)) {
-                        val r = size.minDimension / 2f * (1f + ring * 0.9f)
-                        drawCircle(tone.hue.copy(alpha = (1f - ring) * 0.45f), radius = r, center = center)
-                    }
-                }
                 Glyph(
                     kind = when (chapter.nodeType) {
                         MilestoneNodeType.GATEWAY -> GlyphKind.Square
