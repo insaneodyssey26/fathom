@@ -1,33 +1,36 @@
 # Privacy Policy for Fathom
 
-Last updated: September 24, 2026
+Last updated: October 5, 2026
 
-Fathom is developed by Masum Ali (skmasumali.dev@gmail.com) as an independent, offline-first application. This privacy policy explains how data is handled when you use the app.
+Fathom is developed by Masum Ali (skmasumali.dev@gmail.com) as an independent, offline-first application.
 
-### Data Collection and Usage
-Fathom does not collect, track, store, or share any personal information. 
+### The short version
+Fathom is built to work entirely on your phone. It has no accounts, no analytics, no advertising and no tracking. We do not collect, store on a server, sell or share your personal information, because we never receive it.
 
-- No accounts or logins are required.
-- No analytics, tracking, or advertising SDKs are included.
-- No personal data (names, email addresses, device identifiers, or location) is gathered.
+### What stays on your device
+Your name and chosen spiritual path, reading theme, reminder settings, saved passages and tags, reflections you write, and your reading history and streaks are stored in local databases and preferences on your phone.
+Deleting the app deletes this data. If Android's device backup is switched on in your phone settings, Android may include app data in your Google backup. That is controlled by your phone and Google, not by Fathom.
 
-### Local Data Storage
-All your reading data stays on your device:
-- Bookmarks and saved passages
-- Reading history and progress
-- Appearance and theme preferences (Obsidian, Sepia, Slate)
-- Scripture filter selections
+### Notifications
+The daily verse is scheduled and shown by your phone. Nothing is sent to a server to deliver it. You can turn it off in Settings or in your phone's notification settings at any time.
 
-This information is stored directly on your phone in a local database and is never uploaded to any remote server.
+### Update checks
+Fathom asks Google Play whether a newer version is available, in the app and in the background about twice a day if update alerts are on. This request is made to Google Play and is covered by Google's privacy policy. You can turn update alerts off in Settings.
 
-### External Links
-The app includes optional shortcuts to search for deeper verse explanations on the web via your default browser. When you click these links, your web browser opens and the respective search engine's privacy policy applies.
+### Sharing and exporting
+When you share a verse card or export a backup, you choose where it goes through your phone's share sheet. Fathom does not see or control the destination. A backup file contains your saved passages, tags and reflections, so keep it somewhere you trust.
 
-### Children's Privacy
-Because Fathom collects zero user data, it does not collect any personal information from children.
+### Links to the web
+Some screens offer a shortcut to search the web for a verse's commentary. Tapping it opens your browser, and the search engine's own privacy policy then applies.
 
-### Contact
-If you have any questions or feedback about Fathom or this policy, feel free to reach out directly:
+### Optional narration key
+Settings includes a field where you can store a voice provider key. It is kept only on your device and Fathom does not currently send it anywhere. Recitation uses your phone's built-in offline voice.
 
-Developer: Masum Ali  
-Email: skmasumali.dev@gmail.com
+### Purchases
+During closed testing nothing is charged. If paid features are introduced, payment will be handled by Google Play or the named payment provider, and Fathom will not receive your card details.
+
+### Children
+Because Fathom collects no personal information, it collects none from children either.
+
+### Changes and contact
+If this policy changes, the new version will appear here with a new date. Questions or requests can be sent to skmasumali.dev@gmail.com.

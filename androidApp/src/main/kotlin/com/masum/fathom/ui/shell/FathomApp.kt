@@ -179,6 +179,7 @@ fun FathomApp(graph: AppGraph, launchPassageId: String?) {
     var showPaywall by remember { mutableStateOf(false) }
     var showWhatsNew by remember { mutableStateOf(false) }
     var showAmbience by remember { mutableStateOf(false) }
+    var showMore by remember { mutableStateOf(false) }
     val navigator = rememberAppNavigator()
     var splashDone by remember { mutableStateOf(false) }
 
@@ -216,6 +217,8 @@ fun FathomApp(graph: AppGraph, launchPassageId: String?) {
         LocalSanctuaryPreferences provides preferences,
         LocalSanctuaryDataEngine provides dataEngine,
         LocalOpenSanctuary provides { navigator.push(AppRoute.Settings) },
+        LocalOpenMore provides { showMore = true },
+        LocalOpenLegal provides { navigator.push(AppRoute.Legal(it)) },
         LocalSubscriptionManager provides subscriptionManager,
         LocalSubscriptionState provides subscriptionState,
         LocalOpenPaywall provides { showPaywall = true },
@@ -264,6 +267,8 @@ fun FathomApp(graph: AppGraph, launchPassageId: String?) {
                             showWhatsNew = false
                         },
                         onOpenWhatsNew = { showWhatsNew = true },
+                        showMore = showMore,
+                        onDismissMore = { showMore = false },
                         showAmbience = showAmbience,
                         onOpenAmbience = { showAmbience = true },
                         onDismissAmbience = { showAmbience = false },
@@ -290,6 +295,8 @@ private fun MainStage(
     onLibraryEvent: (com.masum.fathom.ui.library.LibraryUiEvent) -> Unit,
     updateEngine: AppUpdateEngine,
     onOpenWhatsNew: () -> Unit,
+    showMore: Boolean,
+    onDismissMore: () -> Unit,
     showPaywall: Boolean,
     onDismissPaywall: () -> Unit,
     showWhatsNew: Boolean,
@@ -326,7 +333,7 @@ private fun MainStage(
 
         val imeVisible = WindowInsets.isImeVisible
         val topRoute = navigator.top
-        val isStudyingChapter = topRoute is AppRoute.Chapter || topRoute == AppRoute.Settings
+        val isStudyingChapter = topRoute is AppRoute.Chapter || topRoute == AppRoute.Settings || topRoute is AppRoute.Legal
         val selectedNav = navigator.currentTab
         val onNavSelected: (NavigationItem) -> Unit = navigator::selectTab
 
@@ -424,6 +431,9 @@ private fun MainStage(
                             entry<AppRoute.Settings> {
                                 SanctuaryScreen(preferences = preferences, dataEngine = dataEngine, onDismiss = navigator::pop)
                             }
+                            entry<AppRoute.Legal> { route ->
+                                LegalScreen(doc = route.doc, onBack = navigator::pop)
+                            }
                         }
                     )
                 }
@@ -482,6 +492,15 @@ private fun MainStage(
             if (showPaywall) SanctuaryPaywallSheet(onDismiss = onDismissPaywall)
             if (showWhatsNew) WhatsNewModal(onDismiss = onDismissWhatsNew)
             if (showAmbience) AmbienceSoundscapeSheet(onDismiss = onDismissAmbience)
+            if (showMore) {
+                MoreSheet(
+                    onDismiss = onDismissMore,
+                    onSoundscapes = onOpenAmbience,
+                    onSettings = { navigator.push(AppRoute.Settings) },
+                    onWhatsNew = onOpenWhatsNew,
+                    onLegal = { navigator.push(AppRoute.Legal(it)) }
+                )
+            }
         }
     }
 }

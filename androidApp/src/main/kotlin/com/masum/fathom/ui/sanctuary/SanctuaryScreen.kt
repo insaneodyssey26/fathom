@@ -2,6 +2,7 @@ package com.masum.fathom.ui.sanctuary
 
 import android.app.Activity
 import android.content.Intent
+import android.net.Uri
 import android.os.Build
 import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
@@ -97,6 +98,9 @@ import com.masum.fathom.ui.design.Pill
 import com.masum.fathom.ui.design.Seekline
 import com.masum.fathom.ui.design.SheetHeader
 import com.masum.fathom.ui.design.tappable
+import com.masum.fathom.ui.shell.LegalDoc
+import com.masum.fathom.ui.shell.LegalDocuments
+import com.masum.fathom.ui.shell.LocalOpenLegal
 import com.masum.fathom.ui.theme.FathomTheme
 import com.masum.fathom.ui.theme.ReadingTheme
 import com.masum.fathom.ui.theme.palette
@@ -122,6 +126,7 @@ fun SanctuaryScreen(
     val updateEngine = LocalAppUpdateEngine.current
     val updateStatus by updateEngine.updateStatus.collectAsState()
     val scope = rememberCoroutineScope()
+    val openLegal = LocalOpenLegal.current
 
     var stats by remember { mutableStateOf(SanctuaryStorageStats()) }
     var showRestore by remember { mutableStateOf(false) }
@@ -370,11 +375,36 @@ fun SanctuaryScreen(
                                     }
                                 }
                                 when (val status = updateStatus) {
-                                    is AppUpdateStatus.UpToDate -> MonoLabel(text = "You are on the latest build", color = tone.hue)
-                                    is AppUpdateStatus.Error -> Text(text = status.message, style = typography.caption, color = colors.textSecondary)
+                                    is AppUpdateStatus.UpToDate -> MonoLabel(text = "You are on the latest build", color = tone.hue, modifier = Modifier.padding(bottom = 16.dp))
+                                    is AppUpdateStatus.Error -> Text(text = status.message, style = typography.caption, color = colors.textSecondary, modifier = Modifier.padding(bottom = 16.dp))
                                     else -> Unit
                                 }
-                                Hairline(Modifier.padding(top = 18.dp))
+                                AboutRow("Privacy Policy", "How your data is handled") { openLegal(LegalDoc.PRIVACY) }
+                                AboutRow("Terms of Use", "The ground rules") { openLegal(LegalDoc.TERMS) }
+                                AboutRow("Send feedback", LegalDocuments.CONTACT_EMAIL) {
+                                    runCatching {
+                                        context.startActivity(
+                                            Intent(Intent.ACTION_SENDTO).apply {
+                                                data = Uri.parse("mailto:${LegalDocuments.CONTACT_EMAIL}")
+                                                putExtra(Intent.EXTRA_SUBJECT, "Fathom $versionName feedback")
+                                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                            }
+                                        )
+                                    }
+                                }
+                                AboutRow("Rate Fathom", "Opens Google Play") {
+                                    runCatching {
+                                        context.startActivity(
+                                            Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=com.masum.fathom")).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                        )
+                                    }.onFailure {
+                                        runCatching {
+                                            context.startActivity(
+                                                Intent(Intent.ACTION_VIEW, Uri.parse("https://play.google.com/store/apps/details?id=com.masum.fathom")).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                            )
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
@@ -556,5 +586,31 @@ private fun RestoreSheet(onDismiss: () -> Unit, onRestore: (String) -> Unit) {
             style = ButtonStyle.Tone,
             modifier = Modifier.fillMaxWidth()
         )
+    }
+}
+
+@Composable
+private fun AboutRow(title: String, caption: String, onClick: () -> Unit) {
+    val colors = FathomTheme.colors
+    val haptics = LocalFathomHaptics.current
+    Column {
+        Hairline()
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .tappable(scale = 0.99f, haptic = false) {
+                    haptics.light()
+                    onClick()
+                }
+                .padding(vertical = 18.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                Text(text = title, style = FathomTheme.typography.title, color = colors.textPrimary)
+                Text(text = caption, style = FathomTheme.typography.caption, color = colors.textTertiary)
+            }
+            Icon(PhosphorIcons.Light.ArrowRight, null, tint = colors.textTertiary, modifier = Modifier.size(18.dp))
+        }
     }
 }

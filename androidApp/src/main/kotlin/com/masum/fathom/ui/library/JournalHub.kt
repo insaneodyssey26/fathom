@@ -241,21 +241,33 @@ fun JournalHub(
             }
 
             item(key = "footer") {
-                Column(Modifier.padding(top = 56.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                val openLegal = com.masum.fathom.ui.shell.LocalOpenLegal.current
+                Column(Modifier.padding(top = 56.dp)) {
+                    FooterRow(title = "What's new", caption = "fathom $versionName · closed beta", onClick = onOpenWhatsNew)
+                    FooterRow(title = "Privacy Policy", caption = "How your data is handled") { openLegal(com.masum.fathom.ui.shell.LegalDoc.PRIVACY) }
+                    FooterRow(title = "Terms of Use", caption = "The ground rules") { openLegal(com.masum.fathom.ui.shell.LegalDoc.TERMS) }
                     Hairline()
-                    Row(
-                        modifier = Modifier.fillMaxWidth().tappable(scale = 0.99f, onClick = onOpenWhatsNew).padding(vertical = 8.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                            Text(text = "What's new", style = typography.title, color = colors.textPrimary)
-                            MonoLabel(text = "fathom $versionName · closed beta", color = colors.textTertiary)
-                        }
-                        Icon(PhosphorIcons.Light.ArrowUpRight, null, tint = colors.textTertiary, modifier = Modifier.size(20.dp))
-                    }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun FooterRow(title: String, caption: String, onClick: () -> Unit) {
+    val colors = FathomTheme.colors
+    Column {
+        Hairline()
+        Row(
+            modifier = Modifier.fillMaxWidth().tappable(scale = 0.99f, onClick = onClick).padding(vertical = 18.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(text = title, style = FathomTheme.typography.title, color = colors.textPrimary)
+                MonoLabel(text = caption, color = colors.textTertiary)
+            }
+            Icon(PhosphorIcons.Light.ArrowUpRight, null, tint = colors.textTertiary, modifier = Modifier.size(20.dp))
         }
     }
 }
