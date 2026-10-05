@@ -39,7 +39,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.adamglin.PhosphorIcons
@@ -154,6 +156,7 @@ private fun FeedContent(
     val scope = androidx.compose.runtime.rememberCoroutineScope()
     val haptics = LocalFathomHaptics.current
     val shell = LocalShell.current
+    val screenWidth = LocalConfiguration.current.screenWidthDp
     val colors = FathomTheme.colors
     val audioEngine = LocalSacredAudioEngine.current
     val playbackState by audioEngine.playbackState.collectAsState()
@@ -289,8 +292,8 @@ private fun FeedContent(
                         onEvent(FeedUiEvent.OnToggleBookmark(currentPassage))
                     },
                     modifier = Modifier
-                        .align(Alignment.BottomCenter)
-                        .padding(start = shell.startInset, bottom = shell.bottomInset + 14.dp)
+                        .align(if (screenWidth < 400) Alignment.BottomStart else Alignment.BottomCenter)
+                        .padding(start = shell.startInset + if (screenWidth < 400) 14.dp else 0.dp, bottom = shell.bottomInset + 14.dp)
                 )
             }
             }
@@ -323,10 +326,12 @@ private fun Header(
         title = "fathom",
         traditionId = traditionId,
         modifier = modifier,
-        onTitleClick = onOpenBeta
+        onTitleClick = onOpenBeta,
+        badge = "Beta"
     ) {
         Row(
             modifier = Modifier
+                .weight(1f, fill = false)
                 .widthIn(max = 200.dp)
                 .height(44.dp)
                 .glass(RoundedCornerShape(50))
@@ -377,6 +382,7 @@ private fun ActionPill(
 ) {
     val colors = FathomTheme.colors
     val tone = FathomTheme.tone
+    val cell = if (LocalConfiguration.current.screenWidthDp < 340) 48.dp else 52.dp
     Row(
         modifier = modifier
             .height(60.dp)
@@ -385,26 +391,26 @@ private fun ActionPill(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(2.dp)
     ) {
-        PillAction(onClick = onListen, description = "Listen") {
+        PillAction(cell = cell, onClick = onListen, description = "Listen") {
             if (speaking) Equalizer(color = tone.hue) else Icon(PhosphorIcons.Light.SpeakerHigh, null, tint = colors.textPrimary, modifier = Modifier.size(23.dp))
         }
-        PillAction(onClick = onReflect, description = "Context and commentary") {
+        PillAction(cell = cell, onClick = onReflect, description = "Context and commentary") {
             Icon(PhosphorIcons.Light.ChatCenteredText, null, tint = colors.textPrimary, modifier = Modifier.size(23.dp))
         }
-        PillAction(onClick = onShare, description = "Share as card") {
+        PillAction(cell = cell, onClick = onShare, description = "Share as card") {
             Icon(PhosphorIcons.Light.ShareFat, null, tint = colors.textPrimary, modifier = Modifier.size(23.dp))
         }
-        PillAction(onClick = onSave, description = "Save passage") {
+        PillAction(cell = cell, onClick = onSave, description = "Save passage") {
             SaveGlyph(saved = bookmarked, hue = tone.hue)
         }
     }
 }
 
 @Composable
-private fun PillAction(onClick: () -> Unit, description: String, content: @Composable () -> Unit) {
+private fun PillAction(cell: Dp, onClick: () -> Unit, description: String, content: @Composable () -> Unit) {
     Box(
         modifier = Modifier
-            .size(52.dp)
+            .size(cell)
             .clip(CircleShape)
             .tappable(scale = 0.86f, haptic = false, onClick = onClick),
         contentAlignment = Alignment.Center
