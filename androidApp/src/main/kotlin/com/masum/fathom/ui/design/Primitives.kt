@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -196,7 +197,7 @@ fun FathomToggle(
     ) {
         Box(
             Modifier
-                .padding(start = knob, top = 2.dp)
+                .offset(x = knob, y = 2.dp)
                 .size(26.dp)
                 .clip(CircleShape)
                 .background(if (checked) tone.onHue else colors.textSecondary)
