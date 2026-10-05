@@ -43,6 +43,21 @@
             android:exported="false" />
 
         <receiver
+            android:name=".core.notification.NotificationActionReceiver"
+            android:exported="false" />
+
+        <receiver
+            android:name=".core.notification.ScheduleRestoreReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+                <action android:name="android.intent.action.TIME_SET" />
+                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
+            </intent-filter>
+        </receiver>
+
+        <receiver
             android:name=".core.widget.DailyWisdomWidgetProvider"
             android:label="@string/widget_daily_wisdom_title"
             android:exported="true">

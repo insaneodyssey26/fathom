@@ -219,72 +219,8 @@ fun SanctuaryScreen(
                             }
                         }
 
-                        item { Heading("Habit", "Daily reflection") }
-                        item {
-                            Column {
-                                Hairline()
-                                Row(
-                                    modifier = Modifier.fillMaxWidth().padding(vertical = 18.dp),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(16.dp)
-                                ) {
-                                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                        Text(text = "Daily verse reminder", style = typography.title, color = colors.textPrimary)
-                                        Text(text = "A single quiet verse at the hour you choose.", style = typography.body, color = colors.textSecondary)
-                                    }
-                                    FathomToggle(
-                                        checked = settings.dailyNotificationEnabled,
-                                        onCheckedChange = { enabled ->
-                                            haptics.light()
-                                            preferences.updateNotificationTime(enabled, settings.notificationHour, settings.notificationMinute)
-                                            if (enabled) {
-                                                DailyNotificationScheduler.scheduleDailyReminder(context, settings.notificationHour, settings.notificationMinute)
-                                                Toast.makeText(context, "Daily reflection scheduled", Toast.LENGTH_SHORT).show()
-                                            } else {
-                                                DailyNotificationScheduler.cancelDailyReminder(context)
-                                                Toast.makeText(context, "Daily reflection paused", Toast.LENGTH_SHORT).show()
-                                            }
-                                        }
-                                    )
-                                }
-                                AnimatedVisibility(
-                                    visible = settings.dailyNotificationEnabled,
-                                    enter = expandVertically(tween(320)) + fadeIn(tween(240)),
-                                    exit = shrinkVertically(tween(220)) + fadeOut(tween(140))
-                                ) {
-                                    Column {
-                                        Hairline()
-                                        Row(
-                                            modifier = Modifier.fillMaxWidth().padding(vertical = 18.dp),
-                                            verticalAlignment = Alignment.CenterVertically,
-                                            horizontalArrangement = Arrangement.SpaceBetween
-                                        ) {
-                                            MonoLabel(text = "Reminder time")
-                                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-                                                StepButton(icon = PhosphorIcons.Light.Minus, description = "Earlier") {
-                                                    haptics.light()
-                                                    val hour = (settings.notificationHour - 1 + 24) % 24
-                                                    preferences.updateNotificationTime(true, hour, settings.notificationMinute)
-                                                    DailyNotificationScheduler.scheduleDailyReminder(context, hour, settings.notificationMinute)
-                                                }
-                                                Text(
-                                                    text = String.format(Locale.US, "%02d:%02d", settings.notificationHour, settings.notificationMinute),
-                                                    style = typography.headline,
-                                                    color = colors.textPrimary
-                                                )
-                                                StepButton(icon = PhosphorIcons.Light.Plus, description = "Later") {
-                                                    haptics.light()
-                                                    val hour = (settings.notificationHour + 1) % 24
-                                                    preferences.updateNotificationTime(true, hour, settings.notificationMinute)
-                                                    DailyNotificationScheduler.scheduleDailyReminder(context, hour, settings.notificationMinute)
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                                Hairline()
-                            }
-                        }
+                        item { Heading("Notifications", "Reminders and alerts") }
+                        item { NotificationSettings(preferences = preferences, settings = settings) }
 
                         item { Heading("Voice", "Narration") }
                         item {
@@ -531,7 +467,7 @@ private fun ThemeTile(
 }
 
 @Composable
-private fun StepButton(icon: androidx.compose.ui.graphics.vector.ImageVector, description: String, onClick: () -> Unit) {
+internal fun StepButton(icon: androidx.compose.ui.graphics.vector.ImageVector, description: String, onClick: () -> Unit) {
     Box(
         modifier = Modifier
             .size(40.dp)

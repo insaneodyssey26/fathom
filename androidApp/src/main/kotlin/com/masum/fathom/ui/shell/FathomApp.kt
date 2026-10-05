@@ -64,7 +64,9 @@ import com.masum.fathom.core.subscription.LocalOpenPaywall
 import com.masum.fathom.core.subscription.LocalSubscriptionManager
 import com.masum.fathom.core.subscription.LocalSubscriptionState
 import com.masum.fathom.core.subscription.SubscriptionManager
+import com.masum.fathom.core.notification.DailyNotificationScheduler
 import com.masum.fathom.core.update.AppUpdateEngine
+import com.masum.fathom.core.update.UpdateCheckScheduler
 import com.masum.fathom.core.update.LocalAppUpdateEngine
 import com.masum.fathom.ui.components.AmbienceFloatingPill
 import com.masum.fathom.ui.components.AmbienceSoundscapeSheet
@@ -182,6 +184,15 @@ fun FathomApp(graph: AppGraph, launchPassageId: String?) {
 
     LaunchedEffect(settings.hasCompletedOnboarding, versionCode) {
         if (settings.hasCompletedOnboarding && preferences.shouldShowWhatsNew(versionCode)) showWhatsNew = true
+    }
+
+    LaunchedEffect(settings.dailyNotificationEnabled, settings.notificationHour, settings.notificationMinute, settings.updateAlertsEnabled) {
+        if (settings.dailyNotificationEnabled) {
+            DailyNotificationScheduler.scheduleDailyReminder(context, settings.notificationHour, settings.notificationMinute)
+        } else {
+            DailyNotificationScheduler.cancelDailyReminder(context)
+        }
+        UpdateCheckScheduler.sync(context, settings.updateAlertsEnabled)
     }
 
     LaunchedEffect(launchPassageId) {

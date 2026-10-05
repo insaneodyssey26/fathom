@@ -1,108 +1,69 @@
 package com.masum.fathom.core.notification
 
 import android.app.AlarmManager
-import android.app.NotificationChannel
-import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import android.os.Build
-import androidx.core.app.NotificationCompat
-import com.masum.fathom.MainActivity
-import com.masum.fathom.R
+import com.masum.fathom.core.sanctuary.SanctuaryPreferences
+import com.masum.fathom.core.update.UpdateCheckScheduler
+import java.time.LocalDate
 import java.util.Calendar
 
 class DailyWisdomReceiver : BroadcastReceiver() {
 
     override fun onReceive(context: Context, intent: Intent?) {
-        showDailyNotification(context)
+        val settings = SanctuaryPreferences(context).settings.value
+        if (!settings.dailyNotificationEnabled) return
+
+        val verse = DailyVersePicker.pickFor(context, LocalDate.now(), settings.verseSource, settings.userTradition)
+        DailyVerseNotifier.post(context, verse, settings)
+        DailyNotificationScheduler.scheduleDailyReminder(context, settings.notificationHour, settings.notificationMinute)
     }
+}
 
-    private fun showDailyNotification(context: Context) {
-        val channelId = "fathom_daily_contemplation"
-        val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager ?: return
+class ScheduleRestoreReceiver : BroadcastReceiver() {
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
-                channelId,
-                "Daily Sacred Contemplation",
-                NotificationManager.IMPORTANCE_DEFAULT
-            ).apply {
-                description = "Daily contemplative verse and marginalia reminders"
-            }
-            notificationManager.createNotificationChannel(channel)
+    override fun onReceive(context: Context, intent: Intent?) {
+        NotificationChannels.register(context)
+        val settings = SanctuaryPreferences(context).settings.value
+        if (settings.dailyNotificationEnabled) {
+            DailyNotificationScheduler.scheduleDailyReminder(context, settings.notificationHour, settings.notificationMinute)
         }
-
-        val openIntent = Intent(context, MainActivity::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-        }
-        val pendingIntent = PendingIntent.getActivity(
-            context,
-            0,
-            openIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
-
-        val notification = NotificationCompat.Builder(context, channelId)
-            .setSmallIcon(R.mipmap.ic_launcher)
-            .setContentTitle("Daily Sacred Contemplation")
-            .setContentText("Your morning passage of wisdom awaits your reflection.")
-            .setStyle(
-                NotificationCompat.BigTextStyle()
-                    .bigText("“You have a right to your actions, but never to the fruits of actions.”\n\nTake a quiet moment to contemplate today's sacred wisdom.")
-            )
-            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-            .setContentIntent(pendingIntent)
-            .setAutoCancel(true)
-            .build()
-
-        notificationManager.notify(1001, notification)
+        UpdateCheckScheduler.sync(context, settings.updateAlertsEnabled)
     }
 }
 
 object DailyNotificationScheduler {
 
-    fun scheduleDailyReminder(context: Context, hour: Int, minute: Int) {
-        val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as? AlarmManager ?: return
-        val intent = Intent(context, DailyWisdomReceiver::class.java)
-        val pendingIntent = PendingIntent.getBroadcast(
-            context,
-            101,
-            intent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
+    private const val REQUEST_CODE = 101
 
-        val calendar = Calendar.getInstance().apply {
-            timeInMillis = System.currentTimeMillis()
+    private fun pendingIntent(context: Context): PendingIntent = PendingIntent.getBroadcast(
+        context,
+        REQUEST_CODE,
+        Intent(context, DailyWisdomReceiver::class.java),
+        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+    )
+
+    fun nextTriggerMillis(hour: Int, minute: Int, now: Long = System.currentTimeMillis()): Long =
+        Calendar.getInstance().apply {
+            timeInMillis = now
             set(Calendar.HOUR_OF_DAY, hour)
             set(Calendar.MINUTE, minute)
             set(Calendar.SECOND, 0)
-            if (timeInMillis <= System.currentTimeMillis()) {
-                add(Calendar.DAY_OF_YEAR, 1)
-            }
-        }
+            set(Calendar.MILLISECOND, 0)
+            if (timeInMillis <= now + 1_000L) add(Calendar.DAY_OF_YEAR, 1)
+        }.timeInMillis
 
-        try {
-            alarmManager.setInexactRepeating(
-                AlarmManager.RTC_WAKEUP,
-                calendar.timeInMillis,
-                AlarmManager.INTERVAL_DAY,
-                pendingIntent
-            )
-        } catch (_: Exception) {
+    fun scheduleDailyReminder(context: Context, hour: Int, minute: Int) {
+        val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as? AlarmManager ?: return
+        runCatching {
+            alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, nextTriggerMillis(hour, minute), pendingIntent(context))
         }
     }
 
     fun cancelDailyReminder(context: Context) {
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as? AlarmManager ?: return
-        val intent = Intent(context, DailyWisdomReceiver::class.java)
-        val pendingIntent = PendingIntent.getBroadcast(
-            context,
-            101,
-            intent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
-        alarmManager.cancel(pendingIntent)
+        alarmManager.cancel(pendingIntent(context))
     }
 }
