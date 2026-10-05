@@ -53,9 +53,26 @@ fun WhatsNewModal(
     val releases = remember {
         listOf(
             ReleaseNote(
+                version = "v1.4.0",
+                title = "A full redesign, a daily verse and update alerts",
+                isCurrent = true,
+                highlights = listOf(
+                    "A new look everywhere: Every screen was redrawn. Scripture is set in a proper reading serif, and each tradition has its own colour that tints the page as you move between them. The four themes are now Nocturne, Vellum, Abyss and Moss.",
+                    "Daily verse: One verse a day at the time you pick, from every tradition or just your own. Save or share it straight from the notification, and tapping it opens the verse. It stays hidden on the lock screen unless you choose otherwise.",
+                    "Update alerts: Fathom now lets you know when a new version is on Google Play. You can switch this off in Settings.",
+                    "Moving through verses: Swipe as before, or push the small knob in the bottom corner of the Read screen. The ruler on the right shows where you are.",
+                    "Back gesture: Swiping back now follows your finger. Navigation was rebuilt too, so turning your phone no longer drops you out of a chapter.",
+                    "Tablets and landscape: The bottom bar becomes a side rail on wide screens, and every screen was fitted for small phones, tablets and landscape.",
+                    "Journal: The You tab is now Journal, with your streak, a week at a glance, progress for each tradition, milestones, saved passages and reflections.",
+                    "Share cards: The preview is exactly the image you will save. There are four palettes and three sizes.",
+                    "Settings, privacy and terms: Settings is a full page now, and a new More menu on the Read screen gets you to it, plus the Privacy Policy and Terms of Use, which open inside the app.",
+                    "Streaks fixed: Reading streaks and the weekly chart were not counting before. They count now, starting with the verses you read from this update."
+                )
+            ),
+            ReleaseNote(
                 version = "v1.3.0",
                 title = "Ambient Soundscapes, Semantic Topical Explorer & Sacred Road Checkpoints",
-                isCurrent = true,
+                isCurrent = false,
                 highlights = listOf(
                     "High-Fidelity Ambient Soundscapes: 6 immersive looping soundscapes including Tibetan Singing Bowl, Himalayan Monks Chanting, Monastery Rain, Temple Bells & Stream, Binaural 432Hz Solfeggio Tone, and Deep Om Drone.",
                     "Contemplative Sleep Timer: Built-in timer with smooth fade-out presets (15m, 30m, 45m, 60m) and custom duration controls.",
