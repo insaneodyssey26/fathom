@@ -186,6 +186,11 @@ private fun FeedContent(
         snapAnimationSpec = tween(durationMillis = 460, easing = FathomMotion.Emphasized)
     )
 
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val hints = remember { context.getSharedPreferences("fathom_hints", android.content.Context.MODE_PRIVATE) }
+    var showGaugeHint by remember { mutableStateOf(!hints.getBoolean("gauge_hint_seen", false)) }
+    var scrubJob by remember { mutableStateOf<kotlinx.coroutines.Job?>(null) }
+
     val currentPassage = state.passages.getOrNull(pagerState.currentPage)
     val tone = rememberTone(currentPassage?.traditionId)
     NavToneEffect(currentPassage?.traditionId)
@@ -249,7 +254,21 @@ private fun FeedContent(
                 position = { pagerState.currentPage + pagerState.currentPageOffsetFraction },
                 count = state.passages.size,
                 hue = tone.hue,
-                modifier = Modifier.align(Alignment.CenterEnd).padding(end = 4.dp, bottom = 40.dp)
+                onScrub = { target ->
+                    scrubJob?.cancel()
+                    scrubJob = scope.launch { pagerState.scrollToPage(target) }
+                },
+                onStep = { delta ->
+                    val target = (pagerState.currentPage + delta).coerceIn(0, state.passages.lastIndex)
+                    scrubJob?.cancel()
+                    scrubJob = scope.launch { pagerState.animateScrollToPage(target) }
+                },
+                hint = showGaugeHint,
+                onHintShown = {
+                    showGaugeHint = false
+                    hints.edit().putBoolean("gauge_hint_seen", true).apply()
+                },
+                modifier = Modifier.align(Alignment.CenterEnd).padding(end = 2.dp, bottom = 40.dp)
             )
 
             if (currentPassage != null) {
