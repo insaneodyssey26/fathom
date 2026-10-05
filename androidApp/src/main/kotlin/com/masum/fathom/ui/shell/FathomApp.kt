@@ -14,6 +14,7 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -211,7 +212,7 @@ fun FathomApp(graph: AppGraph, launchPassageId: String?) {
                         .togetherWith(fadeOut(FathomMotion.exit(260)))
                 },
                 label = "app_stage",
-                modifier = Modifier.fillMaxSize()
+                modifier = Modifier.fillMaxSize().background(FathomTheme.colors.background)
             ) { target ->
                 when (target) {
                     AppStage.Splash -> SplashScreen(onSplashFinished = { splashDone = true })
@@ -287,7 +288,7 @@ private fun MainStage(
         drawContent()
     }
 
-    BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+    BoxWithConstraints(modifier = Modifier.fillMaxSize().background(colors.background)) {
         val widthClass = widthClassOf(maxWidth)
         val usesRail = maxWidth >= 600.dp || maxHeight < 480.dp
         val direction = LocalLayoutDirection.current
