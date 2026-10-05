@@ -9,6 +9,7 @@ import com.masum.fathom.core.model.user.Bookmark
 import com.masum.fathom.core.model.user.ReadingRecord
 import com.masum.fathom.core.model.user.UserNote
 import com.masum.fathom.core.repository.UserDataRepository
+import kotlin.time.Clock
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -126,7 +127,7 @@ class SqlDelightUserDataRepository(
     override suspend fun recordReading(passageId: String, bookId: String): FathomResult<Unit, DataError.Local> =
         withContext(ioDispatcher) {
             try {
-                val now = 1000L
+                val now = Clock.System.now().toEpochMilliseconds()
                 queries.upsertReadingRecord(
                     passage_id = passageId,
                     book_id = bookId,
