@@ -47,7 +47,7 @@ fun VersePage(
     reveal: () -> Float,
     contentPadding: PaddingValues,
     modifier: Modifier = Modifier,
-    endGutter: androidx.compose.ui.unit.Dp = 52.dp,
+    endGutter: androidx.compose.ui.unit.Dp = 64.dp,
     showThemes: Boolean = true,
     footer: (@Composable () -> Unit)? = null
 ) {

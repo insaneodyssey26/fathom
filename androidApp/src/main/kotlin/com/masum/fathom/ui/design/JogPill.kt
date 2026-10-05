@@ -5,7 +5,6 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.height
@@ -84,7 +83,7 @@ fun JogPill(
                 delay(40)
                 continue
             }
-            val direction = if (norm < 0f) 1 else -1
+            val direction = if (norm > 0f) 1 else -1
             haptics.light()
             onStep(direction)
             val strength = ((magnitude - 0.2f) / 0.8f).coerceIn(0f, 1f)
@@ -107,12 +106,6 @@ fun JogPill(
                     CustomAccessibilityAction("Next verse") { onStep(1); true },
                     CustomAccessibilityAction("Previous verse") { onStep(-1); true }
                 )
-            }
-            .pointerInput(Unit) {
-                detectTapGestures { offset ->
-                    haptics.light()
-                    onStep(if (offset.y < size.height / 2f) -1 else 1)
-                }
             }
             .pointerInput(Unit) {
                 travelPx = (size.height - knobSize.toPx() - 8.dp.toPx()) / 2f
