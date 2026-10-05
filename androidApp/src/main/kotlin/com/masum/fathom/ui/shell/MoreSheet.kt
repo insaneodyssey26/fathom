@@ -30,6 +30,8 @@ import com.adamglin.phosphoricons.light.Sparkle
 import com.masum.fathom.core.haptics.LocalFathomHaptics
 import com.masum.fathom.ui.design.FathomSheet
 import com.masum.fathom.ui.design.Hairline
+import com.masum.fathom.ui.design.LocalSheetCloser
+import com.masum.fathom.ui.design.SheetCloser
 import com.masum.fathom.ui.design.MonoLabel
 import com.masum.fathom.ui.design.SheetHeader
 import com.masum.fathom.ui.design.tappable
@@ -57,13 +59,14 @@ fun MoreSheet(
     }
 
     FathomSheet(onDismiss = onDismiss) {
+        val closeSheet = LocalSheetCloser.current ?: SheetCloser { after -> onDismiss(); after() }
         SheetHeader(overline = "fathom $versionName", title = "More", onClose = onDismiss)
         Hairline()
-        MoreRow(PhosphorIcons.Light.Waves, "Soundscapes", "Rain, bowls and a sleep timer") { onDismiss(); onSoundscapes() }
-        MoreRow(PhosphorIcons.Light.GearSix, "Settings", "Themes, reminders, backup and updates") { onDismiss(); onSettings() }
-        MoreRow(PhosphorIcons.Light.Sparkle, "What's new", "Release notes") { onDismiss(); onWhatsNew() }
-        MoreRow(PhosphorIcons.Light.Lock, "Privacy Policy", "How your data is handled") { onDismiss(); onLegal(LegalDoc.PRIVACY) }
-        MoreRow(PhosphorIcons.Light.Scroll, "Terms of Use", "The ground rules") { onDismiss(); onLegal(LegalDoc.TERMS) }
+        MoreRow(PhosphorIcons.Light.Waves, "Soundscapes", "Rain, bowls and a sleep timer") { closeSheet { onSoundscapes() } }
+        MoreRow(PhosphorIcons.Light.GearSix, "Settings", "Themes, reminders, backup and updates") { closeSheet { onSettings() } }
+        MoreRow(PhosphorIcons.Light.Sparkle, "What's new", "Release notes") { closeSheet { onWhatsNew() } }
+        MoreRow(PhosphorIcons.Light.Lock, "Privacy Policy", "How your data is handled") { closeSheet { onLegal(LegalDoc.PRIVACY) } }
+        MoreRow(PhosphorIcons.Light.Scroll, "Terms of Use", "The ground rules") { closeSheet { onLegal(LegalDoc.TERMS) } }
         Spacer(Modifier.height(20.dp))
         MonoLabel(text = "Offline by design · no accounts · no tracking", color = colors.textTertiary)
     }

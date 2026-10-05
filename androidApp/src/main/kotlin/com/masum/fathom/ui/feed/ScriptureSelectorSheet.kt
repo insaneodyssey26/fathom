@@ -38,6 +38,7 @@ import com.masum.fathom.core.haptics.LocalFathomHaptics
 import com.masum.fathom.core.model.Book
 import com.masum.fathom.core.model.TraditionId
 import com.masum.fathom.ui.design.FathomSheet
+import com.masum.fathom.ui.design.rememberSheetCloser
 import com.masum.fathom.ui.design.Hairline
 import com.masum.fathom.ui.design.MonoLabel
 import com.masum.fathom.ui.design.SheetHeader
@@ -64,6 +65,7 @@ fun ScriptureSelectorSheet(
     val everything = selectedBookId == null && (selectedTraditions.isEmpty() || selectedTraditions.size == TraditionId.entries.size)
 
     FathomSheet(onDismiss = onDismiss) {
+        val closeSheet = rememberSheetCloser(onDismiss)
         SheetHeader(overline = "Library", title = "Choose a scripture", subtitle = "Read one text, one tradition, or everything.", onClose = onDismiss)
         Column(modifier = Modifier.fillMaxWidth().weight(1f, fill = false).verticalScroll(rememberScrollState())) {
             Hairline()
@@ -76,7 +78,7 @@ fun ScriptureSelectorSheet(
                     haptics.light()
                     onSelectTradition(null)
                     onSelectBook(null)
-                    onDismiss()
+                    closeSheet()
                 }
             )
             TraditionId.entries.forEach { tradition ->
@@ -99,12 +101,12 @@ fun ScriptureSelectorSheet(
                     onSelectWhole = {
                         haptics.light()
                         onSelectTradition(tradition)
-                        onDismiss()
+                        closeSheet()
                     },
                     onSelectBook = {
                         haptics.light()
                         onSelectBook(it)
-                        onDismiss()
+                        closeSheet()
                     }
                 )
             }

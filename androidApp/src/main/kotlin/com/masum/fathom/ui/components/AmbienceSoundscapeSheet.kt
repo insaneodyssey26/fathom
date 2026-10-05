@@ -33,6 +33,7 @@ import com.masum.fathom.ui.design.ButtonStyle
 import com.masum.fathom.ui.design.Equalizer
 import com.masum.fathom.ui.design.FathomButton
 import com.masum.fathom.ui.design.FathomSheet
+import com.masum.fathom.ui.design.rememberSheetCloser
 import com.masum.fathom.ui.design.Hairline
 import com.masum.fathom.ui.design.MonoLabel
 import com.masum.fathom.ui.design.Seekline
@@ -50,6 +51,7 @@ fun AmbienceSoundscapeSheet(onDismiss: () -> Unit) {
     val tone = FathomTheme.tone
 
     FathomSheet(onDismiss = onDismiss) {
+        val closeSheet = rememberSheetCloser(onDismiss)
         SheetHeader(
             overline = "Soundscapes",
             title = "Set the room",
@@ -128,7 +130,7 @@ fun AmbienceSoundscapeSheet(onDismiss: () -> Unit) {
                     text = "Stop soundscape",
                     onClick = {
                         engine.stop()
-                        onDismiss()
+                        closeSheet()
                     },
                     style = ButtonStyle.Ghost,
                     modifier = Modifier.fillMaxWidth()

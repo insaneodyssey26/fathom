@@ -29,6 +29,7 @@ import com.masum.fathom.core.haptics.LocalFathomHaptics
 import com.masum.fathom.ui.design.ButtonStyle
 import com.masum.fathom.ui.design.FathomButton
 import com.masum.fathom.ui.design.FathomSheet
+import com.masum.fathom.ui.design.rememberSheetCloser
 import com.masum.fathom.ui.design.Glyph
 import com.masum.fathom.ui.design.GlyphKind
 import com.masum.fathom.ui.design.MonoLabel
@@ -106,6 +107,7 @@ fun WhatsNewModal(
     }
 
     FathomSheet(onDismiss = onDismiss, modifier = modifier) {
+        val closeSheet = rememberSheetCloser(onDismiss)
         SheetHeader(overline = "Release notes", title = "What's new", onClose = onDismiss)
         Column(modifier = Modifier.fillMaxWidth().weight(1f, fill = false).verticalScroll(rememberScrollState())) {
             releases.forEachIndexed { index, release ->
@@ -116,7 +118,7 @@ fun WhatsNewModal(
                 text = "Continue",
                 onClick = {
                     haptics.light()
-                    onDismiss()
+                    closeSheet()
                 },
                 style = ButtonStyle.Tone,
                 modifier = Modifier.fillMaxWidth()
