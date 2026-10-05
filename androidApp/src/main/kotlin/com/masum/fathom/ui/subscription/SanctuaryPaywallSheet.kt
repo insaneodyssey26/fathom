@@ -39,6 +39,7 @@ import com.masum.fathom.core.subscription.LocalSubscriptionManager
 import com.masum.fathom.ui.design.ButtonStyle
 import com.masum.fathom.ui.design.FathomButton
 import com.masum.fathom.ui.design.FathomSheet
+import com.masum.fathom.ui.design.rememberSheetCloser
 import com.masum.fathom.ui.design.Hairline
 import com.masum.fathom.ui.design.MonoLabel
 import com.masum.fathom.ui.design.tappable
@@ -64,6 +65,7 @@ fun SanctuaryPaywallSheet(onDismiss: () -> Unit) {
     var selected by remember { mutableStateOf(SubscriptionTier.ANNUAL) }
 
     FathomSheet(onDismiss = onDismiss) {
+        val closeSheet = rememberSheetCloser(onDismiss)
         Column(
             modifier = Modifier.fillMaxWidth().weight(1f, fill = false).verticalScroll(rememberScrollState())
         ) {
@@ -134,7 +136,7 @@ fun SanctuaryPaywallSheet(onDismiss: () -> Unit) {
                     haptics.heavy()
                     manager.purchaseTier(selected)
                     Toast.makeText(context, "Sanctuary+ unlocked for testing", Toast.LENGTH_SHORT).show()
-                    onDismiss()
+                    closeSheet()
                 },
                 style = ButtonStyle.Tone,
                 modifier = Modifier.fillMaxWidth()
@@ -145,7 +147,7 @@ fun SanctuaryPaywallSheet(onDismiss: () -> Unit) {
                     .tappable(scale = 0.95f) {
                         manager.restorePurchases()
                         Toast.makeText(context, "Full access is active during testing", Toast.LENGTH_SHORT).show()
-                        onDismiss()
+                        closeSheet()
                     }
                     .padding(vertical = 16.dp, horizontal = 24.dp)
             ) {

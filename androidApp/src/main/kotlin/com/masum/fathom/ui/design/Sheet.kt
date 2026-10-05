@@ -27,6 +27,14 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import kotlinx.coroutines.launch
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -39,6 +47,12 @@ import com.adamglin.phosphoricons.Light
 import com.adamglin.phosphoricons.light.X
 import com.masum.fathom.core.haptics.LocalFathomHaptics
 import com.masum.fathom.ui.theme.FathomTheme
+
+class SheetCloser(private val run: (() -> Unit) -> Unit) {
+    operator fun invoke(after: () -> Unit = {}) = run(after)
+}
+
+val LocalSheetCloser = compositionLocalOf<SheetCloser?> { null }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -55,8 +69,22 @@ fun FathomSheet(
     val statusTop = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
     val navBottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
     val contentMax = (windowHeight - statusTop - navBottom - 56.dp).coerceAtLeast(240.dp)
+    val scope = rememberCoroutineScope()
+    val latestDismiss by rememberUpdatedState(onDismiss)
+    var closing by remember { mutableStateOf(false) }
+    val closer = remember(sheetState) {
+        SheetCloser { after ->
+            if (!closing) {
+                closing = true
+                scope.launch { sheetState.hide() }.invokeOnCompletion {
+                    latestDismiss()
+                    after()
+                }
+            }
+        }
+    }
 
-    CompositionLocalProvider(LocalBackdrop provides null) {
+    CompositionLocalProvider(LocalBackdrop provides null, LocalSheetCloser provides closer) {
         ModalBottomSheet(
             onDismissRequest = onDismiss,
             sheetState = sheetState,
@@ -115,6 +143,7 @@ fun SheetHeader(
             trailing()
             if (onClose != null) {
                 val haptics = LocalFathomHaptics.current
+                val closer = LocalSheetCloser.current
                 Box(
                     modifier = Modifier
                         .size(40.dp)
@@ -122,7 +151,7 @@ fun SheetHeader(
                         .background(colors.surfaceElevated)
                         .tappable(scale = 0.9f, haptic = false) {
                             haptics.light()
-                            onClose()
+                            if (closer != null) closer() else onClose()
                         },
                     contentAlignment = Alignment.Center
                 ) {
@@ -136,4 +165,11 @@ fun SheetHeader(
 @Composable
 fun SheetSpacer(height: androidx.compose.ui.unit.Dp = 16.dp) {
     Spacer(Modifier.height(height))
+}
+
+@Composable
+fun rememberSheetCloser(fallback: () -> Unit): SheetCloser {
+    val provided = LocalSheetCloser.current
+    val latest by rememberUpdatedState(fallback)
+    return provided ?: remember { SheetCloser { after -> latest(); after() } }
 }

@@ -41,6 +41,7 @@ import com.masum.fathom.core.model.TraditionId
 import com.masum.fathom.ui.design.ButtonStyle
 import com.masum.fathom.ui.design.FathomButton
 import com.masum.fathom.ui.design.FathomSheet
+import com.masum.fathom.ui.design.rememberSheetCloser
 import com.masum.fathom.ui.design.MonoLabel
 import com.masum.fathom.ui.design.SheetHeader
 import com.masum.fathom.ui.design.TraditionEmblem
@@ -66,6 +67,7 @@ fun NoteSheet(
     val rule by animateColorAsState(if (focused) tone.hue else colors.hairline, tween(260), label = "note_rule")
 
     FathomSheet(onDismiss = onDismiss) {
+        val closeSheet = rememberSheetCloser(onDismiss)
         SheetHeader(
             overline = if (initial.isBlank()) "New reflection" else "Edit reflection",
             title = passage.canonicalReference,
@@ -103,7 +105,7 @@ fun NoteSheet(
         Spacer(Modifier.height(20.dp))
         FathomButton(
             text = "Save reflection",
-            onClick = { onSave(text.trim()) },
+            onClick = { closeSheet { onSave(text.trim()) } },
             enabled = text.isNotBlank(),
             style = ButtonStyle.Tone,
             modifier = Modifier.fillMaxWidth()
@@ -130,6 +132,7 @@ fun ProfileSheet(
     val options = remember { listOf<TraditionId?>(null) + TraditionId.entries }
 
     FathomSheet(onDismiss = onDismiss) {
+        val closeSheet = rememberSheetCloser(onDismiss)
         SheetHeader(overline = "Profile", title = "Who is reading?", onClose = onDismiss)
         MonoLabel(text = "Your name")
         Spacer(Modifier.height(6.dp))
@@ -174,7 +177,7 @@ fun ProfileSheet(
         Spacer(Modifier.height(28.dp))
         FathomButton(
             text = "Save",
-            onClick = { onSave(name.trim().ifBlank { "Seeker" }, tradition) },
+            onClick = { closeSheet { onSave(name.trim().ifBlank { "Seeker" }, tradition) } },
             style = ButtonStyle.Tone,
             modifier = Modifier.fillMaxWidth()
         )

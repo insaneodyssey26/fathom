@@ -63,6 +63,7 @@ import com.masum.fathom.ui.components.MeaningBlock
 import com.masum.fathom.ui.design.ButtonStyle
 import com.masum.fathom.ui.design.FathomButton
 import com.masum.fathom.ui.design.FathomSheet
+import com.masum.fathom.ui.design.rememberSheetCloser
 import com.masum.fathom.ui.design.GlassIconButton
 import com.masum.fathom.ui.design.GlassLayer
 import com.masum.fathom.ui.design.MonoLabel
@@ -309,6 +310,7 @@ private fun JumpSheet(total: Int, current: Int, onSelect: (Int) -> Unit, onDismi
     }
 
     FathomSheet(onDismiss = onDismiss) {
+        val closeSheet = rememberSheetCloser(onDismiss)
         SheetHeader(
             overline = "Navigate",
             title = "Jump to a verse",
@@ -338,7 +340,7 @@ private fun JumpSheet(total: Int, current: Int, onSelect: (Int) -> Unit, onDismi
                         )
                         .tappable(scale = 0.92f, haptic = false) {
                             haptics.light()
-                            onSelect(number - 1)
+                            closeSheet { onSelect(number - 1) }
                         },
                     contentAlignment = Alignment.Center
                 ) {
