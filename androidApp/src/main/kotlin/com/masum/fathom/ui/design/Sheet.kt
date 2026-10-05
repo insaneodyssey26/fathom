@@ -8,11 +8,14 @@ import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.imePadding
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -28,6 +31,8 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.unit.dp
 import com.adamglin.PhosphorIcons
 import com.adamglin.phosphoricons.Light
@@ -45,6 +50,11 @@ fun FathomSheet(
 ) {
     val colors = FathomTheme.colors
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = skipPartiallyExpanded)
+    val density = LocalDensity.current
+    val windowHeight = with(density) { LocalWindowInfo.current.containerSize.height.toDp() }
+    val statusTop = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+    val navBottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+    val contentMax = (windowHeight - statusTop - navBottom - 56.dp).coerceAtLeast(240.dp)
 
     CompositionLocalProvider(LocalBackdrop provides null) {
         ModalBottomSheet(
@@ -53,7 +63,6 @@ fun FathomSheet(
             containerColor = colors.surface,
             scrimColor = colors.scrim,
             shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
-            contentWindowInsets = { WindowInsets(0) },
             dragHandle = {
                 Box(
                     modifier = Modifier
@@ -69,8 +78,8 @@ fun FathomSheet(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .heightIn(max = contentMax)
                     .imePadding()
-                    .navigationBarsPadding()
                     .padding(horizontal = 24.dp)
                     .padding(bottom = 24.dp),
                 content = content
