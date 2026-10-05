@@ -51,7 +51,7 @@ import com.adamglin.phosphoricons.light.CaretDown
 import com.adamglin.phosphoricons.light.ChatCenteredText
 import com.adamglin.phosphoricons.light.ShareFat
 import com.adamglin.phosphoricons.light.SpeakerHigh
-import com.adamglin.phosphoricons.light.Waves
+import com.adamglin.phosphoricons.light.DotsThree
 import com.masum.fathom.core.audio.LocalOpenAmbience
 import com.masum.fathom.core.audio.LocalSacredAudioEngine
 import com.masum.fathom.core.audio.LocalSanctuaryAmbienceEngine
@@ -158,7 +158,7 @@ private fun FeedContent(
     val audioEngine = LocalSacredAudioEngine.current
     val playbackState by audioEngine.playbackState.collectAsState()
     val ambienceState by LocalSanctuaryAmbienceEngine.current.state.collectAsState()
-    val openAmbience = LocalOpenAmbience.current
+    val openMore = com.masum.fathom.ui.shell.LocalOpenMore.current
 
     val pagerState = rememberPagerState(
         initialPage = state.currentIndex.coerceIn(0, (state.passages.size - 1).coerceAtLeast(0)),
@@ -246,7 +246,7 @@ private fun FeedContent(
                 onOpenBeta = onOpenBeta,
                 onOpenAmbience = {
                     haptics.light()
-                    openAmbience()
+                    openMore()
                 },
                 modifier = Modifier.align(Alignment.TopCenter).padding(start = shell.startInset)
             )
@@ -345,12 +345,23 @@ private fun Header(
             )
             Icon(PhosphorIcons.Light.CaretDown, null, tint = colors.textSecondary, modifier = Modifier.size(13.dp))
         }
-        GlassIconButton(
-            icon = PhosphorIcons.Light.Waves,
-            contentDescription = "Soundscapes and sleep timer",
-            onClick = onOpenAmbience,
-            tint = if (ambienceActive) tone.hue else colors.textPrimary
-        )
+        Box {
+            GlassIconButton(
+                icon = PhosphorIcons.Light.DotsThree,
+                contentDescription = "More",
+                onClick = onOpenAmbience
+            )
+            if (ambienceActive) {
+                Box(
+                    Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(top = 8.dp, end = 8.dp)
+                        .size(8.dp)
+                        .clip(CircleShape)
+                        .background(tone.hue)
+                )
+            }
+        }
     }
 }
 

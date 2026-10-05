@@ -16,6 +16,7 @@ sealed interface AppRoute {
     data class Book(val id: String) : AppRoute
     data class Journal(val page: JournalPage) : AppRoute
     data object Settings : AppRoute
+    data class Legal(val doc: LegalDoc) : AppRoute
 }
 
 private fun AppRoute.encode(): String = when (this) {
@@ -30,6 +31,7 @@ private fun AppRoute.encode(): String = when (this) {
         is JournalPage.Canon -> "journal:canon:${p.traditionId.key}"
     }
     AppRoute.Settings -> "settings"
+    is AppRoute.Legal -> "legal:${doc.name}"
 }
 
 private fun decode(raw: String): AppRoute? {
@@ -47,6 +49,7 @@ private fun decode(raw: String): AppRoute? {
             else -> null
         }
         "settings" -> AppRoute.Settings
+        "legal" -> LegalDoc.entries.firstOrNull { it.name == parts.getOrNull(1) }?.let { AppRoute.Legal(it) }
         else -> null
     }
 }
