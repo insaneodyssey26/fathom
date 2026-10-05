@@ -145,7 +145,7 @@ fun JogPill(
             val cx = size.width / 2f
             val tickColor = colors.textTertiary
             val gap = 7.dp.toPx()
-            val top = 26.dp.toPx()
+            val top = 22.dp.toPx()
             var y = top
             var i = 0
             while (y < size.height - top) {
@@ -164,9 +164,9 @@ fun JogPill(
             val chevron = 4.dp.toPx()
             val activeUp = if (norm < -0.2f) 1f else 0.4f
             val activeDown = if (norm > 0.2f) 1f else 0.4f
-            drawLine(hue.copy(alpha = activeUp), Offset(cx - chevron, 15.dp.toPx() + chevron * 0.6f), Offset(cx, 15.dp.toPx()), 1.6.dp.toPx(), StrokeCap.Round)
-            drawLine(hue.copy(alpha = activeUp), Offset(cx + chevron, 15.dp.toPx() + chevron * 0.6f), Offset(cx, 15.dp.toPx()), 1.6.dp.toPx(), StrokeCap.Round)
-            val by = size.height - 15.dp.toPx()
+            drawLine(hue.copy(alpha = activeUp), Offset(cx - chevron, 13.dp.toPx() + chevron * 0.6f), Offset(cx, 13.dp.toPx()), 1.6.dp.toPx(), StrokeCap.Round)
+            drawLine(hue.copy(alpha = activeUp), Offset(cx + chevron, 13.dp.toPx() + chevron * 0.6f), Offset(cx, 13.dp.toPx()), 1.6.dp.toPx(), StrokeCap.Round)
+            val by = size.height - 13.dp.toPx()
             drawLine(hue.copy(alpha = activeDown), Offset(cx - chevron, by - chevron * 0.6f), Offset(cx, by), 1.6.dp.toPx(), StrokeCap.Round)
             drawLine(hue.copy(alpha = activeDown), Offset(cx + chevron, by - chevron * 0.6f), Offset(cx, by), 1.6.dp.toPx(), StrokeCap.Round)
         }
