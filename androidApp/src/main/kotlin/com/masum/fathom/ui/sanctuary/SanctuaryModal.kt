@@ -1,45 +1,45 @@
 package com.masum.fathom.ui.sanctuary
 
 import android.app.Activity
-import android.content.ClipData
-import android.content.ClipboardManager
-import android.content.Context
 import android.content.Intent
+import android.os.Build
 import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.BottomSheetDefaults
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.Switch
-import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -50,30 +50,25 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import com.adamglin.PhosphorIcons
-import com.adamglin.phosphoricons.Bold
-import com.adamglin.phosphoricons.Regular
-import com.adamglin.phosphoricons.bold.Check
-import com.adamglin.phosphoricons.regular.ArrowsClockwise
-import com.adamglin.phosphoricons.regular.CheckCircle
-import com.adamglin.phosphoricons.regular.ClockCounterClockwise
-import com.adamglin.phosphoricons.regular.Copy
-import com.adamglin.phosphoricons.regular.DownloadSimple
-import com.adamglin.phosphoricons.regular.FloppyDisk
-import com.adamglin.phosphoricons.regular.ShareNetwork
-import com.adamglin.phosphoricons.regular.Sparkle
-import com.adamglin.phosphoricons.regular.SpeakerHigh
-import com.adamglin.phosphoricons.regular.Crown
+import com.adamglin.phosphoricons.Light
+import com.adamglin.phosphoricons.light.ArrowRight
+import com.adamglin.phosphoricons.light.Eye
+import com.adamglin.phosphoricons.light.EyeSlash
+import com.adamglin.phosphoricons.light.LockSimple
+import com.adamglin.phosphoricons.light.Minus
+import com.adamglin.phosphoricons.light.Plus
+import com.adamglin.phosphoricons.light.X
 import com.masum.fathom.core.haptics.LocalFathomHaptics
 import com.masum.fathom.core.notification.DailyNotificationScheduler
 import com.masum.fathom.core.sanctuary.ByokProvider
@@ -84,978 +79,544 @@ import com.masum.fathom.core.subscription.LocalOpenPaywall
 import com.masum.fathom.core.subscription.LocalSubscriptionState
 import com.masum.fathom.core.update.AppUpdateStatus
 import com.masum.fathom.core.update.LocalAppUpdateEngine
+import com.masum.fathom.ui.design.Atmosphere
+import com.masum.fathom.ui.design.ButtonStyle
+import com.masum.fathom.ui.design.FathomButton
+import com.masum.fathom.ui.design.FathomSheet
+import com.masum.fathom.ui.design.FathomToggle
+import com.masum.fathom.ui.design.Hairline
+import com.masum.fathom.ui.design.fadeEdges
+import com.masum.fathom.ui.design.LocalBackdrop
+import com.masum.fathom.ui.design.MonoLabel
+import com.masum.fathom.ui.design.Pill
+import com.masum.fathom.ui.design.Seekline
+import com.masum.fathom.ui.design.SheetHeader
+import com.masum.fathom.ui.design.tappable
 import com.masum.fathom.ui.theme.FathomTheme
-import com.masum.fathom.ui.theme.ForestColors
-import com.masum.fathom.ui.theme.JakartaFontFamily
-import com.masum.fathom.ui.theme.ObsidianColors
 import com.masum.fathom.ui.theme.ReadingTheme
-import com.masum.fathom.ui.theme.SepiaColors
-import com.masum.fathom.ui.theme.SlateColors
+import com.masum.fathom.ui.theme.palette
+import com.masum.fathom.ui.theme.rememberTone
 import kotlinx.coroutines.launch
+import java.util.Locale
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SanctuaryModal(
     preferences: SanctuaryPreferences,
     dataEngine: SanctuaryDataEngine,
     onDismiss: () -> Unit
 ) {
-    val haptics = LocalFathomHaptics.current
     val context = LocalContext.current
     val activity = context as? Activity
+    val haptics = LocalFathomHaptics.current
+    val colors = FathomTheme.colors
+    val typography = FathomTheme.typography
+    val tone = rememberTone(null)
+    val settings by preferences.settings.collectAsState()
+    val subscription = LocalSubscriptionState.current
+    val openPaywall = LocalOpenPaywall.current
     val updateEngine = LocalAppUpdateEngine.current
     val updateStatus by updateEngine.updateStatus.collectAsState()
-    val subscriptionState = LocalSubscriptionState.current
-    val openPaywall = LocalOpenPaywall.current
-    val coroutineScope = rememberCoroutineScope()
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    val settings by preferences.settings.collectAsState()
-    val maxHeight = (LocalConfiguration.current.screenHeightDp * 0.88f).dp
+    val scope = rememberCoroutineScope()
 
-    var storageStats by remember { mutableStateOf(SanctuaryStorageStats()) }
-    var showRestoreDialog by remember { mutableStateOf(false) }
-    var restoreJsonInput by remember { mutableStateOf("") }
-    var byokKeyInput by remember { mutableStateOf(settings.byokApiKey) }
-    var showKeyMask by remember { mutableStateOf(true) }
+    var stats by remember { mutableStateOf(SanctuaryStorageStats()) }
+    var showRestore by remember { mutableStateOf(false) }
+    var keyInput by remember { mutableStateOf(settings.byokApiKey) }
+    var maskKey by remember { mutableStateOf(true) }
 
-    LaunchedEffect(Unit) {
-        storageStats = dataEngine.getStorageStats()
+    LaunchedEffect(Unit) { stats = dataEngine.getStorageStats() }
+
+    val version = remember(context) {
+        runCatching {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                context.packageManager.getPackageInfo(context.packageName, android.content.pm.PackageManager.PackageInfoFlags.of(0))
+            } else {
+                @Suppress("DEPRECATION")
+                context.packageManager.getPackageInfo(context.packageName, 0)
+            }
+        }.getOrNull()
     }
+    val versionName = version?.versionName.orEmpty()
+    val buildNumber = if (version != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) version.longVersionCode else 0L
 
-    ModalBottomSheet(
+    Dialog(
         onDismissRequest = onDismiss,
-        sheetState = sheetState,
-        containerColor = FathomTheme.colors.surface,
-        shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
-        dragHandle = {
-            BottomSheetDefaults.DragHandle(
-                color = FathomTheme.colors.borderSubtle,
-                height = 4.dp,
-                width = 36.dp
-            )
-        }
+        properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .heightIn(max = maxHeight)
-                .navigationBarsPadding()
-                .padding(horizontal = 22.dp)
-                .padding(bottom = 36.dp)
-                .verticalScroll(rememberScrollState())
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column {
-                    Text(
-                        text = "SANCTUARY",
-                        fontFamily = JakartaFontFamily,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 22.sp,
-                        color = FathomTheme.colors.textPrimary
-                    )
-                    Spacer(modifier = Modifier.height(2.dp))
-                    Text(
-                        text = "Aesthetics, contemplation habit & private data vault",
-                        fontFamily = JakartaFontFamily,
-                        fontSize = 12.sp,
-                        color = FathomTheme.colors.textTertiary
-                    )
-                }
-
-                Box(
-                    modifier = Modifier
-                        .size(34.dp)
-                        .clip(CircleShape)
-                        .background(FathomTheme.colors.accentGold.copy(alpha = 0.16f)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = PhosphorIcons.Regular.Sparkle,
-                        contentDescription = null,
-                        tint = FathomTheme.colors.accentGold,
-                        modifier = Modifier.size(16.dp)
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(16.dp))
-                    .background(
-                        if (subscriptionState.isPro) {
-                            androidx.compose.ui.graphics.Brush.linearGradient(
-                                listOf(
-                                    FathomTheme.colors.accentGold.copy(alpha = 0.22f),
-                                    FathomTheme.colors.surfaceElevated
-                                )
-                            )
-                        } else {
-                            androidx.compose.ui.graphics.Brush.linearGradient(
-                                listOf(
-                                    FathomTheme.colors.surfaceElevated,
-                                    FathomTheme.colors.surface
-                                )
-                            )
-                        }
-                    )
-                    .border(
-                        width = 1.dp,
-                        color = if (subscriptionState.isPro) FathomTheme.colors.accentGold.copy(alpha = 0.5f) else FathomTheme.colors.borderSubtle,
-                        shape = RoundedCornerShape(16.dp)
-                    )
-                    .clickable {
-                        haptics.medium()
-                        openPaywall()
-                    }
-                    .padding(16.dp)
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+        CompositionLocalProvider(LocalBackdrop provides null) {
+            Atmosphere(tone = tone, modifier = Modifier.fillMaxSize()) {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxHeight().widthIn(max = 640.dp).fadeEdges(top = 96.dp),
+                        contentPadding = PaddingValues(start = 24.dp, end = 24.dp, top = 96.dp, bottom = 48.dp)
                     ) {
-                        Box(
-                            modifier = Modifier
-                                .size(40.dp)
-                                .clip(CircleShape)
-                                .background(FathomTheme.colors.accentGold.copy(alpha = 0.18f)),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = PhosphorIcons.Regular.Crown,
-                                contentDescription = null,
-                                tint = FathomTheme.colors.accentGold,
-                                modifier = Modifier.size(20.dp)
-                            )
-                        }
-
-                        Column {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(6.dp)
-                            ) {
+                        item {
+                            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                                MonoLabel(text = "Settings", color = tone.hue)
+                                Text(text = "Sanctuary", style = typography.display, color = colors.textPrimary)
                                 Text(
-                                    text = if (subscriptionState.isPro) "SANCTUARY+ PATRON" else "FATHOM SANCTUARY+",
-                                    fontFamily = JakartaFontFamily,
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 13.sp,
-                                    letterSpacing = 0.8.sp,
-                                    color = if (subscriptionState.isPro) FathomTheme.colors.accentGold else FathomTheme.colors.textPrimary
+                                    text = "How Fathom looks, sounds and remembers.",
+                                    style = typography.commentaryBody,
+                                    color = colors.textSecondary
                                 )
-                                if (!subscriptionState.isPro) {
-                                    Box(
-                                        modifier = Modifier
-                                            .clip(RoundedCornerShape(4.dp))
-                                            .background(FathomTheme.colors.accentGold)
-                                            .padding(horizontal = 5.dp, vertical = 1.dp)
-                                    ) {
-                                        Text(
-                                            text = "PRO",
-                                            fontFamily = JakartaFontFamily,
-                                            fontWeight = FontWeight.Bold,
-                                            fontSize = 8.sp,
-                                            color = Color.Black
-                                        )
+                            }
+                        }
+
+                        item {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(top = 36.dp)
+                                    .clip(RoundedCornerShape(26.dp))
+                                    .background(Brush.linearGradient(listOf(tone.hue.copy(alpha = 0.26f), tone.hue.copy(alpha = 0.06f))))
+                                    .border(0.75.dp, tone.hue.copy(alpha = 0.32f), RoundedCornerShape(26.dp))
+                                    .tappable(scale = 0.98f) {
+                                        haptics.medium()
+                                        openPaywall()
                                     }
-                                }
-                            }
-                            Spacer(modifier = Modifier.height(2.dp))
-                            Text(
-                                text = if (subscriptionState.isPro) "Full wisdom archives, 4 themes & soundscapes active" else "Unlock all 4 sacred themes, soundscapes & study paths",
-                                fontFamily = JakartaFontFamily,
-                                fontSize = 11.5.sp,
-                                color = FathomTheme.colors.textTertiary
-                            )
-                        }
-                    }
-
-                    Icon(
-                        imageVector = PhosphorIcons.Regular.Sparkle,
-                        contentDescription = null,
-                        tint = FathomTheme.colors.accentGold,
-                        modifier = Modifier.size(16.dp)
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(20.dp))
-
-            Text(
-                text = "READING THEMES",
-                style = FathomTheme.typography.canonicalHeader,
-                color = FathomTheme.colors.accentGold
-            )
-            Spacer(modifier = Modifier.height(10.dp))
-
-            Column(
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                ReadingTheme.entries.forEach { theme ->
-                    val isSelected = settings.theme == theme
-                    val isPremiumTheme = theme != ReadingTheme.OBSIDIAN
-                    val isLocked = isPremiumTheme && !subscriptionState.isPro
-                    val themeColors = when (theme) {
-                        ReadingTheme.OBSIDIAN -> ObsidianColors
-                        ReadingTheme.SEPIA -> SepiaColors
-                        ReadingTheme.SLATE -> SlateColors
-                        ReadingTheme.FOREST -> ForestColors
-                    }
-
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(14.dp))
-                            .background(if (isSelected) FathomTheme.colors.surfaceElevated else FathomTheme.colors.surface)
-                            .border(
-                                width = if (isSelected) 1.5.dp else 1.dp,
-                                color = if (isSelected) FathomTheme.colors.accentGold else FathomTheme.colors.borderSubtle,
-                                shape = RoundedCornerShape(14.dp)
-                            )
-                            .clickable {
-                                if (isLocked) {
-                                    haptics.medium()
-                                    openPaywall()
-                                } else {
-                                    haptics.light()
-                                    preferences.updateTheme(theme)
-                                }
-                            }
-                            .padding(horizontal = 16.dp, vertical = 12.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            Row(
-                                horizontalArrangement = Arrangement.spacedBy(4.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(16.dp)
-                                        .clip(CircleShape)
-                                        .background(themeColors.background)
-                                        .border(1.dp, Color.White.copy(alpha = 0.2f), CircleShape)
-                                )
-                                Box(
-                                    modifier = Modifier
-                                        .size(16.dp)
-                                        .clip(CircleShape)
-                                        .background(themeColors.surfaceElevated)
-                                )
-                                Box(
-                                    modifier = Modifier
-                                        .size(16.dp)
-                                        .clip(CircleShape)
-                                        .background(themeColors.accentGold)
-                                )
-                            }
-
-                            Row(
+                                    .padding(24.dp),
                                 verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                horizontalArrangement = Arrangement.spacedBy(16.dp)
                             ) {
-                                Text(
-                                    text = theme.displayName,
-                                    fontFamily = JakartaFontFamily,
-                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                                    fontSize = 14.sp,
-                                    color = if (isSelected) FathomTheme.colors.textPrimary else FathomTheme.colors.textSecondary
-                                )
-
-                                if (isLocked) {
-                                    Box(
-                                        modifier = Modifier
-                                            .clip(RoundedCornerShape(4.dp))
-                                            .background(FathomTheme.colors.accentGold.copy(alpha = 0.15f))
-                                            .padding(horizontal = 5.dp, vertical = 1.dp)
-                                    ) {
-                                        Text(
-                                            text = "PLUS",
-                                            fontFamily = JakartaFontFamily,
-                                            fontWeight = FontWeight.Bold,
-                                            fontSize = 8.sp,
-                                            letterSpacing = 0.4.sp,
-                                            color = FathomTheme.colors.accentGold
-                                        )
-                                    }
-                                }
-                            }
-                        }
-
-                        if (isSelected) {
-                            Icon(
-                                imageVector = PhosphorIcons.Bold.Check,
-                                contentDescription = "Active Theme",
-                                tint = FathomTheme.colors.accentGold,
-                                modifier = Modifier.size(16.dp)
-                            )
-                        } else if (isLocked) {
-                            Icon(
-                                imageVector = PhosphorIcons.Regular.Crown,
-                                contentDescription = "Sanctuary+ Theme",
-                                tint = FathomTheme.colors.accentGold,
-                                modifier = Modifier.size(16.dp)
-                            )
-                        }
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            Text(
-                text = "DAILY CONTEMPLATION HABIT",
-                style = FathomTheme.typography.canonicalHeader,
-                color = FathomTheme.colors.accentGold
-            )
-            Spacer(modifier = Modifier.height(10.dp))
-
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(14.dp))
-                    .background(FathomTheme.colors.surfaceElevated)
-                    .border(1.dp, FathomTheme.colors.borderSubtle, RoundedCornerShape(14.dp))
-                    .padding(16.dp)
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = "Daily Wisdom Reminder",
-                            fontFamily = JakartaFontFamily,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 14.sp,
-                            color = FathomTheme.colors.textPrimary
-                        )
-                        Text(
-                            text = "Receive a quiet, sacred verse for morning or evening reflection",
-                            fontFamily = JakartaFontFamily,
-                            fontSize = 12.sp,
-                            color = FathomTheme.colors.textTertiary
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.width(10.dp))
-
-                    Switch(
-                        checked = settings.dailyNotificationEnabled,
-                        onCheckedChange = { enabled ->
-                            haptics.light()
-                            preferences.updateNotificationTime(
-                                enabled = enabled,
-                                hour = settings.notificationHour,
-                                minute = settings.notificationMinute
-                            )
-                            if (enabled) {
-                                DailyNotificationScheduler.scheduleDailyReminder(
-                                    context = context,
-                                    hour = settings.notificationHour,
-                                    minute = settings.notificationMinute
-                                )
-                                Toast.makeText(context, "Daily contemplation scheduled", Toast.LENGTH_SHORT).show()
-                            } else {
-                                DailyNotificationScheduler.cancelDailyReminder(context)
-                                Toast.makeText(context, "Daily reminder paused", Toast.LENGTH_SHORT).show()
-                            }
-                        },
-                        colors = SwitchDefaults.colors(
-                            checkedThumbColor = FathomTheme.colors.background,
-                            checkedTrackColor = FathomTheme.colors.accentGold,
-                            uncheckedThumbColor = FathomTheme.colors.textTertiary,
-                            uncheckedTrackColor = FathomTheme.colors.surface
-                        )
-                    )
-                }
-
-                AnimatedVisibility(visible = settings.dailyNotificationEnabled) {
-                    Column {
-                        Spacer(modifier = Modifier.height(14.dp))
-
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Text(
-                                text = "Reminder Time",
-                                fontFamily = JakartaFontFamily,
-                                fontSize = 13.sp,
-                                color = FathomTheme.colors.textSecondary
-                            )
-
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(6.dp)
-                            ) {
-                                val hourFormatted = String.format(java.util.Locale.US, "%02d", settings.notificationHour)
-                                val minFormatted = String.format(java.util.Locale.US, "%02d", settings.notificationMinute)
-
-                                Box(
-                                    modifier = Modifier
-                                        .clip(RoundedCornerShape(8.dp))
-                                        .background(FathomTheme.colors.surface)
-                                        .border(1.dp, FathomTheme.colors.borderSubtle, RoundedCornerShape(8.dp))
-                                        .clickable {
-                                            haptics.light()
-                                            val nextHour = (settings.notificationHour - 1 + 24) % 24
-                                            preferences.updateNotificationTime(true, nextHour, settings.notificationMinute)
-                                            DailyNotificationScheduler.scheduleDailyReminder(context, nextHour, settings.notificationMinute)
-                                        }
-                                        .padding(horizontal = 8.dp, vertical = 4.dp)
-                                ) {
-                                    Text("−", fontFamily = JakartaFontFamily, fontWeight = FontWeight.Bold, color = FathomTheme.colors.textPrimary)
-                                }
-
-                                Box(
-                                    modifier = Modifier
-                                        .clip(RoundedCornerShape(8.dp))
-                                        .background(FathomTheme.colors.accentGold.copy(alpha = 0.16f))
-                                        .border(1.dp, FathomTheme.colors.accentGold.copy(alpha = 0.4f), RoundedCornerShape(8.dp))
-                                        .padding(horizontal = 10.dp, vertical = 5.dp)
-                                ) {
+                                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                    MonoLabel(text = if (subscription.isPro) "Sanctuary+ patron" else "Sanctuary+", color = tone.hue)
                                     Text(
-                                        text = "$hourFormatted:$minFormatted",
-                                        fontFamily = JakartaFontFamily,
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 12.sp,
-                                        color = FathomTheme.colors.accentGold
+                                        text = if (subscription.isPro) "Every theme, soundscape and path is open to you." else "Unlock every theme, soundscape and study path.",
+                                        style = typography.title,
+                                        color = colors.textPrimary
                                     )
                                 }
+                                Icon(PhosphorIcons.Light.ArrowRight, null, tint = tone.hue, modifier = Modifier.size(22.dp))
+                            }
+                        }
 
-                                Box(
-                                    modifier = Modifier
-                                        .clip(RoundedCornerShape(8.dp))
-                                        .background(FathomTheme.colors.surface)
-                                        .border(1.dp, FathomTheme.colors.borderSubtle, RoundedCornerShape(8.dp))
-                                        .clickable {
-                                            haptics.light()
-                                            val nextHour = (settings.notificationHour + 1) % 24
-                                            preferences.updateNotificationTime(true, nextHour, settings.notificationMinute)
-                                            DailyNotificationScheduler.scheduleDailyReminder(context, nextHour, settings.notificationMinute)
+                        item { Heading("Appearance", "Reading themes") }
+                        item {
+                            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                                ReadingTheme.entries.chunked(2).forEach { pair ->
+                                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                        pair.forEach { theme ->
+                                            val locked = theme != ReadingTheme.OBSIDIAN && !subscription.isPro
+                                            ThemeTile(
+                                                theme = theme,
+                                                selected = settings.theme == theme,
+                                                locked = locked,
+                                                modifier = Modifier.weight(1f),
+                                                onClick = {
+                                                    if (locked) {
+                                                        haptics.medium()
+                                                        openPaywall()
+                                                    } else {
+                                                        haptics.light()
+                                                        preferences.updateTheme(theme)
+                                                    }
+                                                }
+                                            )
                                         }
-                                        .padding(horizontal = 8.dp, vertical = 4.dp)
-                                ) {
-                                    Text("+", fontFamily = JakartaFontFamily, fontWeight = FontWeight.Bold, color = FathomTheme.colors.textPrimary)
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            Text(
-                text = "STUDIO SPEECH ENGINE (OPTIONAL BYOK)",
-                style = FathomTheme.typography.canonicalHeader,
-                color = FathomTheme.colors.accentGold
-            )
-            Spacer(modifier = Modifier.height(10.dp))
-
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(14.dp))
-                    .background(FathomTheme.colors.surfaceElevated)
-                    .border(1.dp, FathomTheme.colors.borderSubtle, RoundedCornerShape(14.dp))
-                    .padding(16.dp)
-            ) {
-                Text(
-                    text = "Speech Synthesis Provider",
-                    fontFamily = JakartaFontFamily,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 14.sp,
-                    color = FathomTheme.colors.textPrimary
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = "Fathom uses 100% free offline Android voice synthesis by default. Power users can optionally connect their own API key.",
-                    fontFamily = JakartaFontFamily,
-                    fontSize = 12.sp,
-                    color = FathomTheme.colors.textTertiary
-                )
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    ByokProvider.entries.forEach { prov ->
-                        val isSel = settings.byokProvider == prov
-                        Box(
-                            modifier = Modifier
-                                .weight(1f)
-                                .clip(RoundedCornerShape(10.dp))
-                                .background(if (isSel) FathomTheme.colors.accentGold.copy(alpha = 0.18f) else FathomTheme.colors.surface)
-                                .border(
-                                    width = if (isSel) 1.dp else 0.dp,
-                                    color = if (isSel) FathomTheme.colors.accentGold else Color.Transparent,
-                                    shape = RoundedCornerShape(10.dp)
-                                )
-                                .clickable {
-                                    haptics.light()
-                                    preferences.updateByokSettings(prov, settings.byokApiKey, settings.byokVoiceId)
-                                }
-                                .padding(vertical = 8.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = when (prov) {
-                                    ByokProvider.NONE -> "OFFLINE"
-                                    ByokProvider.ELEVENLABS -> "ELEVENLABS"
-                                    ByokProvider.OPENAI -> "OPENAI"
-                                },
-                                fontFamily = JakartaFontFamily,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 10.sp,
-                                letterSpacing = 0.6.sp,
-                                color = if (isSel) FathomTheme.colors.accentGold else FathomTheme.colors.textSecondary
-                            )
-                        }
-                    }
-                }
-
-                if (settings.byokProvider != ByokProvider.NONE) {
-                    Spacer(modifier = Modifier.height(14.dp))
-
-                    Text(
-                        text = "YOUR ${settings.byokProvider.name} API KEY",
-                        style = FathomTheme.typography.caption.copy(fontSize = 10.sp, letterSpacing = 0.8.sp),
-                        color = FathomTheme.colors.accentGold
-                    )
-                    Spacer(modifier = Modifier.height(6.dp))
-
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(10.dp))
-                            .background(FathomTheme.colors.surface)
-                            .border(1.dp, FathomTheme.colors.borderSubtle, RoundedCornerShape(10.dp))
-                            .padding(horizontal = 12.dp, vertical = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        BasicTextField(
-                            value = byokKeyInput,
-                            onValueChange = { byokKeyInput = it },
-                            singleLine = true,
-                            visualTransformation = if (showKeyMask) PasswordVisualTransformation() else VisualTransformation.None,
-                            textStyle = TextStyle(
-                                fontFamily = JakartaFontFamily,
-                                fontSize = 13.sp,
-                                color = FathomTheme.colors.textPrimary
-                            ),
-                            cursorBrush = SolidColor(FathomTheme.colors.accentGold),
-                            modifier = Modifier.weight(1f),
-                            decorationBox = { inner ->
-                                if (byokKeyInput.isEmpty()) {
-                                    Text(
-                                        text = "Paste secret API key...",
-                                        fontFamily = JakartaFontFamily,
-                                        fontSize = 13.sp,
-                                        color = FathomTheme.colors.textTertiary
-                                    )
-                                }
-                                inner()
-                            }
-                        )
-
-                        TextButton(
-                            onClick = {
-                                haptics.light()
-                                preferences.updateByokSettings(settings.byokProvider, byokKeyInput, settings.byokVoiceId)
-                                Toast.makeText(context, "API Key Saved Securely", Toast.LENGTH_SHORT).show()
-                            }
-                        ) {
-                            Text("SAVE", fontFamily = JakartaFontFamily, fontWeight = FontWeight.Bold, fontSize = 11.sp, color = FathomTheme.colors.accentGold)
-                        }
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            Text(
-                text = "LOCAL-FIRST DATA SANCTUARY",
-                style = FathomTheme.typography.canonicalHeader,
-                color = FathomTheme.colors.accentGold
-            )
-            Spacer(modifier = Modifier.height(10.dp))
-
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(14.dp))
-                    .background(FathomTheme.colors.surfaceElevated)
-                    .border(1.dp, FathomTheme.colors.borderSubtle, RoundedCornerShape(14.dp))
-                    .padding(16.dp)
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Column {
-                        Text(
-                            text = "${storageStats.totalVerses} Verses",
-                            fontFamily = JakartaFontFamily,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 17.sp,
-                            color = FathomTheme.colors.textPrimary
-                        )
-                        Text(
-                            text = "7 Canons • ${storageStats.totalBooks} Books",
-                            fontFamily = JakartaFontFamily,
-                            fontSize = 12.sp,
-                            color = FathomTheme.colors.textTertiary
-                        )
-                    }
-
-                    Column(horizontalAlignment = Alignment.End) {
-                        Text(
-                            text = storageStats.contentDbSizeMb,
-                            fontFamily = JakartaFontFamily,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 17.sp,
-                            color = FathomTheme.colors.accentGold
-                        )
-                        Text(
-                            text = "100% Offline SQLite",
-                            fontFamily = JakartaFontFamily,
-                            fontSize = 12.sp,
-                            color = FathomTheme.colors.textTertiary
-                        )
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .clip(RoundedCornerShape(10.dp))
-                            .background(FathomTheme.colors.surface)
-                            .border(1.dp, FathomTheme.colors.borderSubtle, RoundedCornerShape(10.dp))
-                            .clickable {
-                                haptics.light()
-                                coroutineScope.launch {
-                                    val json = dataEngine.exportBackupJson()
-                                    val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager
-                                    val clip = ClipData.newPlainText("Fathom Data Backup", json)
-                                    clipboard?.setPrimaryClip(clip)
-
-                                    val shareIntent = Intent(Intent.ACTION_SEND).apply {
-                                        type = "text/plain"
-                                        putExtra(Intent.EXTRA_SUBJECT, "Fathom Sanctuary Backup")
-                                        putExtra(Intent.EXTRA_TEXT, json)
                                     }
-                                    context.startActivity(Intent.createChooser(shareIntent, "Export Sanctuary Backup"))
                                 }
                             }
-                            .padding(vertical = 10.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(6.dp)
-                        ) {
-                            Icon(imageVector = PhosphorIcons.Regular.ShareNetwork, contentDescription = null, tint = FathomTheme.colors.accentGold, modifier = Modifier.size(15.dp))
-                            Text(text = "EXPORT BACKUP", fontFamily = JakartaFontFamily, fontWeight = FontWeight.Bold, fontSize = 11.sp, color = FathomTheme.colors.accentGold)
-                        }
-                    }
-
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .clip(RoundedCornerShape(10.dp))
-                            .background(FathomTheme.colors.surface)
-                            .border(1.dp, FathomTheme.colors.borderSubtle, RoundedCornerShape(10.dp))
-                            .clickable {
-                                haptics.light()
-                                showRestoreDialog = true
-                            }
-                            .padding(vertical = 10.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(6.dp)
-                        ) {
-                            Icon(imageVector = PhosphorIcons.Regular.ClockCounterClockwise, contentDescription = null, tint = FathomTheme.colors.textPrimary, modifier = Modifier.size(15.dp))
-                            Text(text = "RESTORE DATA", fontFamily = JakartaFontFamily, fontWeight = FontWeight.Bold, fontSize = 11.sp, color = FathomTheme.colors.textPrimary)
-                        }
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(20.dp))
-
-                Text(
-                    text = "CLOSED TESTING & UPDATES",
-                    style = FathomTheme.typography.commentaryTitle.copy(fontFamily = JakartaFontFamily, fontWeight = FontWeight.Bold, fontSize = 12.sp, letterSpacing = 1.sp),
-                    color = FathomTheme.colors.accentGold
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(14.dp))
-                        .background(FathomTheme.colors.surfaceElevated)
-                        .border(1.dp, FathomTheme.colors.borderSubtle, RoundedCornerShape(14.dp))
-                        .padding(16.dp)
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            val pkgInfo = remember {
-                                try {
-                                    context.packageManager.getPackageInfo(context.packageName, 0)
-                                } catch (_: Exception) {
-                                    null
-                                }
-                            }
-                            val displayVersionName = pkgInfo?.versionName ?: "1.3.0"
-                            val displayVersionCode = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
-                                pkgInfo?.longVersionCode?.toInt() ?: 4
-                            } else {
-                                @Suppress("DEPRECATION")
-                                pkgInfo?.versionCode ?: 4
-                            }
-
-                            Text(
-                                text = "Fathom for Android",
-                                fontFamily = JakartaFontFamily,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 14.sp,
-                                color = FathomTheme.colors.textPrimary
-                            )
-                            Text(
-                                text = "Version $displayVersionName (Build $displayVersionCode) • Closed Testing",
-                                fontFamily = JakartaFontFamily,
-                                fontSize = 12.sp,
-                                color = FathomTheme.colors.textSecondary
-                            )
                         }
 
-                        when (updateStatus) {
-                            is AppUpdateStatus.Checking -> {
-                                CircularProgressIndicator(
-                                    modifier = Modifier.size(20.dp),
-                                    color = FathomTheme.colors.accentGold,
-                                    strokeWidth = 2.dp
-                                )
-                            }
-                            is AppUpdateStatus.Available -> {
-                                Box(
-                                    modifier = Modifier
-                                        .clip(RoundedCornerShape(8.dp))
-                                        .background(FathomTheme.colors.accentGold)
-                                        .clickable {
-                                            haptics.medium()
-                                            if (activity != null) {
-                                                val avail = updateStatus as AppUpdateStatus.Available
-                                                updateEngine.startFlexibleUpdate(activity, avail.info)
+                        item { Heading("Habit", "Daily reflection") }
+                        item {
+                            Column {
+                                Hairline()
+                                Row(
+                                    modifier = Modifier.fillMaxWidth().padding(vertical = 18.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                                ) {
+                                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                        Text(text = "Daily verse reminder", style = typography.title, color = colors.textPrimary)
+                                        Text(text = "A single quiet verse at the hour you choose.", style = typography.body, color = colors.textSecondary)
+                                    }
+                                    FathomToggle(
+                                        checked = settings.dailyNotificationEnabled,
+                                        onCheckedChange = { enabled ->
+                                            haptics.light()
+                                            preferences.updateNotificationTime(enabled, settings.notificationHour, settings.notificationMinute)
+                                            if (enabled) {
+                                                DailyNotificationScheduler.scheduleDailyReminder(context, settings.notificationHour, settings.notificationMinute)
+                                                Toast.makeText(context, "Daily reflection scheduled", Toast.LENGTH_SHORT).show()
+                                            } else {
+                                                DailyNotificationScheduler.cancelDailyReminder(context)
+                                                Toast.makeText(context, "Daily reflection paused", Toast.LENGTH_SHORT).show()
                                             }
                                         }
-                                        .padding(horizontal = 12.dp, vertical = 6.dp)
-                                ) {
-                                    Text(
-                                        text = "UPDATE",
-                                        fontFamily = JakartaFontFamily,
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 11.sp,
-                                        color = Color.Black
                                     )
                                 }
-                            }
-                            is AppUpdateStatus.Downloaded -> {
-                                Box(
-                                    modifier = Modifier
-                                        .clip(RoundedCornerShape(8.dp))
-                                        .background(FathomTheme.colors.accentGold)
-                                        .clickable {
-                                            haptics.success()
-                                            updateEngine.completeUpdate()
-                                        }
-                                        .padding(horizontal = 12.dp, vertical = 6.dp)
+                                AnimatedVisibility(
+                                    visible = settings.dailyNotificationEnabled,
+                                    enter = expandVertically(tween(320)) + fadeIn(tween(240)),
+                                    exit = shrinkVertically(tween(220)) + fadeOut(tween(140))
                                 ) {
-                                    Text(
-                                        text = "RESTART",
-                                        fontFamily = JakartaFontFamily,
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 11.sp,
-                                        color = Color.Black
-                                    )
+                                    Column {
+                                        Hairline()
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth().padding(vertical = 18.dp),
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.SpaceBetween
+                                        ) {
+                                            MonoLabel(text = "Reminder time")
+                                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+                                                StepButton(icon = PhosphorIcons.Light.Minus, description = "Earlier") {
+                                                    haptics.light()
+                                                    val hour = (settings.notificationHour - 1 + 24) % 24
+                                                    preferences.updateNotificationTime(true, hour, settings.notificationMinute)
+                                                    DailyNotificationScheduler.scheduleDailyReminder(context, hour, settings.notificationMinute)
+                                                }
+                                                Text(
+                                                    text = String.format(Locale.US, "%02d:%02d", settings.notificationHour, settings.notificationMinute),
+                                                    style = typography.headline,
+                                                    color = colors.textPrimary
+                                                )
+                                                StepButton(icon = PhosphorIcons.Light.Plus, description = "Later") {
+                                                    haptics.light()
+                                                    val hour = (settings.notificationHour + 1) % 24
+                                                    preferences.updateNotificationTime(true, hour, settings.notificationMinute)
+                                                    DailyNotificationScheduler.scheduleDailyReminder(context, hour, settings.notificationMinute)
+                                                }
+                                            }
+                                        }
+                                    }
                                 }
+                                Hairline()
                             }
-                            else -> {
-                                Box(
-                                    modifier = Modifier
-                                        .clip(RoundedCornerShape(8.dp))
-                                        .background(FathomTheme.colors.surface)
-                                        .border(1.dp, FathomTheme.colors.borderSubtle, RoundedCornerShape(8.dp))
-                                        .clickable {
-                                            haptics.light()
-                                            updateEngine.checkForUpdates(manual = true)
-                                        }
-                                        .padding(horizontal = 10.dp, vertical = 6.dp)
-                                ) {
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(4.dp)
-                                    ) {
-                                        Icon(
-                                            imageVector = PhosphorIcons.Regular.ArrowsClockwise,
-                                            contentDescription = null,
-                                            tint = FathomTheme.colors.accentGold,
-                                            modifier = Modifier.size(13.dp)
-                                        )
-                                        Text(
-                                            text = "CHECK",
-                                            fontFamily = JakartaFontFamily,
-                                            fontWeight = FontWeight.Bold,
-                                            fontSize = 11.sp,
-                                            color = FathomTheme.colors.accentGold
+                        }
+
+                        item { Heading("Voice", "Narration") }
+                        item {
+                            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                                Text(
+                                    text = "Recitation uses your phone's free offline voice. Power users may connect their own neural voice key.",
+                                    style = typography.body,
+                                    color = colors.textSecondary
+                                )
+                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    ByokProvider.entries.forEach { provider ->
+                                        Pill(
+                                            text = when (provider) {
+                                                ByokProvider.NONE -> "Offline"
+                                                ByokProvider.ELEVENLABS -> "ElevenLabs"
+                                                ByokProvider.OPENAI -> "OpenAI"
+                                            },
+                                            selected = settings.byokProvider == provider,
+                                            onClick = {
+                                                haptics.light()
+                                                preferences.updateByokSettings(provider, settings.byokApiKey, settings.byokVoiceId)
+                                            }
                                         )
                                     }
                                 }
+                                AnimatedVisibility(
+                                    visible = settings.byokProvider != ByokProvider.NONE,
+                                    enter = expandVertically(tween(320)) + fadeIn(tween(240)),
+                                    exit = shrinkVertically(tween(220)) + fadeOut(tween(140))
+                                ) {
+                                    KeyField(
+                                        value = keyInput,
+                                        onValueChange = { keyInput = it },
+                                        masked = maskKey,
+                                        onToggleMask = { maskKey = !maskKey },
+                                        onSave = {
+                                            haptics.success()
+                                            preferences.updateByokSettings(settings.byokProvider, keyInput.trim(), settings.byokVoiceId)
+                                            Toast.makeText(context, "Key saved on this device", Toast.LENGTH_SHORT).show()
+                                        }
+                                    )
+                                }
+                            }
+                        }
+
+                        item { Heading("Data", "Your private vault") }
+                        item {
+                            Column {
+                                Hairline()
+                                Row(Modifier.fillMaxWidth().padding(vertical = 20.dp)) {
+                                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                                        Text(text = stats.totalVerses.toString(), style = typography.numeral, color = colors.textPrimary)
+                                        MonoLabel(text = "Verses · ${stats.totalBooks} books")
+                                    }
+                                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                                        Text(text = stats.contentDbSizeMb, style = typography.numeral, color = colors.textPrimary)
+                                        MonoLabel(text = "On device · offline")
+                                    }
+                                }
+                                Hairline()
+                                Spacer(Modifier.height(20.dp))
+                                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                    FathomButton(
+                                        text = "Export backup",
+                                        onClick = {
+                                            haptics.light()
+                                            scope.launch {
+                                                val json = dataEngine.exportBackupJson()
+                                                val send = Intent(Intent.ACTION_SEND).apply {
+                                                    type = "text/plain"
+                                                    putExtra(Intent.EXTRA_SUBJECT, "Fathom backup")
+                                                    putExtra(Intent.EXTRA_TEXT, json)
+                                                }
+                                                context.startActivity(Intent.createChooser(send, "Export backup"))
+                                            }
+                                        },
+                                        style = ButtonStyle.Tone,
+                                        modifier = Modifier.weight(1f)
+                                    )
+                                    FathomButton(
+                                        text = "Restore",
+                                        onClick = {
+                                            haptics.light()
+                                            showRestore = true
+                                        },
+                                        style = ButtonStyle.Ghost,
+                                        modifier = Modifier.weight(1f)
+                                    )
+                                }
+                                Row(
+                                    Modifier.padding(top = 16.dp),
+                                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(PhosphorIcons.Light.LockSimple, null, tint = colors.textTertiary, modifier = Modifier.size(16.dp))
+                                    Text(text = "Bookmarks, notes and history never leave this phone.", style = typography.caption, color = colors.textTertiary)
+                                }
+                            }
+                        }
+
+                        item { Heading("About", "Fathom for Android") }
+                        item {
+                            Column {
+                                Hairline()
+                                Row(
+                                    modifier = Modifier.fillMaxWidth().padding(vertical = 18.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                                ) {
+                                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                        Text(text = "Version $versionName", style = typography.title, color = colors.textPrimary)
+                                        MonoLabel(text = "Build $buildNumber · closed testing")
+                                    }
+                                    when (val status = updateStatus) {
+                                        is AppUpdateStatus.Checking -> MonoLabel(text = "Checking", color = tone.hue)
+                                        is AppUpdateStatus.Available -> FathomButton(
+                                            text = "Update",
+                                            onClick = {
+                                                haptics.medium()
+                                                activity?.let { updateEngine.startFlexibleUpdate(it, status.info) }
+                                            },
+                                            style = ButtonStyle.Tone,
+                                            modifier = Modifier.height(44.dp)
+                                        )
+                                        is AppUpdateStatus.Downloaded -> FathomButton(
+                                            text = "Restart",
+                                            onClick = {
+                                                haptics.success()
+                                                updateEngine.completeUpdate()
+                                            },
+                                            style = ButtonStyle.Tone,
+                                            modifier = Modifier.height(44.dp)
+                                        )
+                                        is AppUpdateStatus.Downloading -> Column(Modifier.width(120.dp)) {
+                                            val fraction = if (status.totalBytes > 0) status.bytesDownloaded.toFloat() / status.totalBytes else 0f
+                                            Seekline(progress = fraction, onSeek = {}, color = tone.hue)
+                                        }
+                                        else -> FathomButton(
+                                            text = "Check",
+                                            onClick = {
+                                                haptics.light()
+                                                updateEngine.checkForUpdates(manual = true)
+                                            },
+                                            style = ButtonStyle.Ghost,
+                                            modifier = Modifier.height(44.dp)
+                                        )
+                                    }
+                                }
+                                when (val status = updateStatus) {
+                                    is AppUpdateStatus.UpToDate -> MonoLabel(text = "You are on the latest build", color = tone.hue)
+                                    is AppUpdateStatus.Error -> Text(text = status.message, style = typography.caption, color = colors.textSecondary)
+                                    else -> Unit
+                                }
+                                Hairline(Modifier.padding(top = 18.dp))
                             }
                         }
                     }
 
-                    if (updateStatus is AppUpdateStatus.UpToDate) {
-                        Spacer(modifier = Modifier.height(10.dp))
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(6.dp)
-                        ) {
-                            Icon(
-                                imageVector = PhosphorIcons.Regular.CheckCircle,
-                                contentDescription = null,
-                                tint = FathomTheme.colors.accentGold,
-                                modifier = Modifier.size(14.dp)
-                            )
-                            Text(
-                                text = "You are on the latest sacred build.",
-                                fontFamily = JakartaFontFamily,
-                                fontSize = 11.5.sp,
-                                color = FathomTheme.colors.accentGold
-                            )
-                        }
-                    } else if (updateStatus is AppUpdateStatus.Error) {
-                        val errMsg = (updateStatus as AppUpdateStatus.Error).message
-                        Spacer(modifier = Modifier.height(10.dp))
-                        Text(
-                            text = errMsg,
-                            fontFamily = JakartaFontFamily,
-                            fontSize = 11.5.sp,
-                            color = FathomTheme.colors.textSecondary
-                        )
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .statusBarsPadding()
+                            .padding(top = 12.dp, end = 20.dp)
+                            .size(44.dp)
+                            .clip(CircleShape)
+                            .background(colors.surfaceElevated)
+                            .tappable(scale = 0.9f, haptic = false) {
+                                haptics.light()
+                                onDismiss()
+                            },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(PhosphorIcons.Light.X, "Close settings", tint = colors.textPrimary, modifier = Modifier.size(20.dp))
                     }
                 }
             }
         }
     }
 
-    if (showRestoreDialog) {
-        AlertDialog(
-            onDismissRequest = {
-                haptics.light()
-                showRestoreDialog = false
-            },
-            containerColor = FathomTheme.colors.surface,
-            title = {
-                Text(
-                    text = "RESTORE BACKUP JSON",
-                    style = FathomTheme.typography.commentaryTitle.copy(fontFamily = JakartaFontFamily, fontWeight = FontWeight.Bold, fontSize = 17.sp),
-                    color = FathomTheme.colors.textPrimary
-                )
-            },
-            text = {
-                Column {
-                    Text(
-                        text = "Paste your exported Fathom backup JSON below to restore your bookmarks and reflections.",
-                        fontFamily = JakartaFontFamily,
-                        fontSize = 12.5.sp,
-                        color = FathomTheme.colors.textSecondary
-                    )
-                    Spacer(modifier = Modifier.height(10.dp))
-                    BasicTextField(
-                        value = restoreJsonInput,
-                        onValueChange = { restoreJsonInput = it },
-                        textStyle = TextStyle(fontFamily = JakartaFontFamily, fontSize = 12.sp, color = FathomTheme.colors.textPrimary),
-                        cursorBrush = SolidColor(FathomTheme.colors.accentGold),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(140.dp)
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(FathomTheme.colors.surfaceElevated)
-                            .border(1.dp, FathomTheme.colors.borderSubtle, RoundedCornerShape(8.dp))
-                            .padding(10.dp)
-                            .verticalScroll(rememberScrollState()),
-                        decorationBox = { inner ->
-                            if (restoreJsonInput.isEmpty()) {
-                                Text(text = "Paste JSON here...", fontFamily = JakartaFontFamily, fontSize = 12.sp, color = FathomTheme.colors.textTertiary)
-                            }
-                            inner()
-                        }
-                    )
-                }
-            },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        haptics.light()
-                        coroutineScope.launch {
-                            val res = dataEngine.restoreBackupJson(restoreJsonInput)
-                            if (res.isSuccess) {
-                                haptics.success()
-                                Toast.makeText(context, "Restored ${res.getOrNull()} items successfully!", Toast.LENGTH_SHORT).show()
-                                showRestoreDialog = false
-                                storageStats = dataEngine.getStorageStats()
-                            } else {
-                                haptics.error()
-                                Toast.makeText(context, "Invalid backup JSON format", Toast.LENGTH_SHORT).show()
-                            }
-                        }
+    if (showRestore) {
+        RestoreSheet(
+            onDismiss = { showRestore = false },
+            onRestore = { json ->
+                scope.launch {
+                    val outcome = dataEngine.restoreBackupJson(json)
+                    outcome.onSuccess { count ->
+                        Toast.makeText(context, "Restored $count items", Toast.LENGTH_SHORT).show()
+                        showRestore = false
+                        stats = dataEngine.getStorageStats()
+                    }.onFailure {
+                        Toast.makeText(context, "That backup could not be read", Toast.LENGTH_SHORT).show()
                     }
-                ) {
-                    Text("RESTORE", fontFamily = JakartaFontFamily, fontWeight = FontWeight.Bold, color = FathomTheme.colors.accentGold)
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = {
-                    haptics.light()
-                    showRestoreDialog = false
-                }) {
-                    Text("CANCEL", fontFamily = JakartaFontFamily, color = FathomTheme.colors.textSecondary)
                 }
             }
+        )
+    }
+}
+
+@Composable
+private fun Heading(overline: String, title: String) {
+    Column(Modifier.fillMaxWidth().padding(top = 52.dp, bottom = 18.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        MonoLabel(text = overline, color = FathomTheme.tone.hue)
+        Text(text = title, style = FathomTheme.typography.headline, color = FathomTheme.colors.textPrimary)
+    }
+}
+
+@Composable
+private fun ThemeTile(
+    theme: ReadingTheme,
+    selected: Boolean,
+    locked: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val palette = theme.palette()
+    val tone = FathomTheme.tone
+    val shape = RoundedCornerShape(24.dp)
+    Box(
+        modifier = modifier
+            .aspectRatio(1.3f)
+            .clip(shape)
+            .background(palette.background)
+            .border(if (selected) 2.dp else 0.75.dp, if (selected) tone.hue else palette.hairline, shape)
+            .tappable(scale = 0.97f, haptic = false, onClick = onClick)
+            .padding(18.dp)
+    ) {
+        Text(
+            text = "Aa",
+            style = FathomTheme.typography.headline.copy(fontSize = 34.sp, lineHeight = 36.sp),
+            color = palette.textPrimary,
+            modifier = Modifier.align(Alignment.TopStart)
+        )
+        Box(Modifier.align(Alignment.TopEnd).size(14.dp).clip(CircleShape).background(palette.accent))
+        Column(Modifier.align(Alignment.BottomStart), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text(text = theme.displayName, style = FathomTheme.typography.label, color = palette.textSecondary)
+            if (locked) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Icon(PhosphorIcons.Light.LockSimple, null, tint = palette.textTertiary, modifier = Modifier.size(12.dp))
+                    Text(text = "Plus", style = FathomTheme.typography.mono, color = palette.textTertiary)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun StepButton(icon: androidx.compose.ui.graphics.vector.ImageVector, description: String, onClick: () -> Unit) {
+    Box(
+        modifier = Modifier
+            .size(40.dp)
+            .clip(CircleShape)
+            .border(0.75.dp, FathomTheme.colors.hairline, CircleShape)
+            .tappable(scale = 0.9f, haptic = false, onClick = onClick),
+        contentAlignment = Alignment.Center
+    ) {
+        Icon(icon, description, tint = FathomTheme.colors.textPrimary, modifier = Modifier.size(18.dp))
+    }
+}
+
+@Composable
+private fun KeyField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    masked: Boolean,
+    onToggleMask: () -> Unit,
+    onSave: () -> Unit
+) {
+    val colors = FathomTheme.colors
+    val tone = FathomTheme.tone
+    val source = remember { MutableInteractionSource() }
+    val focused by source.collectIsFocusedAsState()
+    val rule by animateColorAsState(if (focused) tone.hue else colors.hairline, tween(240), label = "key_rule")
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        MonoLabel(text = "API key")
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Box(Modifier.weight(1f)) {
+                if (value.isEmpty()) Text(text = "Paste your secret key", style = FathomTheme.typography.body, color = colors.textTertiary)
+                BasicTextField(
+                    value = value,
+                    onValueChange = onValueChange,
+                    singleLine = true,
+                    interactionSource = source,
+                    visualTransformation = if (masked) PasswordVisualTransformation() else VisualTransformation.None,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                    textStyle = FathomTheme.typography.body.copy(fontSize = 16.sp, color = colors.textPrimary),
+                    cursorBrush = SolidColor(tone.hue),
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 10.dp)
+                )
+            }
+            Box(Modifier.tappable(scale = 0.9f, haptic = false, onClick = onToggleMask).padding(6.dp)) {
+                Icon(
+                    imageVector = if (masked) PhosphorIcons.Light.Eye else PhosphorIcons.Light.EyeSlash,
+                    contentDescription = if (masked) "Show key" else "Hide key",
+                    tint = colors.textSecondary,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+            Box(Modifier.tappable(scale = 0.94f, onClick = onSave).padding(8.dp)) { MonoLabel(text = "Save", color = tone.hue) }
+        }
+        Box(Modifier.fillMaxWidth().height(1.dp).background(rule))
+    }
+}
+
+@Composable
+private fun RestoreSheet(onDismiss: () -> Unit, onRestore: (String) -> Unit) {
+    val colors = FathomTheme.colors
+    val tone = FathomTheme.tone
+    var json by remember { mutableStateOf("") }
+    FathomSheet(onDismiss = onDismiss) {
+        SheetHeader(overline = "Restore", title = "Paste a backup", subtitle = "Bookmarks and reflections from an exported file.", onClose = onDismiss)
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(180.dp)
+                .clip(RoundedCornerShape(20.dp))
+                .background(colors.surfaceElevated)
+                .padding(16.dp)
+        ) {
+            if (json.isEmpty()) Text(text = "Paste JSON here", style = FathomTheme.typography.body, color = colors.textTertiary)
+            BasicTextField(
+                value = json,
+                onValueChange = { json = it },
+                textStyle = FathomTheme.typography.body.copy(fontSize = 14.sp, color = colors.textPrimary),
+                cursorBrush = SolidColor(tone.hue),
+                modifier = Modifier.fillMaxSize()
+            )
+        }
+        Spacer(Modifier.height(20.dp))
+        FathomButton(
+            text = "Restore data",
+            onClick = { onRestore(json) },
+            enabled = json.isNotBlank(),
+            style = ButtonStyle.Tone,
+            modifier = Modifier.fillMaxWidth()
         )
     }
 }

@@ -5,31 +5,21 @@ import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -39,527 +29,169 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.adamglin.PhosphorIcons
-import com.adamglin.phosphoricons.Regular
-import com.adamglin.phosphoricons.regular.BookOpen
-import com.adamglin.phosphoricons.regular.Crown
-import com.adamglin.phosphoricons.regular.Headphones
-import com.adamglin.phosphoricons.regular.Info
-import com.adamglin.phosphoricons.regular.NotePencil
-import com.adamglin.phosphoricons.regular.PaintBrush
-import com.adamglin.phosphoricons.regular.ShieldCheck
-import com.adamglin.phosphoricons.regular.Sparkle
-import com.adamglin.phosphoricons.regular.X
+import com.masum.fathom.core.haptics.LocalFathomHaptics
 import com.masum.fathom.core.model.user.SubscriptionTier
 import com.masum.fathom.core.subscription.LocalSubscriptionManager
+import com.masum.fathom.ui.design.ButtonStyle
+import com.masum.fathom.ui.design.FathomButton
+import com.masum.fathom.ui.design.FathomSheet
+import com.masum.fathom.ui.design.Hairline
+import com.masum.fathom.ui.design.MonoLabel
+import com.masum.fathom.ui.design.tappable
 import com.masum.fathom.ui.theme.FathomTheme
-import com.masum.fathom.ui.theme.JakartaFontFamily
-import com.masum.fathom.ui.theme.SyneFontFamily
 
-private data class PaywallFeature(
-    val icon: ImageVector,
-    val title: String,
-    val description: String
+private data class Perk(val title: String, val body: String)
+
+private val Perks = listOf(
+    Perk("Four reading themes", "Nocturne, Vellum, Abyss and Moss, each tuned for a different hour."),
+    Perk("Endless recitation", "Continuous audio, singing bowls and ambient drones for any length of session."),
+    Perk("Every path, in full", "Walk each scripture chapter by chapter, with reflections along the way."),
+    Perk("Unlimited reflections", "Write without limits, tag what matters and revisit deep commentary.")
 )
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SanctuaryPaywallSheet(
-    onDismiss: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    val haptics = com.masum.fathom.core.haptics.LocalFathomHaptics.current
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    val subscriptionManager = LocalSubscriptionManager.current
+fun SanctuaryPaywallSheet(onDismiss: () -> Unit) {
+    val haptics = LocalFathomHaptics.current
+    val manager = LocalSubscriptionManager.current
     val context = LocalContext.current
+    val colors = FathomTheme.colors
+    val tone = FathomTheme.tone
+    val typography = FathomTheme.typography
+    var selected by remember { mutableStateOf(SubscriptionTier.ANNUAL) }
+    val maxHeight = (LocalConfiguration.current.screenHeightDp * 0.82f).dp
 
-    var selectedTier by remember { mutableStateOf(SubscriptionTier.ANNUAL) }
-
-    val features = remember {
-        listOf(
-            PaywallFeature(
-                icon = PhosphorIcons.Regular.PaintBrush,
-                title = "4 Sacred Reading Themes",
-                description = "Deep Obsidian, Ancient Parchment, Midnight Sapphire, and Imperial Emerald."
-            ),
-            PaywallFeature(
-                icon = PhosphorIcons.Regular.Headphones,
-                title = "Endless Sacred Audio & Soundscapes",
-                description = "Continuous recitations, Tibetan singing bowls, and 432Hz ambient harmonic drones."
-            ),
-            PaywallFeature(
-                icon = PhosphorIcons.Regular.BookOpen,
-                title = "Full Pathways Scripture Mastery",
-                description = "Study scriptures step-by-step across all chapters with reflections and certificates."
-            ),
-            PaywallFeature(
-                icon = PhosphorIcons.Regular.NotePencil,
-                title = "Unlimited Notes & Deep Insights",
-                description = "Unlimited personal notes, tag indexing, and deep conversational passage explanations."
-            )
-        )
-    }
-
-    ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        sheetState = sheetState,
-        containerColor = FathomTheme.colors.background,
-        dragHandle = null,
-        modifier = modifier.statusBarsPadding()
-    ) {
+    FathomSheet(onDismiss = onDismiss) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .navigationBarsPadding()
-                .verticalScroll(rememberScrollState())
-                .padding(bottom = 24.dp)
+            modifier = Modifier.fillMaxWidth().heightIn(max = maxHeight).verticalScroll(rememberScrollState())
         ) {
+            Column(Modifier.padding(top = 6.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                MonoLabel(text = "Sanctuary+", color = tone.hue)
+                Text(text = "Go deeper.", style = typography.display, color = colors.textPrimary)
+                Text(
+                    text = "Everything Fathom offers, with nothing held back.",
+                    style = typography.commentaryBody,
+                    color = colors.textSecondary
+                )
+            }
+
+            Column(Modifier.padding(top = 32.dp)) {
+                Hairline()
+                Perks.forEachIndexed { index, perk ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 18.dp),
+                        horizontalArrangement = Arrangement.spacedBy(18.dp)
+                    ) {
+                        MonoLabel(text = (index + 1).toString().padStart(2, '0'), color = tone.hue, modifier = Modifier.padding(top = 6.dp))
+                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Text(text = perk.title, style = typography.title, color = colors.textPrimary)
+                            Text(text = perk.body, style = typography.body, color = colors.textSecondary)
+                        }
+                    }
+                    Hairline()
+                }
+            }
+
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                    .padding(top = 28.dp)
+                    .clip(RoundedCornerShape(20.dp))
+                    .background(Brush.linearGradient(listOf(tone.hue.copy(alpha = 0.16f), tone.hue.copy(alpha = 0.04f))))
+                    .border(0.75.dp, tone.hue.copy(alpha = 0.28f), RoundedCornerShape(20.dp))
+                    .padding(18.dp),
+                horizontalArrangement = Arrangement.spacedBy(14.dp)
             ) {
-                IconButton(
-                    onClick = {
-                        haptics.light()
-                        onDismiss()
-                    },
-                    modifier = Modifier
-                        .size(36.dp)
-                        .clip(CircleShape)
-                        .background(FathomTheme.colors.surfaceElevated)
-                ) {
-                    Icon(
-                        imageVector = PhosphorIcons.Regular.X,
-                        contentDescription = "Close",
-                        tint = FathomTheme.colors.textSecondary,
-                        modifier = Modifier.size(18.dp)
-                    )
-                }
-
-                TextButton(
-                    onClick = {
-                        haptics.light()
-                        subscriptionManager.restorePurchases()
-                        Toast.makeText(context, "Full access active during testing", Toast.LENGTH_SHORT).show()
-                        onDismiss()
-                    }
-                ) {
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    MonoLabel(text = "Closed testing", color = tone.hue)
                     Text(
-                        text = "RESTORE",
-                        fontFamily = JakartaFontFamily,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 11.sp,
-                        letterSpacing = 1.sp,
-                        color = FathomTheme.colors.textSecondary
+                        text = "Pricing is a preview and will change when Fathom launches on Google Play. While you test, everything is unlocked.",
+                        style = typography.caption,
+                        color = colors.textSecondary
                     )
                 }
             }
 
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(64.dp)
-                        .clip(CircleShape)
-                        .background(
-                            Brush.radialGradient(
-                                listOf(
-                                    FathomTheme.colors.accentGold.copy(alpha = 0.28f),
-                                    FathomTheme.colors.surfaceElevated
-                                )
-                            )
-                        )
-                        .border(1.5.dp, FathomTheme.colors.accentGold, CircleShape),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = PhosphorIcons.Regular.Crown,
-                        contentDescription = null,
-                        tint = FathomTheme.colors.accentGold,
-                        modifier = Modifier.size(32.dp)
+            Column(Modifier.padding(top = 32.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                listOf(SubscriptionTier.ANNUAL, SubscriptionTier.SIX_MONTH, SubscriptionTier.MONTHLY).forEach { tier ->
+                    TierRow(
+                        tier = tier,
+                        selected = selected == tier,
+                        onClick = {
+                            haptics.light()
+                            selected = tier
+                        }
                     )
                 }
-
-                Spacer(modifier = Modifier.height(14.dp))
-
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(0.dp)
-                ) {
-                    Text(
-                        text = "fathom sanctuary",
-                        fontFamily = SyneFontFamily,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 24.sp,
-                        letterSpacing = (-0.5).sp,
-                        color = FathomTheme.colors.textPrimary
-                    )
-                    Text(
-                        text = "+",
-                        fontFamily = SyneFontFamily,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 24.sp,
-                        color = FathomTheme.colors.accentGold
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(6.dp))
-
-                Text(
-                    text = "Ascend into Deep Contemplation",
-                    fontFamily = JakartaFontFamily,
-                    fontSize = 13.5.sp,
-                    color = FathomTheme.colors.textSecondary,
-                    textAlign = TextAlign.Center
-                )
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
-
+            Spacer(Modifier.height(28.dp))
+            FathomButton(
+                text = "Unlock for testing",
+                onClick = {
+                    haptics.heavy()
+                    manager.purchaseTier(selected)
+                    Toast.makeText(context, "Sanctuary+ unlocked for testing", Toast.LENGTH_SHORT).show()
+                    onDismiss()
+                },
+                style = ButtonStyle.Tone,
+                modifier = Modifier.fillMaxWidth()
+            )
             Box(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 20.dp)
-                    .clip(RoundedCornerShape(16.dp))
-                    .background(
-                        Brush.verticalGradient(
-                            listOf(
-                                FathomTheme.colors.accentGold.copy(alpha = 0.12f),
-                                FathomTheme.colors.surfaceElevated
-                            )
-                        )
-                    )
-                    .border(1.dp, FathomTheme.colors.accentGold.copy(alpha = 0.45f), RoundedCornerShape(16.dp))
-                    .padding(16.dp)
-            ) {
-                Row(
-                    verticalAlignment = Alignment.Top,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(32.dp)
-                            .clip(CircleShape)
-                            .background(FathomTheme.colors.accentGold.copy(alpha = 0.2f)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = PhosphorIcons.Regular.Info,
-                            contentDescription = null,
-                            tint = FathomTheme.colors.accentGold,
-                            modifier = Modifier.size(18.dp)
-                        )
-                    }
-
-                    Column(modifier = Modifier.weight(1f)) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(6.dp)
-                        ) {
-                            Text(
-                                text = "CLOSED TESTING PREVIEW",
-                                fontFamily = JakartaFontFamily,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 11.sp,
-                                letterSpacing = 0.8.sp,
-                                color = FathomTheme.colors.accentGold
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.height(4.dp))
-
-                        Text(
-                            text = "Fathom is currently in closed beta testing. Subscriptions and pricing are not finalized and will launch later on Google Play. You may encounter bugs, incomplete features, or UI polish in progress. All features are unlocked for your testing!",
-                            fontFamily = JakartaFontFamily,
-                            fontSize = 12.sp,
-                            lineHeight = 17.sp,
-                            color = FathomTheme.colors.textSecondary
-                        )
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(18.dp))
-
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 20.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                features.forEach { feature ->
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(FathomTheme.colors.surfaceElevated)
-                            .border(1.dp, FathomTheme.colors.borderSubtle, RoundedCornerShape(12.dp))
-                            .padding(12.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(38.dp)
-                                .clip(CircleShape)
-                                .background(FathomTheme.colors.accentGold.copy(alpha = 0.14f)),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = feature.icon,
-                                contentDescription = null,
-                                tint = FathomTheme.colors.accentGold,
-                                modifier = Modifier.size(20.dp)
-                            )
-                        }
-
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = feature.title,
-                                fontFamily = JakartaFontFamily,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 13.sp,
-                                color = FathomTheme.colors.textPrimary
-                            )
-                            Spacer(modifier = Modifier.height(2.dp))
-                            Text(
-                                text = feature.description,
-                                fontFamily = JakartaFontFamily,
-                                fontSize = 11.5.sp,
-                                lineHeight = 16.sp,
-                                color = FathomTheme.colors.textTertiary
-                            )
-                        }
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(20.dp))
-
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 20.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                SubscriptionTierCard(
-                    tier = SubscriptionTier.ANNUAL,
-                    isSelected = selectedTier == SubscriptionTier.ANNUAL,
-                    onClick = {
-                        haptics.light()
-                        selectedTier = SubscriptionTier.ANNUAL
-                    }
-                )
-
-                SubscriptionTierCard(
-                    tier = SubscriptionTier.SIX_MONTH,
-                    isSelected = selectedTier == SubscriptionTier.SIX_MONTH,
-                    onClick = {
-                        haptics.light()
-                        selectedTier = SubscriptionTier.SIX_MONTH
-                    }
-                )
-
-                SubscriptionTierCard(
-                    tier = SubscriptionTier.MONTHLY,
-                    isSelected = selectedTier == SubscriptionTier.MONTHLY,
-                    onClick = {
-                        haptics.light()
-                        selectedTier = SubscriptionTier.MONTHLY
-                    }
-                )
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Text(
-                text = "* Pricing shown is a provisional preview and subject to change upon Google Play launch.",
-                fontFamily = JakartaFontFamily,
-                fontSize = 10.5.sp,
-                color = FathomTheme.colors.textTertiary,
-                textAlign = TextAlign.Center,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 24.dp)
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 20.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Button(
-                    onClick = {
-                        haptics.heavy()
-                        subscriptionManager.purchaseTier(selectedTier)
-                        Toast.makeText(context, "Full Sanctuary+ access unlocked for testing", Toast.LENGTH_SHORT).show()
+                    .align(Alignment.CenterHorizontally)
+                    .tappable(scale = 0.95f) {
+                        manager.restorePurchases()
+                        Toast.makeText(context, "Full access is active during testing", Toast.LENGTH_SHORT).show()
                         onDismiss()
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(52.dp)
-                        .clip(RoundedCornerShape(14.dp)),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = FathomTheme.colors.accentGold,
-                        contentColor = Color.Black
-                    ),
-                    shape = RoundedCornerShape(14.dp)
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Icon(
-                            imageVector = PhosphorIcons.Regular.Sparkle,
-                            contentDescription = null,
-                            tint = Color.Black,
-                            modifier = Modifier.size(18.dp)
-                        )
-                        Text(
-                            text = "ENJOY FULL ACCESS (TESTING PREVIEW)",
-                            fontFamily = JakartaFontFamily,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 12.5.sp,
-                            letterSpacing = 0.5.sp
-                        )
                     }
-                }
-
-                Spacer(modifier = Modifier.height(10.dp))
-
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    Icon(
-                        imageVector = PhosphorIcons.Regular.ShieldCheck,
-                        contentDescription = null,
-                        tint = FathomTheme.colors.textTertiary,
-                        modifier = Modifier.size(14.dp)
-                    )
-                    Text(
-                        text = "Google Play Closed Testing · All Features Unlocked",
-                        fontFamily = JakartaFontFamily,
-                        fontSize = 11.sp,
-                        color = FathomTheme.colors.textTertiary
-                    )
-                }
+                    .padding(vertical = 16.dp, horizontal = 24.dp)
+            ) {
+                MonoLabel(text = "Restore purchases", color = colors.textTertiary)
             }
         }
     }
 }
 
 @Composable
-private fun SubscriptionTierCard(
-    tier: SubscriptionTier,
-    isSelected: Boolean,
-    onClick: () -> Unit
-) {
-    val borderColor by animateColorAsState(
-        targetValue = if (isSelected) FathomTheme.colors.accentGold else FathomTheme.colors.borderSubtle,
-        animationSpec = tween(200),
-        label = "border_color"
-    )
+private fun TierRow(tier: SubscriptionTier, selected: Boolean, onClick: () -> Unit) {
+    val colors = FathomTheme.colors
+    val tone = FathomTheme.tone
+    val shape = RoundedCornerShape(22.dp)
+    val border by animateColorAsState(if (selected) tone.hue else colors.hairline, tween(240), label = "tier_border")
+    val fill by animateColorAsState(if (selected) tone.hue.copy(alpha = 0.10f) else androidx.compose.ui.graphics.Color.Transparent, tween(240), label = "tier_fill")
 
-    val backgroundColor by animateColorAsState(
-        targetValue = if (isSelected) FathomTheme.colors.accentGold.copy(alpha = 0.12f) else FathomTheme.colors.surfaceElevated,
-        animationSpec = tween(200),
-        label = "bg_color"
-    )
-
-    Box(
+    Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(14.dp))
-            .background(backgroundColor)
-            .border(
-                width = if (isSelected) 1.5.dp else 1.dp,
-                color = borderColor,
-                shape = RoundedCornerShape(14.dp)
-            )
-            .clickable(onClick = onClick)
-            .padding(14.dp)
+            .clip(shape)
+            .background(fill)
+            .border(if (selected) 1.5.dp else 0.75.dp, border, shape)
+            .tappable(scale = 0.985f, haptic = false, onClick = onClick)
+            .padding(horizontal = 20.dp, vertical = 18.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+        Box(
+            modifier = Modifier
+                .size(22.dp)
+                .clip(CircleShape)
+                .border(1.5.dp, if (selected) tone.hue else colors.textTertiary, CircleShape),
+            contentAlignment = Alignment.Center
         ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Text(
-                        text = tier.title,
-                        fontFamily = JakartaFontFamily,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 14.5.sp,
-                        color = if (isSelected) FathomTheme.colors.accentGold else FathomTheme.colors.textPrimary
-                    )
-
-                    tier.badgeLabel?.let { badge ->
-                        Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(6.dp))
-                                .background(FathomTheme.colors.accentGold)
-                                .padding(horizontal = 6.dp, vertical = 2.dp)
-                        ) {
-                            Text(
-                                text = badge,
-                                fontFamily = JakartaFontFamily,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 9.sp,
-                                letterSpacing = 0.4.sp,
-                                color = Color.Black
-                            )
-                        }
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(3.dp))
-
-                Text(
-                    text = tier.billingPeriod,
-                    fontFamily = JakartaFontFamily,
-                    fontSize = 12.sp,
-                    color = FathomTheme.colors.textTertiary
-                )
-            }
-
-            Column(horizontalAlignment = Alignment.End) {
-                Text(
-                    text = tier.priceDisplay,
-                    fontFamily = JakartaFontFamily,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 18.sp,
-                    color = if (isSelected) FathomTheme.colors.accentGold else FathomTheme.colors.textPrimary
-                )
-                Text(
-                    text = tier.equivalentMonthlyPrice,
-                    fontFamily = JakartaFontFamily,
-                    fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
-                    fontSize = 11.sp,
-                    color = if (isSelected) FathomTheme.colors.accentGold else FathomTheme.colors.textTertiary
-                )
-            }
+            if (selected) Box(Modifier.size(12.dp).clip(CircleShape).background(tone.hue))
+        }
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+            Text(text = tier.title, style = FathomTheme.typography.title, color = colors.textPrimary)
+            MonoLabel(text = tier.billingPeriod, color = colors.textTertiary)
+            tier.badgeLabel?.let { MonoLabel(text = it, color = tone.hue) }
+        }
+        Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text(text = tier.priceDisplay, style = FathomTheme.typography.headline.copy(fontSize = 24.sp), color = colors.textPrimary)
+            MonoLabel(text = tier.equivalentMonthlyPrice, color = colors.textTertiary)
         }
     }
 }

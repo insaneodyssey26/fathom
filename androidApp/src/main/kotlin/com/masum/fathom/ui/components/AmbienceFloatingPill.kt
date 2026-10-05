@@ -1,16 +1,16 @@
 package com.masum.fathom.ui.components
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -23,19 +23,19 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.adamglin.PhosphorIcons
-import com.adamglin.phosphoricons.Regular
-import com.adamglin.phosphoricons.regular.Pause
-import com.adamglin.phosphoricons.regular.Play
-import com.adamglin.phosphoricons.regular.Waves
+import com.adamglin.phosphoricons.Fill
+import com.adamglin.phosphoricons.fill.Pause as PauseFill
+import com.adamglin.phosphoricons.fill.Play as PlayFill
 import com.masum.fathom.core.audio.LocalSanctuaryAmbienceEngine
-import com.masum.fathom.core.haptics.LocalFathomHaptics
+import com.masum.fathom.ui.design.Equalizer
+import com.masum.fathom.ui.design.MonoLabel
+import com.masum.fathom.ui.design.glass
+import com.masum.fathom.ui.design.tappable
+import com.masum.fathom.ui.theme.FathomMotion
 import com.masum.fathom.ui.theme.FathomTheme
-import com.masum.fathom.ui.theme.JakartaFontFamily
 import java.util.Locale
 
 @Composable
@@ -43,81 +43,51 @@ fun AmbienceFloatingPill(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val haptics = LocalFathomHaptics.current
-    val ambienceEngine = LocalSanctuaryAmbienceEngine.current
-    val state by ambienceEngine.state.collectAsState()
+    val engine = LocalSanctuaryAmbienceEngine.current
+    val state by engine.state.collectAsState()
+    val colors = FathomTheme.colors
+    val tone = FathomTheme.tone
 
     AnimatedVisibility(
         visible = state.currentTrack != null,
-        enter = fadeIn() + slideInVertically { it / 2 },
-        exit = fadeOut() + slideOutVertically { it / 2 },
+        enter = fadeIn(tween(240)) + scaleIn(tween(360, easing = FathomMotion.Emphasized), initialScale = 0.85f),
+        exit = fadeOut(tween(160)) + scaleOut(tween(200), targetScale = 0.9f),
         modifier = modifier
     ) {
         val track = state.currentTrack ?: return@AnimatedVisibility
-
         Row(
             modifier = Modifier
-                .clip(RoundedCornerShape(24.dp))
-                .background(FathomTheme.colors.surfaceElevated.copy(alpha = 0.95f))
-                .border(
-                    width = 1.dp,
-                    color = if (state.isPlaying) FathomTheme.colors.accentGold.copy(alpha = 0.5f) else FathomTheme.colors.borderSubtle,
-                    shape = RoundedCornerShape(24.dp)
-                )
-                .clickable {
-                    haptics.light()
-                    onClick()
-                }
-                .padding(horizontal = 12.dp, vertical = 7.dp),
+                .height(44.dp)
+                .glass(RoundedCornerShape(50), tint = colors.surfaceElevated.copy(alpha = 0.78f), blur = 22.dp)
+                .tappable(scale = 0.96f, onClick = onClick)
+                .padding(start = 16.dp, end = 5.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Icon(
-                imageVector = PhosphorIcons.Regular.Waves,
-                contentDescription = null,
-                tint = if (state.isPlaying) FathomTheme.colors.accentGold else FathomTheme.colors.textTertiary,
-                modifier = Modifier.size(15.dp)
-            )
-
+            Equalizer(color = tone.hue, size = 16.dp, active = state.isPlaying)
             Text(
                 text = track.title,
-                fontFamily = JakartaFontFamily,
-                fontWeight = FontWeight.SemiBold,
-                fontSize = 11.5.sp,
-                color = if (state.isPlaying) FathomTheme.colors.textPrimary else FathomTheme.colors.textSecondary
+                style = FathomTheme.typography.label,
+                color = if (state.isPlaying) colors.textPrimary else colors.textSecondary,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
-
-            if (state.sleepTimerSecondsRemaining != null) {
-                val rem = state.sleepTimerSecondsRemaining ?: 0
-                val min = rem / 60
-                val sec = rem % 60
-                Text(
-                    text = String.format(Locale.US, "(%02d:%02d)", min, sec),
-                    fontFamily = JakartaFontFamily,
-                    fontSize = 10.sp,
-                    color = FathomTheme.colors.accentGold
-                )
+            state.sleepTimerSecondsRemaining?.let {
+                MonoLabel(text = String.format(Locale.US, "%02d:%02d", it / 60, it % 60), color = tone.hue)
             }
-
             Box(
                 modifier = Modifier
-                    .size(22.dp)
+                    .size(34.dp)
                     .clip(CircleShape)
-                    .background(
-                        if (state.isPlaying) FathomTheme.colors.accentGold
-                        else FathomTheme.colors.surface
-                    )
-                    .clickable {
-                        haptics.light()
-                        ambienceEngine.togglePlayPause()
-                    },
+                    .background(tone.hue)
+                    .tappable(scale = 0.9f, haptic = false) { engine.togglePlayPause() },
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
-                    imageVector = if (state.isPlaying) PhosphorIcons.Regular.Pause else PhosphorIcons.Regular.Play,
-                    contentDescription = null,
-                    tint = if (state.isPlaying) Color.Black else FathomTheme.colors.accentGold,
-                    modifier = Modifier.size(11.dp)
+                    imageVector = if (state.isPlaying) PhosphorIcons.Fill.PauseFill else PhosphorIcons.Fill.PlayFill,
+                    contentDescription = if (state.isPlaying) "Pause soundscape" else "Play soundscape",
+                    tint = tone.onHue,
+                    modifier = Modifier.size(15.dp)
                 )
             }
         }

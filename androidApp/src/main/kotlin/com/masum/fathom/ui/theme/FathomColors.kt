@@ -12,57 +12,64 @@ data class FathomColors(
     val textPrimary: Color,
     val textSecondary: Color,
     val textTertiary: Color,
-    val accentGold: Color,
-    val borderSubtle: Color,
+    val accent: Color,
+    val onAccent: Color,
+    val hairline: Color,
     val isDark: Boolean
-)
+) {
+    val scrim: Color get() = if (isDark) Color(0xCC000000) else Color(0x991A140C)
+}
 
-val ObsidianColors = FathomColors(
-    background = Color(0xFF09090B),
-    surface = Color(0xFF121214),
-    surfaceElevated = Color(0xFF18181B),
-    textPrimary = Color(0xFFFAFAFA),
-    textSecondary = Color(0xFFA1A1AA),
-    textTertiary = Color(0xFF71717A),
-    accentGold = Color(0xFFD4AF37),
-    borderSubtle = Color(0xFF27272A),
+val NocturneColors = FathomColors(
+    background = Color(0xFF0B0A09),
+    surface = Color(0xFF151311),
+    surfaceElevated = Color(0xFF1F1C18),
+    textPrimary = Color(0xFFF1EADD),
+    textSecondary = Color(0xFFA59C8D),
+    textTertiary = Color(0xFF70685C),
+    accent = Color(0xFFDCC291),
+    onAccent = Color(0xFF17120B),
+    hairline = Color(0xFF2C2824),
     isDark = true
 )
 
-val SepiaColors = FathomColors(
-    background = Color(0xFFFBF7EE),
-    surface = Color(0xFFF4EFE6),
-    surfaceElevated = Color(0xFFEBE4D8),
-    textPrimary = Color(0xFF1C1917),
-    textSecondary = Color(0xFF57534E),
-    textTertiary = Color(0xFF78716C),
-    accentGold = Color(0xFFB45309),
-    borderSubtle = Color(0xFFE7E0D3),
+val VellumColors = FathomColors(
+    background = Color(0xFFF3EDE0),
+    surface = Color(0xFFEAE3D3),
+    surfaceElevated = Color(0xFFE0D7C4),
+    textPrimary = Color(0xFF1E1A15),
+    textSecondary = Color(0xFF5B5347),
+    textTertiary = Color(0xFF8A806F),
+    accent = Color(0xFF8A5527),
+    onAccent = Color(0xFFFBF6EA),
+    hairline = Color(0xFFD6CBB5),
     isDark = false
 )
 
-val SlateColors = FathomColors(
-    background = Color(0xFF0F172A),
-    surface = Color(0xFF1E293B),
-    surfaceElevated = Color(0xFF334155),
-    textPrimary = Color(0xFFF8FAFC),
-    textSecondary = Color(0xFF94A3B8),
-    textTertiary = Color(0xFF64748B),
-    accentGold = Color(0xFFFBBF24),
-    borderSubtle = Color(0xFF334155),
+val AbyssColors = FathomColors(
+    background = Color(0xFF070C13),
+    surface = Color(0xFF0F1722),
+    surfaceElevated = Color(0xFF172231),
+    textPrimary = Color(0xFFE8EEF6),
+    textSecondary = Color(0xFF92A2B7),
+    textTertiary = Color(0xFF5C6C82),
+    accent = Color(0xFF9CBFE3),
+    onAccent = Color(0xFF08111B),
+    hairline = Color(0xFF212F42),
     isDark = true
 )
 
-val ForestColors = FathomColors(
-    background = Color(0xFF0A120D),
-    surface = Color(0xFF111D15),
-    surfaceElevated = Color(0xFF1A2A20),
-    textPrimary = Color(0xFFF2F8F4),
-    textSecondary = Color(0xFF9EBAA8),
-    textTertiary = Color(0xFF6B8774),
-    accentGold = Color(0xFFD4AF37),
-    borderSubtle = Color(0xFF233B2C),
+val MossColors = FathomColors(
+    background = Color(0xFF090E0A),
+    surface = Color(0xFF111913),
+    surfaceElevated = Color(0xFF19241C),
+    textPrimary = Color(0xFFE9F0E5),
+    textSecondary = Color(0xFF9AAF9B),
+    textTertiary = Color(0xFF64786A),
+    accent = Color(0xFFB3D296),
+    onAccent = Color(0xFF0B1209),
+    hairline = Color(0xFF233327),
     isDark = true
 )
 
-val LocalFathomColors = staticCompositionLocalOf { ObsidianColors }
+val LocalFathomColors = staticCompositionLocalOf { NocturneColors }

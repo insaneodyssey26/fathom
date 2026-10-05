@@ -16,6 +16,8 @@ kotlin = "2.4.20"
 kotlinx-coroutines = "1.10.1"
 material3 = "1.12.0-alpha03"
 sqldelight = "2.0.2"
+backdrop = "2.0.1"
+graphics-shapes = "1.1.0"
 
 [libraries]
 sqldelight-android-driver = { module = "app.cash.sqldelight:android-driver", version.ref = "sqldelight" }
@@ -46,6 +48,8 @@ compose-ui = { module = "org.jetbrains.compose.ui:ui", version.ref = "composeMul
 compose-components-resources = { module = "org.jetbrains.compose.components:components-resources", version.ref = "composeMultiplatform" }
 compose-uiToolingPreview = { module = "org.jetbrains.compose.ui:ui-tooling-preview", version.ref = "composeMultiplatform" }
 play-app-update = { module = "com.google.android.play:app-update-ktx", version = "2.1.0" }
+backdrop = { module = "io.github.kyant0:backdrop", version.ref = "backdrop" }
+androidx-graphics-shapes = { module = "androidx.graphics:graphics-shapes", version.ref = "graphics-shapes" }
 androidx-profileinstaller = { module = "androidx.profileinstaller:profileinstaller", version = "1.4.1" }
 
 [plugins]

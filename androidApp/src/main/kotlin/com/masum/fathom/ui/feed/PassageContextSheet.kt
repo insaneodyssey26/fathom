@@ -2,572 +2,286 @@ package com.masum.fathom.ui.feed
 
 import android.content.Intent
 import android.net.Uri
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import com.adamglin.PhosphorIcons
-import com.adamglin.phosphoricons.Regular
-import com.adamglin.phosphoricons.regular.BookBookmark
-import com.adamglin.phosphoricons.regular.Compass
-import com.adamglin.phosphoricons.regular.Pause
-import com.adamglin.phosphoricons.regular.Play
-import com.adamglin.phosphoricons.regular.Quotes
-import com.adamglin.phosphoricons.regular.Sparkle
-import com.adamglin.phosphoricons.regular.SpeakerHigh
-import androidx.compose.material3.BottomSheetDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.adamglin.PhosphorIcons
+import com.adamglin.phosphoricons.Fill
+import com.adamglin.phosphoricons.Light
+import com.adamglin.phosphoricons.fill.Pause as PauseFill
+import com.adamglin.phosphoricons.fill.Play as PlayFill
+import com.adamglin.phosphoricons.light.ArrowUpRight
 import com.masum.fathom.core.audio.LocalSacredAudioEngine
+import com.masum.fathom.core.audio.RecitationMode
 import com.masum.fathom.core.audio.SacredAudioState
+import com.masum.fathom.core.haptics.LocalFathomHaptics
 import com.masum.fathom.core.model.Passage
 import com.masum.fathom.core.model.TraditionId
-import com.masum.fathom.ui.components.SacredDivider
-import com.masum.fathom.ui.components.TraditionBadge
+import com.masum.fathom.ui.design.FathomSheet
+import com.masum.fathom.ui.design.Hairline
+import com.masum.fathom.ui.design.MonoLabel
+import com.masum.fathom.ui.design.SheetHeader
+import com.masum.fathom.ui.design.tappable
 import com.masum.fathom.ui.theme.FathomTheme
-import com.masum.fathom.ui.theme.JakartaFontFamily
+import com.masum.fathom.ui.theme.LocalTone
+import com.masum.fathom.ui.theme.ScriptureFamily
+import com.masum.fathom.ui.theme.rememberTone
+import androidx.compose.runtime.CompositionLocalProvider
+import java.util.Locale
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PassageContextSheet(
     passage: Passage,
     onDismiss: () -> Unit
 ) {
     val context = LocalContext.current
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    val exegesis = ScriptureExegesisEngine.generateExegesis(passage)
-    val maxHeight = (LocalConfiguration.current.screenHeightDp * 0.82f).dp
-    val bookBackground = getScriptureBackground(passage.bookId, passage.traditionId)
-    val audioEngine = LocalSacredAudioEngine.current
-    val playbackState by audioEngine.playbackState.collectAsState()
+    val colors = FathomTheme.colors
+    val typography = FathomTheme.typography
+    val haptics = LocalFathomHaptics.current
+    val audio = LocalSacredAudioEngine.current
+    val playback by audio.playbackState.collectAsState()
+    val exegesis = remember(passage.id) { ScriptureExegesisEngine.generateExegesis(passage) }
+    val background = remember(passage.bookId) { getScriptureBackground(passage.bookId, passage.traditionId) }
+    val maxHeight = (LocalConfiguration.current.screenHeightDp * 0.8f).dp
+    val tone = rememberTone(passage.traditionId)
 
-    ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        sheetState = sheetState,
-        containerColor = FathomTheme.colors.surface,
-        shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
-        dragHandle = {
-            BottomSheetDefaults.DragHandle(
-                color = FathomTheme.colors.borderSubtle,
-                height = 4.dp,
-                width = 36.dp
+    CompositionLocalProvider(LocalTone provides tone) {
+        FathomSheet(onDismiss = onDismiss) {
+            SheetHeader(
+                overline = "${passage.traditionId.displayName} · ${background.period}",
+                title = passage.canonicalReference,
+                subtitle = background.title,
+                onClose = onDismiss
             )
-        }
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .heightIn(max = maxHeight)
-                .navigationBarsPadding()
-                .padding(horizontal = 24.dp)
-                .padding(bottom = 36.dp)
-                .verticalScroll(rememberScrollState())
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                TraditionBadge(traditionId = passage.traditionId)
-
-                Text(
-                    text = bookBackground.period,
-                    style = FathomTheme.typography.caption.copy(
-                        fontSize = 11.sp,
-                        letterSpacing = 0.5.sp
-                    ),
-                    color = FathomTheme.colors.textTertiary
-                )
-            }
-
-            Spacer(modifier = Modifier.height(14.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column(modifier = Modifier.weight(1f).padding(end = 12.dp)) {
-                    Text(
-                        text = passage.canonicalReference,
-                        style = FathomTheme.typography.brandTitle.copy(
-                            fontFamily = JakartaFontFamily,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 24.sp,
-                            lineHeight = 30.sp,
-                            letterSpacing = (-0.3).sp
-                        ),
-                        color = FathomTheme.colors.textPrimary
-                    )
-
-                    Spacer(modifier = Modifier.height(3.dp))
-
-                    Text(
-                        text = bookBackground.title,
-                        style = FathomTheme.typography.caption.copy(
-                            fontFamily = JakartaFontFamily,
-                            fontWeight = FontWeight.Normal,
-                            fontSize = 13.sp
-                        ),
-                        color = FathomTheme.colors.textTertiary
-                    )
-                }
-
-                val isSpeakingThis = (playbackState as? SacredAudioState.Playing)?.passage?.id == passage.id ||
-                    (playbackState as? SacredAudioState.Paused)?.passage?.id == passage.id
-                val isPlaying = playbackState is SacredAudioState.Playing && (playbackState as SacredAudioState.Playing).passage.id == passage.id
-
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(16.dp))
-                        .background(if (isSpeakingThis) FathomTheme.colors.accentGold else FathomTheme.colors.surfaceElevated)
-                        .border(
-                            width = 1.dp,
-                            color = if (isSpeakingThis) FathomTheme.colors.accentGold else FathomTheme.colors.borderSubtle,
-                            shape = RoundedCornerShape(16.dp)
-                        )
-                        .clickable { audioEngine.toggle(passage) }
-                        .padding(horizontal = 14.dp, vertical = 10.dp)
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
-                    ) {
-                        Icon(
-                            imageVector = if (isPlaying) PhosphorIcons.Regular.Pause else PhosphorIcons.Regular.Play,
-                            contentDescription = if (isPlaying) "Pause Recitation" else "Listen to Recitation",
-                            tint = if (isSpeakingThis) Color.Black else FathomTheme.colors.accentGold,
-                            modifier = Modifier.size(15.dp)
-                        )
-                        Text(
-                            text = if (isPlaying) "PAUSE" else "LISTEN",
-                            fontFamily = JakartaFontFamily,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 11.5.sp,
-                            letterSpacing = 0.5.sp,
-                            color = if (isSpeakingThis) Color.Black else FathomTheme.colors.accentGold
-                        )
-                    }
-                }
-            }
-
-            val currentAudioState = playbackState
-            if ((currentAudioState is SacredAudioState.Playing && currentAudioState.passage.id == passage.id) ||
-                (currentAudioState is SacredAudioState.Paused && currentAudioState.passage.id == passage.id)
-            ) {
-                val isOriginal = (currentAudioState as? SacredAudioState.Playing)?.isOriginalPart ?: (currentAudioState as? SacredAudioState.Paused)?.isOriginalPart ?: false
-                val currentMode = (currentAudioState as? SacredAudioState.Playing)?.mode ?: (currentAudioState as? SacredAudioState.Paused)?.mode ?: com.masum.fathom.core.audio.RecitationMode.TRANSLATION_ONLY
-                val currentProg = (currentAudioState as? SacredAudioState.Playing)?.progress ?: (currentAudioState as? SacredAudioState.Paused)?.progress ?: 0f
-                val currentSpd = (currentAudioState as? SacredAudioState.Playing)?.speed ?: (currentAudioState as? SacredAudioState.Paused)?.speed ?: 1.0f
-
-                Spacer(modifier = Modifier.height(14.dp))
-
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(14.dp))
-                        .background(FathomTheme.colors.surfaceElevated)
-                        .border(1.dp, FathomTheme.colors.accentGold.copy(alpha = 0.35f), RoundedCornerShape(14.dp))
-                        .padding(14.dp)
-                ) {
-                    Column(modifier = Modifier.fillMaxWidth()) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(6.dp)
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .clip(RoundedCornerShape(6.dp))
-                                        .background(FathomTheme.colors.accentGold.copy(alpha = 0.15f))
-                                        .clickable {
-                                            val nextMode = when (currentMode) {
-                                                com.masum.fathom.core.audio.RecitationMode.TRANSLATION_ONLY -> com.masum.fathom.core.audio.RecitationMode.ORIGINAL_ONLY
-                                                com.masum.fathom.core.audio.RecitationMode.ORIGINAL_ONLY -> com.masum.fathom.core.audio.RecitationMode.FULL
-                                                com.masum.fathom.core.audio.RecitationMode.FULL -> com.masum.fathom.core.audio.RecitationMode.TRANSLATION_ONLY
-                                            }
-                                            audioEngine.setMode(nextMode)
-                                        }
-                                        .padding(horizontal = 6.dp, vertical = 2.dp)
-                                ) {
-                                    Text(
-                                        text = if (isOriginal) "ORIGINAL RECITATION" else "ENGLISH RECITATION",
-                                        fontFamily = JakartaFontFamily,
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 9.sp,
-                                        letterSpacing = 0.4.sp,
-                                        color = FathomTheme.colors.accentGold
-                                    )
-                                }
-                            }
-
-                            Box(
-                                modifier = Modifier
-                                    .clip(RoundedCornerShape(6.dp))
-                                    .background(FathomTheme.colors.surface)
-                                    .border(1.dp, FathomTheme.colors.borderSubtle, RoundedCornerShape(6.dp))
-                                    .clickable {
-                                        val nextSpeed = when {
-                                            currentSpd <= 0.85f -> 1.0f
-                                            currentSpd <= 1.05f -> 1.2f
-                                            currentSpd <= 1.25f -> 1.5f
-                                            else -> 0.8f
-                                        }
-                                        audioEngine.setSpeed(nextSpeed)
-                                    }
-                                    .padding(horizontal = 6.dp, vertical = 2.dp)
-                            ) {
-                                Text(
-                                    text = "${String.format(java.util.Locale.US, "%.1f", currentSpd)}×",
-                                    fontFamily = JakartaFontFamily,
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 9.5.sp,
-                                    color = FathomTheme.colors.accentGold
-                                )
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.height(10.dp))
-
-                        androidx.compose.material3.LinearProgressIndicator(
-                            progress = { currentProg },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(3.dp)
-                                .clip(RoundedCornerShape(2.dp)),
-                            color = FathomTheme.colors.accentGold,
-                            trackColor = FathomTheme.colors.surface
-                        )
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(18.dp))
-
-            if (!passage.originalText.isNullOrBlank()) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(FathomTheme.colors.surfaceElevated.copy(alpha = 0.6f))
-                        .border(
-                            width = 1.dp,
-                            color = FathomTheme.colors.borderSubtle.copy(alpha = 0.7f),
-                            shape = RoundedCornerShape(12.dp)
-                        )
-                        .padding(16.dp)
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .width(2.5.dp)
-                            .height(42.dp)
-                            .clip(RoundedCornerShape(2.dp))
-                            .background(FathomTheme.colors.accentGold)
-                    )
-
-                    Spacer(modifier = Modifier.width(14.dp))
-
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = "ORIGINAL SCRIPTURE",
-                            style = FathomTheme.typography.caption.copy(
-                                fontSize = 10.sp,
-                                letterSpacing = 1.3.sp,
-                                fontWeight = FontWeight.SemiBold
-                            ),
-                            color = FathomTheme.colors.accentGold
-                        )
-
-                        Spacer(modifier = Modifier.height(6.dp))
-
-                        Text(
-                            text = passage.originalText ?: "",
-                            style = FathomTheme.typography.verseOriginal.copy(
-                                fontSize = 17.sp,
-                                lineHeight = 26.sp
-                            ),
-                            color = FathomTheme.colors.textPrimary
-                        )
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(20.dp))
-            }
-
-            Column(modifier = Modifier.fillMaxWidth()) {
-                Text(
-                    text = "SCRIPTURE INSIGHTS & CONTEXT",
-                    style = FathomTheme.typography.caption.copy(
-                        fontSize = 11.sp,
-                        letterSpacing = 1.3.sp,
-                        fontWeight = FontWeight.SemiBold
-                    ),
-                    color = FathomTheme.colors.accentGold
-                )
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Text(
-                    text = exegesis.title,
-                    style = FathomTheme.typography.commentaryTitle.copy(
-                        fontFamily = JakartaFontFamily,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 16.sp,
-                        lineHeight = 23.sp
-                    ),
-                    color = FathomTheme.colors.textPrimary
-                )
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Text(
-                    text = exegesis.contextSummary,
-                    style = FathomTheme.typography.commentaryBody.copy(
-                        fontSize = 15.sp,
-                        lineHeight = 24.sp
-                    ),
-                    color = FathomTheme.colors.textSecondary
-                )
-            }
-
-            Spacer(modifier = Modifier.height(20.dp))
 
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(14.dp))
-                    .background(FathomTheme.colors.surfaceElevated)
-                    .border(
-                        width = 1.dp,
-                        color = FathomTheme.colors.accentGold.copy(alpha = 0.2f),
-                        shape = RoundedCornerShape(14.dp)
-                    )
-                    .padding(18.dp)
+                modifier = Modifier.fillMaxWidth().heightIn(max = maxHeight).verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(30.dp)
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    Icon(
-                        imageVector = PhosphorIcons.Regular.Quotes,
-                        contentDescription = null,
-                        tint = FathomTheme.colors.accentGold,
-                        modifier = Modifier.size(14.dp)
-                    )
-                    Text(
-                        text = "PRACTICAL CONTEMPLATION",
-                        style = FathomTheme.typography.caption.copy(
-                            fontSize = 10.5.sp,
-                            letterSpacing = 1.3.sp,
-                            fontWeight = FontWeight.SemiBold
-                        ),
-                        color = FathomTheme.colors.accentGold
-                    )
+                Recitation(passage = passage, state = playback, onToggle = {
+                    haptics.medium()
+                    audio.toggle(passage)
+                }, onMode = audio::setMode, onSpeed = audio::setSpeed)
+
+                passage.originalText?.takeIf { it.isNotBlank() }?.let {
+                    Section(label = "In the original") {
+                        Text(
+                            text = it,
+                            style = typography.verseOriginal.copy(textDirection = TextDirection.Content),
+                            color = colors.textSecondary
+                        )
+                    }
                 }
 
-                Spacer(modifier = Modifier.height(10.dp))
+                Section(label = "Context") {
+                    Text(text = exegesis.title, style = typography.title, color = colors.textPrimary)
+                    Text(text = exegesis.contextSummary, style = typography.commentaryBody, color = colors.textSecondary)
+                }
 
-                Text(
-                    text = exegesis.spiritualInsight,
-                    style = FathomTheme.typography.commentaryBody.copy(
-                        fontFamily = JakartaFontFamily,
-                        fontWeight = FontWeight.Normal,
-                        fontSize = 14.5.sp,
-                        lineHeight = 23.sp
-                    ),
-                    color = FathomTheme.colors.textPrimary
-                )
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                Text(
-                    text = "— ${exegesis.sourceAttribution}",
-                    style = FathomTheme.typography.caption.copy(
-                        fontSize = 11.sp,
-                        letterSpacing = 0.3.sp
-                    ),
-                    color = FathomTheme.colors.textTertiary
-                )
-            }
-
-            if (passage.explanations.isNotEmpty()) {
-                Spacer(modifier = Modifier.height(20.dp))
-
-                passage.explanations.forEach { explanation ->
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(14.dp))
-                            .background(FathomTheme.colors.surfaceElevated.copy(alpha = 0.5f))
-                            .border(
-                                width = 1.dp,
-                                color = FathomTheme.colors.borderSubtle.copy(alpha = 0.6f),
-                                shape = RoundedCornerShape(14.dp)
-                            )
-                            .padding(18.dp)
-                    ) {
-                        Text(
-                            text = "CANONICAL COMMENTARY",
-                            style = FathomTheme.typography.caption.copy(
-                                fontSize = 10.5.sp,
-                                letterSpacing = 1.3.sp,
-                                fontWeight = FontWeight.SemiBold
-                            ),
-                            color = FathomTheme.colors.accentGold
-                        )
-
-                        if (!explanation.title.isNullOrBlank()) {
-                            Spacer(modifier = Modifier.height(8.dp))
+                Section(label = "Contemplate") {
+                    Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min)) {
+                        Box(Modifier.padding(end = 16.dp).width(2.dp).fillMaxHeight().background(tone.hue))
+                        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                             Text(
-                                text = explanation.title ?: "",
-                                style = FathomTheme.typography.commentaryTitle.copy(
-                                    fontSize = 15.sp,
-                                    lineHeight = 22.sp
-                                ),
-                                color = FathomTheme.colors.textPrimary
+                                text = exegesis.spiritualInsight,
+                                style = typography.verseDisplay.copy(fontFamily = ScriptureFamily, fontStyle = FontStyle.Italic, fontSize = 21.sp, lineHeight = 30.sp),
+                                color = colors.textPrimary
                             )
-                        }
-
-                        Spacer(modifier = Modifier.height(8.dp))
-
-                        Text(
-                            text = explanation.body,
-                            style = FathomTheme.typography.commentaryBody.copy(
-                                fontSize = 14.sp,
-                                lineHeight = 22.sp
-                            ),
-                            color = FathomTheme.colors.textSecondary
-                        )
-
-                        if (!explanation.author.isNullOrBlank() || !explanation.source.isNullOrBlank()) {
-                            Spacer(modifier = Modifier.height(10.dp))
-                            val attribution = listOfNotNull(explanation.author, explanation.source).joinToString(" • ")
-                            Text(
-                                text = "— $attribution",
-                                style = FathomTheme.typography.caption.copy(fontSize = 11.sp),
-                                color = FathomTheme.colors.textTertiary
-                            )
+                            MonoLabel(text = exegesis.sourceAttribution, color = colors.textTertiary)
                         }
                     }
-
-                    Spacer(modifier = Modifier.height(12.dp))
                 }
-            }
 
-            Spacer(modifier = Modifier.height(20.dp))
-
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(FathomTheme.colors.surfaceElevated)
-                    .border(
-                        width = 1.dp,
-                        color = FathomTheme.colors.borderSubtle,
-                        shape = RoundedCornerShape(12.dp)
-                    )
-                    .clickable {
-                        val searchQuery = "${passage.canonicalReference} commentary exegesis"
-                        val intent = Intent(
-                            Intent.ACTION_VIEW,
-                            Uri.parse("https://www.google.com/search?q=${Uri.encode(searchQuery)}")
-                        )
-                        context.startActivity(intent)
+                if (passage.explanations.isNotEmpty()) {
+                    Section(label = "Commentary") {
+                        passage.explanations.forEachIndexed { index, explanation ->
+                            if (index > 0) Hairline(Modifier.padding(vertical = 8.dp))
+                            explanation.title?.takeIf { it.isNotBlank() }?.let {
+                                Text(text = it, style = typography.title, color = colors.textPrimary)
+                            }
+                            Text(text = explanation.body, style = typography.commentaryBody, color = colors.textSecondary)
+                            val credit = listOfNotNull(explanation.author, explanation.source).joinToString(" · ")
+                            if (credit.isNotBlank()) MonoLabel(text = credit, color = colors.textTertiary)
+                        }
                     }
-                    .padding(vertical = 14.dp, horizontal = 16.dp),
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(
-                    imageVector = PhosphorIcons.Regular.Sparkle,
-                    contentDescription = null,
-                    tint = FathomTheme.colors.accentGold,
-                    modifier = Modifier.size(15.dp)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = "Explore Complete Exegesis Online",
-                    style = FathomTheme.typography.caption.copy(
-                        fontFamily = JakartaFontFamily,
-                        fontWeight = FontWeight.SemiBold,
-                        fontSize = 12.5.sp
-                    ),
-                    color = FathomTheme.colors.textPrimary
-                )
-            }
-
-            Spacer(modifier = Modifier.height(20.dp))
-
-            SacredDivider(modifier = Modifier.padding(bottom = 16.dp))
-
-            Column(modifier = Modifier.fillMaxWidth()) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    Icon(
-                        imageVector = PhosphorIcons.Regular.Compass,
-                        contentDescription = null,
-                        tint = FathomTheme.colors.textTertiary,
-                        modifier = Modifier.size(13.dp)
-                    )
-                    Text(
-                        text = "HISTORICAL CONTEXT",
-                        style = FathomTheme.typography.caption.copy(
-                            fontSize = 10.5.sp,
-                            letterSpacing = 1.3.sp,
-                            fontWeight = FontWeight.SemiBold
-                        ),
-                        color = FathomTheme.colors.textTertiary
-                    )
                 }
 
-                Spacer(modifier = Modifier.height(8.dp))
+                Section(label = "Background") {
+                    Text(text = background.summary, style = typography.body.copy(fontSize = 15.sp, lineHeight = 23.sp), color = colors.textTertiary)
+                }
 
-                Text(
-                    text = bookBackground.summary,
-                    style = FathomTheme.typography.caption.copy(
-                        fontFamily = JakartaFontFamily,
-                        fontSize = 13.sp,
-                        lineHeight = 20.sp
-                    ),
-                    color = FathomTheme.colors.textTertiary
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(50))
+                        .border(0.75.dp, colors.hairline, RoundedCornerShape(50))
+                        .tappable(scale = 0.98f) {
+                            val query = "${passage.canonicalReference} commentary exegesis"
+                            context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://www.google.com/search?q=${Uri.encode(query)}")))
+                        }
+                        .padding(horizontal = 24.dp, vertical = 16.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(text = "Search the commentary online", style = typography.label, color = colors.textPrimary)
+                    Icon(PhosphorIcons.Light.ArrowUpRight, null, tint = tone.hue, modifier = Modifier.size(18.dp))
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun Section(label: String, content: @Composable ColumnScope.() -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        MonoLabel(text = label, color = FathomTheme.tone.hue)
+        content()
+    }
+}
+
+@Composable
+private fun Recitation(
+    passage: Passage,
+    state: SacredAudioState,
+    onToggle: () -> Unit,
+    onMode: (RecitationMode) -> Unit,
+    onSpeed: (Float) -> Unit
+) {
+    val colors = FathomTheme.colors
+    val tone = FathomTheme.tone
+    val haptics = LocalFathomHaptics.current
+
+    val active = when (state) {
+        is SacredAudioState.Playing -> state.passage.id == passage.id
+        is SacredAudioState.Paused -> state.passage.id == passage.id
+        SacredAudioState.Idle -> false
+    }
+    val playing = state is SacredAudioState.Playing && state.passage.id == passage.id
+    val progress = when (state) {
+        is SacredAudioState.Playing -> state.progress
+        is SacredAudioState.Paused -> state.progress
+        SacredAudioState.Idle -> 0f
+    }
+    val mode = when (state) {
+        is SacredAudioState.Playing -> state.mode
+        is SacredAudioState.Paused -> state.mode
+        SacredAudioState.Idle -> RecitationMode.TRANSLATION_ONLY
+    }
+    val speed = when (state) {
+        is SacredAudioState.Playing -> state.speed
+        is SacredAudioState.Paused -> state.speed
+        SacredAudioState.Idle -> 1f
+    }
+    val original = (state as? SacredAudioState.Playing)?.isOriginalPart ?: (state as? SacredAudioState.Paused)?.isOriginalPart ?: false
+    val fill by animateFloatAsState(progress.coerceIn(0f, 1f), tween(200), label = "recitation_progress")
+
+    Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(50))
+                .background(if (active) tone.hue else colors.surfaceElevated)
+                .tappable(scale = 0.98f, onClick = onToggle)
+                .padding(horizontal = 24.dp)
+                .height(56.dp),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = if (playing) PhosphorIcons.Fill.PauseFill else PhosphorIcons.Fill.PlayFill,
+                contentDescription = null,
+                tint = if (active) tone.onHue else tone.hue,
+                modifier = Modifier.size(18.dp)
+            )
+            Spacer(Modifier.width(10.dp))
+            Text(
+                text = if (playing) "Pause recitation" else if (active) "Resume recitation" else "Listen to the recitation",
+                style = FathomTheme.typography.label,
+                color = if (active) tone.onHue else colors.textPrimary
+            )
+        }
+        if (active) {
+            Box(Modifier.fillMaxWidth().height(2.dp).background(colors.hairline)) {
+                Box(Modifier.fillMaxHeight().fillMaxWidth(fill).background(tone.hue))
+            }
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
+                ControlChip(
+                    text = if (original) "Original" else "English",
+                    onClick = {
+                        haptics.light()
+                        onMode(
+                            when (mode) {
+                                RecitationMode.TRANSLATION_ONLY -> RecitationMode.ORIGINAL_ONLY
+                                RecitationMode.ORIGINAL_ONLY -> RecitationMode.FULL
+                                RecitationMode.FULL -> RecitationMode.TRANSLATION_ONLY
+                            }
+                        )
+                    }
+                )
+                ControlChip(
+                    text = "${String.format(Locale.US, "%.1f", speed)}×",
+                    onClick = {
+                        haptics.light()
+                        onSpeed(
+                            when {
+                                speed <= 0.85f -> 1.0f
+                                speed <= 1.05f -> 1.2f
+                                speed <= 1.25f -> 1.5f
+                                else -> 0.8f
+                            }
+                        )
+                    }
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun ControlChip(text: String, onClick: () -> Unit) {
+    val colors = FathomTheme.colors
+    Box(
+        modifier = Modifier
+            .clip(RoundedCornerShape(50))
+            .border(0.75.dp, colors.hairline, RoundedCornerShape(50))
+            .tappable(scale = 0.94f, haptic = false, onClick = onClick)
+            .padding(horizontal = 16.dp, vertical = 9.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(text = text, style = FathomTheme.typography.label, color = colors.textSecondary)
     }
 }
 
