@@ -2,6 +2,21 @@
 
 All notable changes to the Fathom project are documented in this file.
 
+## [Unreleased]
+
+### Changed
+- **Complete visual redesign**: a new design system built around the idea of a reading instrument. Per-tradition tones tint every screen, scripture is set in Newsreader, display type in Fraunces, interface in Geist and citations in Geist Mono.
+- **Docked navigation**: an edge-attached bottom bar with a tick-mark ruler and tone-coloured marker, replaced by a docked rail on tablets, foldables and landscape phones.
+- **Feed**: full-bleed verse pages with scroll-linked text reveal, a depth gauge, morphing tradition emblem, and a compact action pill.
+- **Paths**: a sounding-line chapter timeline with a tick-ring progress dial, a redesigned chapter reader, jump-to-verse sheet and completion celebration.
+- **Explore**: editorial search, tradition chips, a staggered topic mosaic and a scripture directory; verses now highlight matched search terms.
+- **Journal** (formerly Library): a personal almanac with greeting, weekly tide chart, reading ledger, per-tradition progress, milestones, saved passages, reflections and history.
+- **Sheets and settings**: share cards now preview the exact exported image, settings became a full page, and the paywall, release notes, soundscapes and passage context were redrawn.
+- **Widget and launcher icon**: the home screen widget follows the reading theme and verse tradition, and the app has a new adaptive icon.
+
+### Fixed
+- Reading streaks, the weekly chart and history grouping never worked because every read was stamped with a placeholder 1970 timestamp.
+
 ---
 
 ## [1.3.0] - 2026-09-30

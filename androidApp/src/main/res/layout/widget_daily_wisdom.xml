@@ -1,83 +1,106 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/widget_root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/widget_card_background"
-    android:orientation="vertical"
-    android:padding="16dp">
+    android:background="@drawable/widget_card_background">
 
-    <RelativeLayout
+    <ImageView
+        android:id="@+id/widget_background"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="match_parent"
+        android:importantForAccessibility="no"
+        android:scaleType="fitXY" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:padding="18dp">
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <ImageView
+                android:id="@+id/widget_emblem"
+                android:layout_width="22dp"
+                android:layout_height="22dp"
+                android:layout_alignParentStart="true"
+                android:layout_centerVertical="true"
+                android:importantForAccessibility="no" />
+
+            <TextView
+                android:id="@+id/widget_tradition_badge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerVertical="true"
+                android:layout_marginStart="10dp"
+                android:layout_toEndOf="@id/widget_emblem"
+                android:fontFamily="@font/geist_mono"
+                android:fontVariationSettings="'wght' 500"
+                android:letterSpacing="0.14"
+                android:text="STOICISM"
+                android:textColor="#9DB0CC"
+                android:textSize="10sp" />
+
+            <ImageView
+                android:id="@+id/widget_btn_refresh"
+                android:layout_width="30dp"
+                android:layout_height="30dp"
+                android:layout_alignParentEnd="true"
+                android:layout_centerVertical="true"
+                android:background="?android:attr/selectableItemBackgroundBorderless"
+                android:contentDescription="Refresh verse"
+                android:padding="6dp"
+                android:src="@drawable/widget_icon_refresh" />
+        </RelativeLayout>
 
         <TextView
-            android:id="@+id/widget_tradition_badge"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignParentStart="true"
-            android:layout_centerVertical="true"
-            android:background="@drawable/widget_tradition_badge"
-            android:fontFamily="@font/jakarta_bold"
-            android:letterSpacing="0.08"
-            android:paddingHorizontal="10dp"
-            android:paddingVertical="3dp"
-            android:text="SACRED WISDOM"
-            android:textColor="#E5C378"
-            android:textSize="10sp" />
+            android:id="@+id/widget_verse_text"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_marginTop="10dp"
+            android:layout_marginBottom="10dp"
+            android:layout_weight="1"
+            android:ellipsize="end"
+            android:fontFamily="@font/newsreader"
+            android:fontVariationSettings="'wght' 400, 'opsz' 24"
+            android:gravity="center_vertical"
+            android:lineSpacingMultiplier="1.12"
+            android:maxLines="5"
+            android:text="The soul becomes dyed with the color of its thoughts."
+            android:textColor="#F1EADD"
+            android:textSize="17sp" />
 
-        <ImageView
-            android:id="@+id/widget_btn_refresh"
-            android:layout_width="28dp"
-            android:layout_height="28dp"
-            android:layout_alignParentEnd="true"
-            android:layout_centerVertical="true"
-            android:background="?android:attr/selectableItemBackgroundBorderless"
-            android:contentDescription="Refresh Verse"
-            android:padding="5dp"
-            android:src="@drawable/widget_icon_refresh" />
-    </RelativeLayout>
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
 
-    <TextView
-        android:id="@+id/widget_verse_text"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_marginTop="10dp"
-        android:layout_marginBottom="10dp"
-        android:layout_weight="1"
-        android:ellipsize="end"
-        android:fontFamily="@font/jakarta_medium"
-        android:gravity="center_vertical"
-        android:lineSpacingExtra="4dp"
-        android:maxLines="4"
-        android:text="“The soul becomes dyed with the color of its thoughts.”"
-        android:textColor="#FAFAFA"
-        android:textSize="13sp" />
+            <TextView
+                android:id="@+id/widget_verse_reference"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentStart="true"
+                android:layout_centerVertical="true"
+                android:fontFamily="@font/geist_mono"
+                android:fontVariationSettings="'wght' 500"
+                android:letterSpacing="0.1"
+                android:text="MEDITATIONS 5.16"
+                android:textColor="#A59C8D"
+                android:textSize="10sp" />
 
-    <RelativeLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content">
-
-        <TextView
-            android:id="@+id/widget_verse_reference"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignParentStart="true"
-            android:layout_centerVertical="true"
-            android:fontFamily="@font/syne_bold"
-            android:letterSpacing="0.05"
-            android:text="Meditations 5.16"
-            android:textColor="#E5C378"
-            android:textSize="11sp" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignParentEnd="true"
-            android:layout_centerVertical="true"
-            android:fontFamily="@font/syne_bold"
-            android:text="fathom."
-            android:textColor="#5E584D"
-            android:textSize="10sp" />
-    </RelativeLayout>
-</LinearLayout>
+            <TextView
+                android:id="@+id/widget_wordmark"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentEnd="true"
+                android:layout_centerVertical="true"
+                android:fontFamily="@font/fraunces_italic"
+                android:fontVariationSettings="'wght' 400, 'opsz' 48, 'SOFT' 60"
+                android:text="fathom"
+                android:textColor="#F1EADD"
+                android:textSize="16sp" />
+        </RelativeLayout>
+    </LinearLayout>
+</FrameLayout>

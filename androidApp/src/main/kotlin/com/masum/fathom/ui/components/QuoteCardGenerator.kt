@@ -5,10 +5,11 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.Canvas
+import android.graphics.LinearGradient
 import android.graphics.Paint
-import android.graphics.Path
+import android.graphics.RadialGradient
 import android.graphics.RectF
-import android.graphics.Typeface
+import android.graphics.Shader
 import android.net.Uri
 import android.os.Build
 import android.os.Environment
@@ -17,14 +18,19 @@ import android.text.Layout
 import android.text.StaticLayout
 import android.text.TextPaint
 import android.widget.Toast
+import androidx.compose.ui.graphics.toArgb
 import androidx.core.content.FileProvider
-import androidx.core.content.res.ResourcesCompat
 import com.masum.fathom.R
 import com.masum.fathom.core.model.Passage
-import com.masum.fathom.core.model.TraditionId
+import com.masum.fathom.ui.design.EmblemShapes
+import com.masum.fathom.ui.theme.FathomTypefaces
+import com.masum.fathom.ui.theme.ReadingTheme
+import com.masum.fathom.ui.theme.palette
+import com.masum.fathom.ui.theme.toneFor
 import java.io.File
 import java.io.FileOutputStream
 import java.io.OutputStream
+import java.util.Random
 
 enum class CardFormat(
     val title: String,
@@ -32,55 +38,16 @@ enum class CardFormat(
     val height: Int,
     val aspectRatio: Float
 ) {
-    STORY("9:16 Story", 1080, 1920, 9f / 16f),
-    SQUARE("1:1 Square", 1080, 1080, 1f),
-    PORTRAIT("4:5 Feed", 1080, 1350, 4f / 5f)
+    STORY("Story 9:16", 1080, 1920, 9f / 16f),
+    SQUARE("Square 1:1", 1080, 1080, 1f),
+    PORTRAIT("Feed 4:5", 1080, 1350, 4f / 5f)
 }
 
-enum class CardTheme(
-    val title: String,
-    val bgHex: Int,
-    val cardBgHex: Int,
-    val borderHex: Int,
-    val textPrimaryHex: Int,
-    val textSecondaryHex: Int,
-    val textTertiaryHex: Int,
-    val accentGoldHex: Int,
-    val badgeBgHex: Int
-) {
-    OBSIDIAN(
-        title = "Obsidian",
-        bgHex = 0xFF09090B.toInt(),
-        cardBgHex = 0xFF121214.toInt(),
-        borderHex = 0xFF27272A.toInt(),
-        textPrimaryHex = 0xFFFAFAFA.toInt(),
-        textSecondaryHex = 0xFFA1A1AA.toInt(),
-        textTertiaryHex = 0xFF71717A.toInt(),
-        accentGoldHex = 0xFFD4AF37.toInt(),
-        badgeBgHex = 0x22D4AF37.toInt()
-    ),
-    SEPIA(
-        title = "Sepia",
-        bgHex = 0xFFFBF7EE.toInt(),
-        cardBgHex = 0xFFF4EFE6.toInt(),
-        borderHex = 0xFFE7E0D3.toInt(),
-        textPrimaryHex = 0xFF1C1917.toInt(),
-        textSecondaryHex = 0xFF57534E.toInt(),
-        textTertiaryHex = 0xFF78716C.toInt(),
-        accentGoldHex = 0xFFB45309.toInt(),
-        badgeBgHex = 0x22B45309.toInt()
-    ),
-    SLATE(
-        title = "Slate",
-        bgHex = 0xFF0F172A.toInt(),
-        cardBgHex = 0xFF1E293B.toInt(),
-        borderHex = 0xFF334155.toInt(),
-        textPrimaryHex = 0xFFF8FAFC.toInt(),
-        textSecondaryHex = 0xFF94A3B8.toInt(),
-        textTertiaryHex = 0xFF64748B.toInt(),
-        accentGoldHex = 0xFFFBBF24.toInt(),
-        badgeBgHex = 0x22FBBF24.toInt()
-    )
+enum class CardTheme(val title: String, val reading: ReadingTheme) {
+    OBSIDIAN("Nocturne", ReadingTheme.OBSIDIAN),
+    SEPIA("Vellum", ReadingTheme.SEPIA),
+    SLATE("Abyss", ReadingTheme.SLATE),
+    FOREST("Moss", ReadingTheme.FOREST)
 }
 
 object QuoteCardRenderer {
@@ -97,262 +64,179 @@ object QuoteCardRenderer {
         val height = format.height
         val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
+        val unit = width / 1080f
 
-        val syneBold = try {
-            ResourcesCompat.getFont(context, R.font.syne_bold) ?: Typeface.DEFAULT_BOLD
-        } catch (e: Exception) {
-            Typeface.DEFAULT_BOLD
+        val palette = theme.reading.palette()
+        val tone = toneFor(passage.traditionId, palette)
+        val ink = palette.textPrimary.toArgb()
+        val muted = palette.textSecondary.toArgb()
+        val faint = palette.textTertiary.toArgb()
+        val hairline = palette.hairline.toArgb()
+        val hue = tone.hue.toArgb()
+
+        val scripture = FathomTypefaces.load(context, R.font.newsreader, "'wght' 400, 'opsz' 36")
+        val original = FathomTypefaces.load(context, R.font.newsreader, "'wght' 400, 'opsz' 16")
+        val mono = FathomTypefaces.load(context, R.font.geist_mono, "'wght' 500")
+        val display = FathomTypefaces.load(context, R.font.fraunces_italic, "'wght' 400, 'opsz' 144, 'SOFT' 60, 'WONK' 1")
+
+        canvas.drawColor(palette.background.toArgb())
+        val glowPaint = Paint(Paint.ANTI_ALIAS_FLAG)
+        glowPaint.shader = RadialGradient(width * 0.12f, height * 0.08f, maxOf(width, height) * 0.95f, tone.glowPrimary.toArgb(), 0x00000000, Shader.TileMode.CLAMP)
+        canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), glowPaint)
+        glowPaint.shader = RadialGradient(width * 0.96f, height * 0.94f, maxOf(width, height) * 0.8f, tone.glowSecondary.toArgb(), 0x00000000, Shader.TileMode.CLAMP)
+        canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), glowPaint)
+        glowPaint.shader = LinearGradient(0f, height * 0.55f, 0f, height.toFloat(), 0x00000000, (palette.background.toArgb() and 0x00FFFFFF) or 0x66000000, Shader.TileMode.CLAMP)
+        canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), glowPaint)
+
+        val grain = Paint().apply { color = if (palette.isDark) 0x0DFFFFFF else 0x0D000000 }
+        val random = Random(passage.id.hashCode().toLong())
+        val speck = 1.6f * unit
+        repeat(width * height / 260) {
+            val x = random.nextInt(width).toFloat()
+            val y = random.nextInt(height).toFloat()
+            canvas.drawRect(x, y, x + speck, y + speck, grain)
         }
 
-        val jakartaRegular = try {
-            ResourcesCompat.getFont(context, R.font.jakarta_regular) ?: Typeface.DEFAULT
-        } catch (e: Exception) {
-            Typeface.DEFAULT
-        }
-
-        val jakartaMedium = try {
-            ResourcesCompat.getFont(context, R.font.jakarta_medium) ?: Typeface.DEFAULT
-        } catch (e: Exception) {
-            Typeface.DEFAULT
-        }
-
-        val jakartaSemiBold = try {
-            ResourcesCompat.getFont(context, R.font.jakarta_semibold) ?: Typeface.DEFAULT_BOLD
-        } catch (e: Exception) {
-            Typeface.DEFAULT_BOLD
-        }
-
-        val jakartaBold = try {
-            ResourcesCompat.getFont(context, R.font.jakarta_bold) ?: Typeface.DEFAULT_BOLD
-        } catch (e: Exception) {
-            Typeface.DEFAULT_BOLD
-        }
-
-        val bgPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = theme.bgHex
-            style = Paint.Style.FILL
-        }
-        canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), bgPaint)
-
-        val outerMarginX = 64f
-        val outerMarginY = when (format) {
-            CardFormat.STORY -> 160f
-            CardFormat.PORTRAIT -> 90f
-            CardFormat.SQUARE -> 64f
-        }
-
-        val cardLeft = outerMarginX
-        val cardTop = outerMarginY
-        val cardRight = width - outerMarginX
-        val cardBottom = height - outerMarginY
-        val cardRect = RectF(cardLeft, cardTop, cardRight, cardBottom)
-        val cornerRadius = 36f
-
-        val cardBgPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = theme.cardBgHex
-            style = Paint.Style.FILL
-        }
-        canvas.drawRoundRect(cardRect, cornerRadius, cornerRadius, cardBgPaint)
-
-        val borderPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = theme.borderHex
+        val edge = 56f * unit
+        val frame = RectF(edge, edge, width - edge, height - edge)
+        val framePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = hairline
             style = Paint.Style.STROKE
-            strokeWidth = 3f
+            strokeWidth = 2f * unit
         }
-        canvas.drawRoundRect(cardRect, cornerRadius, cornerRadius, borderPaint)
+        canvas.drawRoundRect(frame, 44f * unit, 44f * unit, framePaint)
 
-        val innerPaddingX = 64f
-        val contentWidth = (cardRect.width() - (innerPaddingX * 2)).toInt()
-        var currentY = cardTop + 64f
+        val padX = 84f * unit
+        val left = frame.left + padX
+        val right = frame.right - padX
+        val contentWidth = (right - left).toInt()
 
-        val badgeText = passage.traditionId.displayName.uppercase()
-        val badgePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = theme.accentGoldHex
-            typeface = jakartaBold
-            textSize = 28f
-            letterSpacing = 0.12f
-        }
-        val badgeTextWidth = badgePaint.measureText(badgeText)
-        val badgePaddingH = 26f
-        val badgePaddingV = 14f
-        val badgeWidth = badgeTextWidth + (badgePaddingH * 2)
-        val badgeHeight = 28f + (badgePaddingV * 2)
-        val badgeRect = RectF(
-            cardLeft + innerPaddingX,
-            currentY,
-            cardLeft + innerPaddingX + badgeWidth,
-            currentY + badgeHeight
-        )
-
-        val badgeBgPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = theme.badgeBgHex
-            style = Paint.Style.FILL
-        }
-        val badgeBorderPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = theme.accentGoldHex
+        val emblemSize = 64f * unit
+        val emblemPath = EmblemShapes.androidPath(passage.traditionId, emblemSize)
+        val emblemPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = hue
             style = Paint.Style.STROKE
-            strokeWidth = 2.5f
+            strokeWidth = 3f * unit
         }
-        canvas.drawRoundRect(badgeRect, 18f, 18f, badgeBgPaint)
-        canvas.drawRoundRect(badgeRect, 18f, 18f, badgeBorderPaint)
+        val topY = frame.top + 92f * unit
+        canvas.save()
+        canvas.translate(left, topY)
+        canvas.drawPath(emblemPath, emblemPaint)
+        canvas.restore()
 
-        val badgeFontMetrics = badgePaint.fontMetrics
-        val badgeTextY = badgeRect.centerY() - (badgeFontMetrics.ascent + badgeFontMetrics.descent) / 2
-        canvas.drawText(badgeText, badgeRect.left + badgePaddingH, badgeTextY, badgePaint)
-
-        val refText = passage.canonicalReference.uppercase()
-        val refPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = theme.textSecondaryHex
-            typeface = jakartaSemiBold
-            textSize = 28f
-            letterSpacing = 0.1f
+        val captionPaint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
+            typeface = mono
+            textSize = 26f * unit
+            letterSpacing = 0.14f
+            color = muted
             textAlign = Paint.Align.RIGHT
         }
-        val refFontMetrics = refPaint.fontMetrics
-        val refTextY = badgeRect.centerY() - (refFontMetrics.ascent + refFontMetrics.descent) / 2
-        canvas.drawText(refText, cardRight - innerPaddingX, refTextY, refPaint)
+        val caption = "${passage.traditionId.displayName} · ${passage.canonicalReference}".uppercase()
+        val captionLayoutWidth = contentWidth - emblemSize.toInt() - (24f * unit).toInt()
+        var captionText = caption
+        while (captionPaint.measureText(captionText) > captionLayoutWidth && captionText.length > 8) {
+            captionText = captionText.dropLast(2)
+        }
+        if (captionText != caption) captionText = captionText.trimEnd() + "…"
+        canvas.drawText(captionText, right, topY + emblemSize / 2f + 9f * unit, captionPaint)
 
-        currentY += badgeHeight + 36f
+        val footerTop = frame.bottom - 190f * unit
+        val bodyTop = topY + emblemSize + 70f * unit
+        val themesHeight = if (includeThemes && passage.themes.isNotEmpty()) 64f * unit else 0f
+        val bodyBottom = footerTop - 40f * unit - themesHeight
+        val bodyHeight = (bodyBottom - bodyTop).toInt()
 
-        drawDivider(canvas, cardLeft + innerPaddingX, currentY, cardRight - innerPaddingX, theme)
-        currentY += 40f
-
-        val hasOriginal = includeOriginal && !passage.originalText.isNullOrBlank()
-        val originalLayout: StaticLayout? = if (hasOriginal) {
-            val origPaint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
-                color = theme.textTertiaryHex
-                typeface = jakartaRegular
-                textSize = 34f
-                letterSpacing = 0.02f
+        val hasOriginal = includeOriginal && !passage.originalText.isNullOrBlank() && passage.originalText != passage.translation
+        val originalLayout = if (hasOriginal) {
+            val paint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
+                typeface = original
+                textSize = 36f * unit
+                color = faint
             }
-            createStaticLayout(passage.originalText ?: "", origPaint, contentWidth)
+            var layout = layout(passage.originalText.orEmpty(), paint, contentWidth, 1.2f)
+            while (layout.lineCount > 3 && paint.textSize > 24f * unit) {
+                paint.textSize -= 2f * unit
+                layout = layout(passage.originalText.orEmpty(), paint, contentWidth, 1.2f)
+            }
+            layout
         } else null
+        val reservedForOriginal = (originalLayout?.height ?: 0) + if (originalLayout != null) (56f * unit).toInt() else 0
 
-        val availableHeightForTranslation = (cardBottom - currentY - 160f) - (if (originalLayout != null) originalLayout.height + 60f else 0f)
-
-        val textLength = passage.translation.length
-        val dynamicFontSize = when {
-            textLength < 100 -> if (format == CardFormat.STORY) 52f else 46f
-            textLength < 220 -> if (format == CardFormat.STORY) 44f else 38f
-            textLength < 400 -> if (format == CardFormat.STORY) 38f else 32f
-            else -> 30f
+        val translationPaint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
+            typeface = scripture
+            color = ink
+        }
+        var size = (if (format == CardFormat.STORY) 92f else if (format == CardFormat.PORTRAIT) 84f else 76f) * unit
+        val minSize = 34f * unit
+        var translationLayout: StaticLayout
+        while (true) {
+            translationPaint.textSize = size
+            translationLayout = layout(passage.translation, translationPaint, contentWidth, 1.22f)
+            if (translationLayout.height + reservedForOriginal <= bodyHeight || size <= minSize) break
+            size -= 2f * unit
         }
 
-        val transPaint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = theme.textPrimaryHex
-            typeface = jakartaMedium
-            textSize = dynamicFontSize
-            letterSpacing = 0.02f
-        }
-
-        val translationLayout = createStaticLayout(passage.translation, transPaint, contentWidth)
-
-        val totalContentHeight = (if (originalLayout != null) originalLayout.height + 60f else 0f) + translationLayout.height
-        val spaceRemaining = (cardBottom - 160f) - currentY
-        if (spaceRemaining > totalContentHeight) {
-            currentY += ((spaceRemaining - totalContentHeight) * 0.35f)
-        }
-
+        val blockHeight = translationLayout.height + reservedForOriginal
+        var cursor = bodyTop + ((bodyHeight - blockHeight).coerceAtLeast(0) / 2f)
         if (originalLayout != null) {
             canvas.save()
-            canvas.translate(cardLeft + innerPaddingX, currentY)
+            canvas.translate(left, cursor)
             originalLayout.draw(canvas)
             canvas.restore()
-            currentY += originalLayout.height + 28f
-
-            drawDivider(canvas, cardLeft + innerPaddingX, currentY, cardRight - innerPaddingX, theme)
-            currentY += 36f
+            cursor += originalLayout.height + 22f * unit
+            val rule = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = hue
+                strokeWidth = 3f * unit
+            }
+            canvas.drawLine(left, cursor, left + 72f * unit, cursor, rule)
+            cursor += 34f * unit
         }
-
         canvas.save()
-        canvas.translate(cardLeft + innerPaddingX, currentY)
+        canvas.translate(left, cursor)
         translationLayout.draw(canvas)
         canvas.restore()
 
-        currentY += translationLayout.height + 36f
-
-        val hasThemes = includeThemes && passage.themes.isNotEmpty()
-        if (hasThemes) {
-            val themesText = passage.themes.joinToString("   •   ") { "#" + it.name.uppercase() }
-            val themesPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                color = theme.accentGoldHex
-                typeface = jakartaSemiBold
-                textSize = 24f
+        if (themesHeight > 0f) {
+            val themesPaint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
+                typeface = mono
+                textSize = 24f * unit
                 letterSpacing = 0.08f
+                color = faint
             }
-            canvas.drawText(themesText, cardLeft + innerPaddingX, cardBottom - 110f, themesPaint)
+            canvas.drawText(passage.themes.take(3).joinToString("   ") { "#" + it.name.lowercase() }, left, footerTop - 34f * unit, themesPaint)
         }
 
-        val footerDividerY = cardBottom - 80f
-        drawDivider(canvas, cardLeft + innerPaddingX, footerDividerY, cardRight - innerPaddingX, theme)
-
-        val brandPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = theme.textPrimaryHex
-            typeface = syneBold
-            textSize = 34f
-            letterSpacing = -0.02f
+        val footerRule = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = hairline
+            strokeWidth = 2f * unit
         }
-        val brandDotPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = theme.accentGoldHex
-            typeface = syneBold
-            textSize = 34f
+        canvas.drawLine(left, footerTop, right, footerTop, footerRule)
+
+        val brandPaint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
+            typeface = display
+            textSize = 68f * unit
+            color = ink
         }
-        val fathomText = "fathom"
-        val fathomWidth = brandPaint.measureText(fathomText)
-        val footerY = cardBottom - 34f
+        canvas.drawText("fathom", left, footerTop + 104f * unit, brandPaint)
 
-        canvas.drawText(fathomText, cardLeft + innerPaddingX, footerY, brandPaint)
-        canvas.drawText(".", cardLeft + innerPaddingX + fathomWidth, footerY, brandDotPaint)
-
-        val taglinePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = theme.textTertiaryHex
-            typeface = jakartaRegular
-            textSize = 22f
-            letterSpacing = 0.08f
+        val taglinePaint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
+            typeface = mono
+            textSize = 20f * unit
+            letterSpacing = 0.16f
+            color = faint
             textAlign = Paint.Align.RIGHT
         }
-        canvas.drawText("SACRED HUMAN WISDOM", cardRight - innerPaddingX, footerY, taglinePaint)
+        canvas.drawText("SACRED WISDOM, OFFLINE", right, footerTop + 96f * unit, taglinePaint)
 
         return bitmap
     }
 
-    private fun createStaticLayout(text: CharSequence, paint: TextPaint, width: Int): StaticLayout {
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            StaticLayout.Builder.obtain(text, 0, text.length, paint, width)
-                .setAlignment(Layout.Alignment.ALIGN_NORMAL)
-                .setLineSpacing(14f, 1.25f)
-                .setIncludePad(false)
-                .build()
-        } else {
-            @Suppress("DEPRECATION")
-            StaticLayout(text, paint, width, Layout.Alignment.ALIGN_NORMAL, 1.25f, 14f, false)
-        }
-    }
-
-    private fun drawDivider(canvas: Canvas, startX: Float, y: Float, endX: Float, theme: CardTheme) {
-        val midX = (startX + endX) / 2
-        val linePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = theme.borderHex
-            strokeWidth = 2f
-            style = Paint.Style.STROKE
-        }
-
-        canvas.drawLine(startX, y, midX - 24f, y, linePaint)
-        canvas.drawLine(midX + 24f, y, endX, y, linePaint)
-
-        val diamondPath = Path().apply {
-            moveTo(midX, y - 6f)
-            lineTo(midX + 6f, y)
-            lineTo(midX, y + 6f)
-            lineTo(midX - 6f, y)
-            close()
-        }
-        val diamondPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = theme.accentGoldHex
-            style = Paint.Style.FILL
-        }
-        canvas.drawPath(diamondPath, diamondPaint)
-    }
+    private fun layout(text: CharSequence, paint: TextPaint, width: Int, spacing: Float): StaticLayout =
+        StaticLayout.Builder.obtain(text, 0, text.length, paint, width)
+            .setAlignment(Layout.Alignment.ALIGN_NORMAL)
+            .setLineSpacing(0f, spacing)
+            .setIncludePad(false)
+            .build()
 
     fun shareQuoteCard(
         context: Context,

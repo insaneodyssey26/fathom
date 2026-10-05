@@ -1,23 +1,14 @@
 package com.masum.fathom.ui.pathways
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -25,27 +16,21 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.LinearProgressIndicator
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -54,39 +39,43 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
 import com.adamglin.PhosphorIcons
-import com.adamglin.phosphoricons.Regular
-import com.adamglin.phosphoricons.regular.ArrowLeft
-import com.adamglin.phosphoricons.regular.ArrowRight
-import com.adamglin.phosphoricons.regular.CaretDown
-import com.adamglin.phosphoricons.regular.CaretUp
-import com.adamglin.phosphoricons.regular.Compass
-import com.adamglin.phosphoricons.regular.Info
-import com.adamglin.phosphoricons.regular.Lightbulb
-import com.adamglin.phosphoricons.regular.Pause
-import com.adamglin.phosphoricons.regular.Sparkle
-import com.adamglin.phosphoricons.regular.SpeakerHigh
-import com.adamglin.phosphoricons.regular.X
-import androidx.compose.runtime.collectAsState
+import com.adamglin.phosphoricons.Fill
+import com.adamglin.phosphoricons.Light
+import com.adamglin.phosphoricons.fill.Pause as PauseFill
+import com.adamglin.phosphoricons.light.ArrowLeft
+import com.adamglin.phosphoricons.light.ArrowRight
+import com.adamglin.phosphoricons.light.CaretDown
+import com.adamglin.phosphoricons.light.ChatCenteredText
+import com.adamglin.phosphoricons.light.SpeakerHigh
+import com.adamglin.phosphoricons.light.Check
 import com.masum.fathom.core.audio.LocalSacredAudioEngine
 import com.masum.fathom.core.audio.SacredAudioState
 import com.masum.fathom.core.haptics.LocalFathomHaptics
 import com.masum.fathom.core.model.Passage
-import com.masum.fathom.ui.components.SacredDivider
+import com.masum.fathom.ui.design.Atmosphere
+import com.masum.fathom.ui.design.BreathingMark
+import com.masum.fathom.ui.components.MeaningBlock
+import com.masum.fathom.ui.design.ButtonStyle
+import com.masum.fathom.ui.design.FathomButton
+import com.masum.fathom.ui.design.FathomSheet
+import com.masum.fathom.ui.design.GlassIconButton
+import com.masum.fathom.ui.design.GlassLayer
+import com.masum.fathom.ui.design.MonoLabel
+import com.masum.fathom.ui.design.QuietMessage
+import com.masum.fathom.ui.design.SheetHeader
+import com.masum.fathom.ui.design.StateFrame
+import com.masum.fathom.ui.design.tappable
+import com.masum.fathom.ui.feed.VersePage
+import com.masum.fathom.ui.theme.FathomMotion
 import com.masum.fathom.ui.theme.FathomTheme
-import com.masum.fathom.ui.theme.JakartaFontFamily
+import com.masum.fathom.ui.theme.LocalTone
+import com.masum.fathom.ui.theme.rememberTone
 import kotlinx.coroutines.launch
+import kotlin.math.abs
 
 @Composable
 fun ChapterStudyScreen(
@@ -101,765 +90,262 @@ fun ChapterStudyScreen(
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val haptics = LocalFathomHaptics.current
-    val audioEngine = LocalSacredAudioEngine.current
-    val coroutineScope = rememberCoroutineScope()
-    var showJumpModal by remember { mutableStateOf(false) }
+    val tradition = passages.firstOrNull()?.traditionId
 
-    Box(
-        modifier = modifier
-            .fillMaxSize()
-            .background(FathomTheme.colors.background)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .statusBarsPadding()
-                .navigationBarsPadding()
-        ) {
-            if (isLoading) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f),
-                    contentAlignment = Alignment.Center
-                ) {
-                    CircularProgressIndicator(color = FathomTheme.colors.accentGold)
-                }
-            } else if (passages.isEmpty()) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f)
-                        .padding(24.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "No verses available for this chapter.",
-                        fontFamily = JakartaFontFamily,
-                        fontSize = 14.sp,
-                        color = FathomTheme.colors.textSecondary,
-                        textAlign = TextAlign.Center
-                    )
-                }
-            } else {
-                val pagerState = rememberPagerState(initialPage = 0, pageCount = { passages.size })
-                val currentPage = pagerState.currentPage
-                val totalPages = passages.size
-                val targetProgress = ((currentPage + 1).toFloat() / totalPages.toFloat()).coerceIn(0f, 1f)
-
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 8.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    IconButton(
-                        onClick = {
-                            haptics.light()
-                            onDismiss()
-                        },
-                        modifier = Modifier
-                            .clip(CircleShape)
-                            .background(FathomTheme.colors.surfaceElevated)
-                            .size(38.dp)
-                    ) {
-                        Icon(
-                            imageVector = PhosphorIcons.Regular.ArrowLeft,
-                            contentDescription = "Back to Pathway",
-                            tint = FathomTheme.colors.textPrimary,
-                            modifier = Modifier.size(18.dp)
-                        )
-                    }
-
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        modifier = Modifier
-                            .weight(1f)
-                            .padding(horizontal = 8.dp)
-                    ) {
-                        Text(
-                            text = bookTitle.uppercase(),
-                            fontFamily = JakartaFontFamily,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 10.5.sp,
-                            letterSpacing = 1.sp,
-                            color = FathomTheme.colors.accentGold,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                        Text(
-                            text = chapterTitle,
-                            fontFamily = JakartaFontFamily,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 15.sp,
-                            color = FathomTheme.colors.textPrimary,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                    }
-
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
-                    ) {
-                        val playbackState by audioEngine.playbackState.collectAsState()
-                        val currentPassage = passages[currentPage]
-                        val isPlayingCurrent = (playbackState as? SacredAudioState.Playing)?.passage?.id == currentPassage.id
-
-                        IconButton(
-                            onClick = {
-                                haptics.light()
-                                audioEngine.toggle(currentPassage)
-                            },
-                            modifier = Modifier
-                                .clip(CircleShape)
-                                .background(
-                                    if (isPlayingCurrent) FathomTheme.colors.accentGold.copy(alpha = 0.2f)
-                                    else FathomTheme.colors.surfaceElevated
-                                )
-                                .border(
-                                    width = 1.dp,
-                                    color = if (isPlayingCurrent) FathomTheme.colors.accentGold else FathomTheme.colors.borderSubtle,
-                                    shape = CircleShape
-                                )
-                                .size(38.dp)
-                        ) {
-                            Icon(
-                                imageVector = if (isPlayingCurrent) PhosphorIcons.Regular.Pause else PhosphorIcons.Regular.SpeakerHigh,
-                                contentDescription = if (isPlayingCurrent) "Pause Verse Audio" else "Play Verse Audio",
-                                tint = FathomTheme.colors.accentGold,
-                                modifier = Modifier.size(18.dp)
-                            )
-                        }
-                    }
-                }
-
-                SacredDivider()
-
-                val animatedProgress by animateFloatAsState(
-                    targetValue = targetProgress,
-                    animationSpec = tween(
-                        durationMillis = 350,
-                        easing = FastOutSlowInEasing
-                    ),
-                    label = "chapter_progress_anim"
-                )
-
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f)
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 20.dp, vertical = 10.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text(
-                            text = "VERSE ${currentPage + 1} OF $totalPages",
-                            fontFamily = JakartaFontFamily,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 11.5.sp,
-                            letterSpacing = 0.8.sp,
-                            color = FathomTheme.colors.accentGold
-                        )
-
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .clip(RoundedCornerShape(8.dp))
-                                    .background(FathomTheme.colors.surfaceElevated)
-                                    .border(1.dp, FathomTheme.colors.borderSubtle, RoundedCornerShape(8.dp))
-                                    .clickable {
-                                        haptics.light()
-                                        showJumpModal = true
-                                    }
-                                    .padding(horizontal = 10.dp, vertical = 4.dp)
-                            ) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
-                                ) {
-                                    Icon(
-                                        imageVector = PhosphorIcons.Regular.Compass,
-                                        contentDescription = null,
-                                        tint = FathomTheme.colors.accentGold,
-                                        modifier = Modifier.size(12.dp)
-                                    )
-                                    Text(
-                                        text = "JUMP",
-                                        fontFamily = JakartaFontFamily,
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 10.5.sp,
-                                        letterSpacing = 0.5.sp,
-                                        color = FathomTheme.colors.accentGold
-                                    )
-                                }
-                            }
-
-                            Text(
-                                text = "${(targetProgress * 100).toInt()}%",
-                                fontFamily = JakartaFontFamily,
-                                fontWeight = FontWeight.SemiBold,
-                                fontSize = 11.5.sp,
-                                color = FathomTheme.colors.textTertiary
-                            )
-                        }
-                    }
-
-                    LinearProgressIndicator(
-                        progress = { animatedProgress },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 20.dp)
-                            .height(3.5.dp)
-                            .clip(RoundedCornerShape(2.dp)),
-                        color = FathomTheme.colors.accentGold,
-                        trackColor = FathomTheme.colors.surfaceElevated
-                    )
-
-                    HorizontalPager(
-                        state = pagerState,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .weight(1f),
-                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 14.dp),
-                        pageSpacing = 0.dp
-                    ) { page ->
-                        val pageOffset = ((pagerState.currentPage - page) + pagerState.currentPageOffsetFraction)
-                        val clampedOffset = pageOffset.coerceIn(-1f, 1f)
-                        val absOffset = kotlin.math.abs(clampedOffset)
-
-                        val passage = passages[page]
-
-                        Box(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .graphicsLayer {
-                                    cameraDistance = 14f * density
-                                    rotationY = -clampedOffset * 48f
-                                    transformOrigin = TransformOrigin(
-                                        pivotFractionX = if (clampedOffset > 0f) 0f else 1f,
-                                        pivotFractionY = 0.5f
-                                    )
-                                    val scale = 1f - (absOffset * 0.08f)
-                                    scaleX = scale
-                                    scaleY = scale
-                                    alpha = 1f - (absOffset * 0.45f)
-                                }
-                        ) {
-                            InteractiveWisdomCard(
-                                passage = passage,
-                                index = page + 1,
-                                total = totalPages,
-                                onOpenInfo = {
-                                    haptics.light()
-                                    onOpenPassageContext(passage)
-                                }
-                            )
-                        }
-                    }
-
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 20.dp, vertical = 12.dp),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        if (currentPage > 0) {
-                            OutlinedButton(
-                                onClick = {
-                                    haptics.light()
-                                    coroutineScope.launch {
-                                        pagerState.animateScrollToPage(
-                                            page = currentPage - 1,
-                                            animationSpec = tween(350, easing = FastOutSlowInEasing)
-                                        )
-                                    }
-                                },
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .height(52.dp),
-                                shape = RoundedCornerShape(20.dp),
-                                colors = ButtonDefaults.outlinedButtonColors(
-                                    contentColor = FathomTheme.colors.textPrimary
-                                ),
-                                border = androidx.compose.foundation.BorderStroke(1.dp, FathomTheme.colors.borderSubtle)
-                            ) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                ) {
-                                    Icon(
-                                        imageVector = PhosphorIcons.Regular.ArrowLeft,
-                                        contentDescription = "Previous Verse",
-                                        modifier = Modifier.size(18.dp),
-                                        tint = FathomTheme.colors.accentGold
-                                    )
-                                    Text(
-                                        text = "PREVIOUS",
-                                        fontFamily = JakartaFontFamily,
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 12.sp,
-                                        letterSpacing = 1.sp
-                                    )
-                                }
-                            }
-                        }
-
-                        if (currentPage < totalPages - 1) {
-                            Button(
-                                onClick = {
-                                    haptics.light()
-                                    coroutineScope.launch {
-                                        pagerState.animateScrollToPage(
-                                            page = currentPage + 1,
-                                            animationSpec = tween(350, easing = FastOutSlowInEasing)
-                                        )
-                                    }
-                                },
-                                modifier = Modifier
-                                    .weight(1.3f)
-                                    .height(52.dp),
-                                shape = RoundedCornerShape(20.dp),
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = FathomTheme.colors.accentGold,
-                                    contentColor = Color.Black
-                                )
-                            ) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                ) {
-                                    Text(
-                                        text = "CONTINUE",
-                                        fontFamily = JakartaFontFamily,
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 12.sp,
-                                        letterSpacing = 1.sp
-                                    )
-                                    Icon(
-                                        imageVector = PhosphorIcons.Regular.ArrowRight,
-                                        contentDescription = "Next Verse",
-                                        modifier = Modifier.size(18.dp)
-                                    )
-                                }
-                            }
-                        } else {
-                            Button(
-                                onClick = {
-                                    haptics.success()
-                                    onCompleteChapter()
-                                },
-                                modifier = Modifier
-                                    .weight(1.3f)
-                                    .height(52.dp),
-                                shape = RoundedCornerShape(20.dp),
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = FathomTheme.colors.accentGold,
-                                    contentColor = Color.Black
-                                )
-                            ) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                ) {
-                                    Icon(
-                                        imageVector = PhosphorIcons.Regular.Sparkle,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(18.dp)
-                                    )
-                                    Text(
-                                        text = "MASTER CHAPTER",
-                                        fontFamily = JakartaFontFamily,
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 12.sp,
-                                        letterSpacing = 1.sp
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
-
-                if (showJumpModal) {
-                    JumpToVerseModal(
-                        totalVerses = totalPages,
-                        currentVerseIndex = currentPage,
-                        onSelectVerse = { targetIdx ->
-                            coroutineScope.launch {
-                                pagerState.scrollToPage(targetIdx)
-                            }
-                            showJumpModal = false
-                        },
-                        onDismiss = { showJumpModal = false }
-                    )
-                }
-            }
+    when {
+        isLoading -> StateFrame(modifier, traditionId = tradition) { BreathingMark() }
+        passages.isEmpty() -> StateFrame(modifier, traditionId = tradition) {
+            QuietMessage(
+                title = "Nothing to read here",
+                body = "No verses are available for this chapter yet.",
+                action = "Back to the path",
+                onAction = onDismiss
+            )
         }
+        else -> StudyContent(
+            chapterNumber = chapterNumber,
+            chapterTitle = chapterTitle,
+            bookTitle = bookTitle,
+            passages = passages,
+            onCompleteChapter = onCompleteChapter,
+            onOpenPassageContext = onOpenPassageContext,
+            onDismiss = onDismiss,
+            modifier = modifier
+        )
     }
 }
 
 @Composable
-private fun JumpToVerseModal(
-    totalVerses: Int,
-    currentVerseIndex: Int,
-    onSelectVerse: (Int) -> Unit,
-    onDismiss: () -> Unit
+private fun StudyContent(
+    chapterNumber: Int,
+    chapterTitle: String,
+    bookTitle: String,
+    passages: List<Passage>,
+    onCompleteChapter: () -> Unit,
+    onOpenPassageContext: (Passage) -> Unit,
+    onDismiss: () -> Unit,
+    modifier: Modifier
 ) {
     val haptics = LocalFathomHaptics.current
-    Dialog(
-        onDismissRequest = onDismiss,
-        properties = DialogProperties(usePlatformDefaultWidth = false)
-    ) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color.Black.copy(alpha = 0.85f))
-                .clickable(
-                    interactionSource = remember { MutableInteractionSource() },
-                    indication = null,
-                    onClick = {
-                        haptics.light()
-                        onDismiss()
-                    }
-                )
-                .padding(24.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(24.dp))
-                    .background(FathomTheme.colors.surfaceElevated)
-                    .border(1.dp, FathomTheme.colors.borderSubtle, RoundedCornerShape(24.dp))
-                    .clickable(
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication = null,
-                        onClick = {}
-                    )
-                    .padding(22.dp)
-            ) {
-                Column(modifier = Modifier.fillMaxWidth()) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                Text(
-                                    text = "JUMP TO VERSE",
-                                    fontFamily = JakartaFontFamily,
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 12.sp,
-                                    letterSpacing = 1.sp,
-                                    color = FathomTheme.colors.accentGold
-                                )
+    val colors = FathomTheme.colors
+    val audioEngine = LocalSacredAudioEngine.current
+    val scope = rememberCoroutineScope()
+    var showJump by remember { mutableStateOf(false) }
 
-                                Box(
-                                    modifier = Modifier
-                                        .clip(RoundedCornerShape(6.dp))
-                                        .background(FathomTheme.colors.surface)
-                                        .padding(horizontal = 6.dp, vertical = 2.dp)
-                                ) {
-                                    Text(
-                                        text = "$totalVerses verses",
-                                        fontFamily = JakartaFontFamily,
-                                        fontSize = 10.sp,
-                                        color = FathomTheme.colors.textTertiary
-                                    )
-                                }
+    val pagerState = rememberPagerState(initialPage = 0, pageCount = { passages.size })
+    val page = pagerState.currentPage
+    val total = passages.size
+    val tone = rememberTone(passages[page].traditionId)
+    val playback by audioEngine.playbackState.collectAsState()
+    val speaking = (playback as? SacredAudioState.Playing)?.passage?.id == passages[page].id
+    val isLast = page == total - 1
+    val progress by animateFloatAsState((page + 1f) / total, tween(420, easing = FathomMotion.Emphasized), label = "study_progress")
+
+    CompositionLocalProvider(LocalTone provides tone) {
+        GlassLayer(
+            modifier = modifier.fillMaxSize(),
+            background = {
+                Atmosphere(
+                    tone = tone,
+                    modifier = Modifier.fillMaxSize(),
+                    phase = { pagerState.currentPage + pagerState.currentPageOffsetFraction }
+                ) {
+                    HorizontalPager(
+                        state = pagerState,
+                        beyondViewportPageCount = 1,
+                        modifier = Modifier.fillMaxSize().statusBarsPadding()
+                    ) { index ->
+                        val passage = passages[index]
+                        val distance = { index - (pagerState.currentPage + pagerState.currentPageOffsetFraction) }
+                        VersePage(
+                            passage = passage,
+                            reveal = { (1f - abs(distance()) * 1.1f).coerceIn(0f, 1f) },
+                            contentPadding = PaddingValues(top = 148.dp, bottom = 128.dp),
+                            endGutter = 28.dp,
+                            showThemes = false,
+                            footer = if (passage.explanations.isNotEmpty()) {
+                                { MeaningBlock(passage = passage) }
+                            } else null,
+                            modifier = Modifier.graphicsLayer {
+                                val d = distance().coerceIn(-1f, 1f)
+                                translationX = -d * size.width * 0.08f
+                                alpha = 1f - abs(d) * 0.9f
                             }
-                            Text(
-                                text = "Select any verse number to navigate",
-                                fontFamily = JakartaFontFamily,
-                                fontSize = 11.5.sp,
-                                color = FathomTheme.colors.textSecondary
-                            )
-                        }
-
-                        IconButton(
+                        )
+                    }
+                }
+            },
+            overlay = {
+                Column(
+                    modifier = Modifier.fillMaxWidth().statusBarsPadding().padding(horizontal = 20.dp).padding(top = 12.dp)
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+                        GlassIconButton(
+                            icon = PhosphorIcons.Light.ArrowLeft,
+                            contentDescription = "Back to path",
                             onClick = {
                                 haptics.light()
                                 onDismiss()
-                            },
-                            modifier = Modifier
-                                .clip(CircleShape)
-                                .background(FathomTheme.colors.surface)
-                                .size(32.dp)
-                        ) {
-                            Icon(
-                                imageVector = PhosphorIcons.Regular.X,
-                                contentDescription = "Close",
-                                tint = FathomTheme.colors.textTertiary,
-                                modifier = Modifier.size(15.dp)
+                            }
+                        )
+                        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                            MonoLabel(text = "$bookTitle · ${chapterNumber.toString().padStart(2, '0')}", color = tone.hue)
+                            Text(
+                                text = chapterTitle,
+                                style = FathomTheme.typography.title,
+                                color = colors.textPrimary,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
                             )
                         }
+                        GlassIconButton(
+                            icon = if (speaking) PhosphorIcons.Fill.PauseFill else PhosphorIcons.Light.SpeakerHigh,
+                            contentDescription = if (speaking) "Pause recitation" else "Listen",
+                            tint = if (speaking) tone.hue else colors.textPrimary,
+                            onClick = {
+                                haptics.light()
+                                audioEngine.toggle(passages[page])
+                            }
+                        )
                     }
 
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    val itemsList = (1..totalVerses).toList()
-                    val gridState = rememberLazyGridState()
-
-                    LaunchedEffect(currentVerseIndex) {
-                        if (currentVerseIndex > 6) {
-                            gridState.scrollToItem((currentVerseIndex - 4).coerceAtLeast(0))
-                        }
-                    }
-
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(240.dp)
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(top = 22.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        LazyVerticalGrid(
-                            columns = GridCells.Adaptive(minSize = 48.dp),
-                            state = gridState,
-                            modifier = Modifier.fillMaxSize(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        Box(
+                            modifier = Modifier
+                                .tappable(scale = 0.95f) { showJump = true }
+                                .padding(vertical = 4.dp)
                         ) {
-                            items(itemsList) { verseNum ->
-                                val isSelected = (verseNum - 1) == currentVerseIndex
-                                Box(
-                                    modifier = Modifier
-                                        .size(46.dp)
-                                        .clip(RoundedCornerShape(12.dp))
-                                        .background(
-                                            if (isSelected) FathomTheme.colors.accentGold
-                                            else FathomTheme.colors.surface
-                                        )
-                                        .border(
-                                            width = 1.dp,
-                                            color = if (isSelected) FathomTheme.colors.accentGold else FathomTheme.colors.borderSubtle,
-                                            shape = RoundedCornerShape(12.dp)
-                                        )
-                                        .clickable {
-                                            haptics.light()
-                                            onSelectVerse(verseNum - 1)
-                                        },
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Text(
-                                        text = "$verseNum",
-                                        fontFamily = JakartaFontFamily,
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 13.5.sp,
-                                        color = if (isSelected) Color.Black else FathomTheme.colors.textPrimary
-                                    )
-                                }
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                MonoLabel(text = "Verse ${page + 1} / $total", color = colors.textSecondary)
+                                Icon(PhosphorIcons.Light.CaretDown, null, tint = colors.textTertiary, modifier = Modifier.size(12.dp))
                             }
                         }
+                        MonoLabel(text = "${(progress * 100).toInt()}%", color = colors.textTertiary)
+                    }
+                    Box(Modifier.fillMaxWidth().padding(top = 10.dp).height(2.dp).background(colors.hairline)) {
+                        Box(Modifier.fillMaxHeight().fillMaxWidth(progress).background(tone.hue))
                     }
                 }
+
+                Row(
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .fillMaxWidth()
+                        .navigationBarsPadding()
+                        .padding(horizontal = 20.dp)
+                        .padding(bottom = 16.dp)
+                        .widthIn(max = 640.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    if (page > 0) {
+                        GlassIconButton(
+                            icon = PhosphorIcons.Light.ArrowLeft,
+                            contentDescription = "Previous verse",
+                            size = 56.dp,
+                            onClick = {
+                                haptics.light()
+                                scope.launch { pagerState.animateScrollToPage(page - 1, animationSpec = tween(420, easing = FathomMotion.Emphasized)) }
+                            }
+                        )
+                    }
+                    GlassIconButton(
+                        icon = PhosphorIcons.Light.ChatCenteredText,
+                        contentDescription = "Context and commentary",
+                        size = 56.dp,
+                        onClick = {
+                            haptics.light()
+                            onOpenPassageContext(passages[page])
+                        }
+                    )
+                    FathomButton(
+                        text = if (isLast) "Complete chapter" else "Next verse",
+                        onClick = {
+                            if (isLast) {
+                                haptics.success()
+                                onCompleteChapter()
+                            } else {
+                                scope.launch { pagerState.animateScrollToPage(page + 1, animationSpec = tween(420, easing = FathomMotion.Emphasized)) }
+                            }
+                        },
+                        trailing = if (isLast) PhosphorIcons.Light.Check else PhosphorIcons.Light.ArrowRight,
+                        style = ButtonStyle.Tone,
+                        modifier = Modifier.weight(1f).height(56.dp)
+                    )
+                }
             }
+        )
+    }
+
+    if (showJump) {
+        CompositionLocalProvider(LocalTone provides tone) {
+            JumpSheet(
+                total = total,
+                current = page,
+                onSelect = { target ->
+                    scope.launch { pagerState.scrollToPage(target) }
+                    showJump = false
+                },
+                onDismiss = { showJump = false }
+            )
         }
     }
 }
 
 @Composable
-private fun InteractiveWisdomCard(
-    passage: Passage,
-    index: Int,
-    total: Int,
-    onOpenInfo: () -> Unit
-) {
+private fun JumpSheet(total: Int, current: Int, onSelect: (Int) -> Unit, onDismiss: () -> Unit) {
+    val colors = FathomTheme.colors
+    val tone = FathomTheme.tone
     val haptics = LocalFathomHaptics.current
-    var isExpanded by remember { mutableStateOf(false) }
-    val scrollState = rememberScrollState()
+    val gridState: LazyGridState = rememberLazyGridState()
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .clip(RoundedCornerShape(26.dp))
-            .background(
-                Brush.verticalGradient(
-                    listOf(
-                        FathomTheme.colors.surfaceElevated,
-                        FathomTheme.colors.surface
-                    )
-                )
-            )
-            .border(
-                width = 1.dp,
-                color = FathomTheme.colors.accentGold.copy(alpha = 0.35f),
-                shape = RoundedCornerShape(26.dp)
-            )
-            .padding(22.dp)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(scrollState)
+    LaunchedEffect(current) {
+        if (current > 12) gridState.scrollToItem((current - 8).coerceAtLeast(0))
+    }
+
+    FathomSheet(onDismiss = onDismiss) {
+        SheetHeader(
+            overline = "Navigate",
+            title = "Jump to a verse",
+            subtitle = "$total verses in this chapter",
+            onClose = onDismiss
+        )
+        LazyVerticalGrid(
+            columns = GridCells.Adaptive(minSize = 56.dp),
+            state = gridState,
+            modifier = Modifier.fillMaxWidth().height(300.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = passage.canonicalReference.ifEmpty { "Verse $index" },
-                    fontFamily = JakartaFontFamily,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 13.sp,
-                    letterSpacing = 0.5.sp,
-                    color = FathomTheme.colors.accentGold
-                )
-
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    IconButton(
-                        onClick = {
-                            haptics.light()
-                            onOpenInfo()
-                        },
-                        modifier = Modifier
-                            .clip(CircleShape)
-                            .background(FathomTheme.colors.surface)
-                            .size(28.dp)
-                    ) {
-                        Icon(
-                            imageVector = PhosphorIcons.Regular.Info,
-                            contentDescription = "Passage Info & Commentary",
-                            tint = FathomTheme.colors.accentGold,
-                            modifier = Modifier.size(14.dp)
-                        )
-                    }
-
-                    Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(10.dp))
-                            .background(FathomTheme.colors.surface)
-                            .padding(horizontal = 8.dp, vertical = 4.dp)
-                    ) {
-                        Text(
-                            text = "$index of $total",
-                            fontFamily = JakartaFontFamily,
-                            fontWeight = FontWeight.Medium,
-                            fontSize = 11.sp,
-                            color = FathomTheme.colors.textTertiary
-                        )
-                    }
-                }
-            }
-
-            val origText = passage.originalText
-            if (!origText.isNullOrBlank() && origText != passage.translation) {
-                Spacer(modifier = Modifier.height(14.dp))
+            items((1..total).toList()) { number ->
+                val selected = number - 1 == current
+                val passed = number - 1 < current
                 Box(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(FathomTheme.colors.surface.copy(alpha = 0.6f))
-                        .padding(12.dp)
+                        .size(56.dp)
+                        .clip(RoundedCornerShape(18.dp))
+                        .background(
+                            when {
+                                selected -> tone.hue
+                                passed -> tone.hue.copy(alpha = 0.14f)
+                                else -> colors.surfaceElevated
+                            }
+                        )
+                        .tappable(scale = 0.92f, haptic = false) {
+                            haptics.light()
+                            onSelect(number - 1)
+                        },
+                    contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = origText,
-                        fontFamily = JakartaFontFamily,
-                        fontSize = 13.5.sp,
-                        color = FathomTheme.colors.textTertiary,
-                        lineHeight = 22.sp
+                        text = number.toString(),
+                        style = FathomTheme.typography.label,
+                        color = if (selected) tone.onHue else if (passed) tone.hue else colors.textPrimary
                     )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(14.dp))
-
-            Text(
-                text = "“${passage.translation}”",
-                fontFamily = JakartaFontFamily,
-                fontWeight = FontWeight.Medium,
-                fontSize = 16.sp,
-                color = FathomTheme.colors.textPrimary,
-                lineHeight = 26.sp
-            )
-
-            if (passage.explanations.isNotEmpty()) {
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(FathomTheme.colors.surface)
-                        .border(1.dp, FathomTheme.colors.borderSubtle, RoundedCornerShape(12.dp))
-                        .clickable {
-                            haptics.light()
-                            isExpanded = !isExpanded
-                        }
-                        .padding(12.dp)
-                ) {
-                    Column {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(6.dp)
-                            ) {
-                                Icon(
-                                    imageVector = PhosphorIcons.Regular.Lightbulb,
-                                    contentDescription = null,
-                                    tint = FathomTheme.colors.accentGold,
-                                    modifier = Modifier.size(14.dp)
-                                )
-                                Text(
-                                    text = if (isExpanded) "Passage Insights & Meaning" else "Tap to Reveal Meaning",
-                                    fontFamily = JakartaFontFamily,
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 11.5.sp,
-                                    color = FathomTheme.colors.accentGold
-                                )
-                            }
-                            Icon(
-                                imageVector = if (isExpanded) PhosphorIcons.Regular.CaretUp else PhosphorIcons.Regular.CaretDown,
-                                contentDescription = null,
-                                tint = FathomTheme.colors.accentGold,
-                                modifier = Modifier.size(13.dp)
-                            )
-                        }
-
-                        if (isExpanded) {
-                            Column(modifier = Modifier.padding(top = 10.dp)) {
-                                val exp = passage.explanations.first()
-                                val expTitle = exp.title
-                                if (!expTitle.isNullOrBlank()) {
-                                    Text(
-                                        text = expTitle,
-                                        fontFamily = JakartaFontFamily,
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 12.5.sp,
-                                        color = FathomTheme.colors.textPrimary
-                                    )
-                                    Spacer(modifier = Modifier.height(4.dp))
-                                }
-                                Text(
-                                    text = exp.body,
-                                    fontFamily = JakartaFontFamily,
-                                    fontSize = 12.5.sp,
-                                    color = FathomTheme.colors.textSecondary,
-                                    lineHeight = 19.sp
-                                )
-                            }
-                        }
-                    }
                 }
             }
         }

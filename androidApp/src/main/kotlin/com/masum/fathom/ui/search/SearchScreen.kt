@@ -2,103 +2,62 @@ package com.masum.fathom.ui.search
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.pager.HorizontalPager
-import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.snapshotFlow
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.drawWithContent
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
-import androidx.compose.foundation.layout.offset
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.adamglin.PhosphorIcons
-import com.adamglin.phosphoricons.Fill
-import com.adamglin.phosphoricons.Regular
-import com.adamglin.phosphoricons.fill.BookmarkSimple as BookmarkSimpleFill
-import com.adamglin.phosphoricons.regular.ArrowLeft
-import com.adamglin.phosphoricons.regular.BookBookmark
-import com.adamglin.phosphoricons.regular.BookmarkSimple
-import com.adamglin.phosphoricons.regular.CaretRight
-import com.adamglin.phosphoricons.regular.Crown
-import com.adamglin.phosphoricons.regular.Info
-import com.adamglin.phosphoricons.regular.MagnifyingGlass
-import com.adamglin.phosphoricons.regular.ShareNetwork
-import com.adamglin.phosphoricons.regular.Sliders
-import com.adamglin.phosphoricons.regular.Sparkle
-import com.adamglin.phosphoricons.regular.SpeakerHigh
-import com.adamglin.phosphoricons.regular.X
-import com.masum.fathom.core.audio.LocalSacredAudioEngine
-import com.masum.fathom.core.audio.SacredAudioState
+import com.adamglin.phosphoricons.Light
+import com.adamglin.phosphoricons.light.Sliders
 import com.masum.fathom.core.haptics.LocalFathomHaptics
-import com.masum.fathom.core.model.Book
-import com.masum.fathom.core.model.Passage
 import com.masum.fathom.core.model.SacredTopic
-import com.masum.fathom.core.model.TraditionId
-import com.masum.fathom.core.subscription.LocalOpenPaywall
-import com.masum.fathom.core.subscription.LocalSubscriptionState
+import com.masum.fathom.core.sanctuary.LocalOpenSanctuary
+import com.masum.fathom.ui.components.PassageEntry
 import com.masum.fathom.ui.components.QuoteCardModal
-import com.masum.fathom.ui.components.SacredDivider
-import com.masum.fathom.ui.components.TraditionBadge
+import com.masum.fathom.ui.design.Atmosphere
+import com.masum.fathom.ui.design.BreathingMark
+import com.masum.fathom.ui.design.DockedTopPanel
+import com.masum.fathom.ui.design.GlassIconButton
+import com.masum.fathom.ui.design.GlassLayer
+import com.masum.fathom.ui.design.LocalShell
+import com.masum.fathom.ui.design.MonoLabel
+import com.masum.fathom.ui.design.NavToneEffect
+import com.masum.fathom.ui.design.QuietMessage
+import com.masum.fathom.ui.design.ScreenHeader
+import com.masum.fathom.ui.design.WidthClass
+import com.masum.fathom.ui.design.tappable
 import com.masum.fathom.ui.feed.PassageContextSheet
+import com.masum.fathom.ui.theme.FathomMotion
 import com.masum.fathom.ui.theme.FathomTheme
-import com.masum.fathom.ui.theme.JakartaFontFamily
-import kotlinx.coroutines.launch
+import com.masum.fathom.ui.theme.LocalTone
+import com.masum.fathom.ui.theme.rememberTone
 
 @Composable
 fun SearchScreen(
@@ -109,40 +68,32 @@ fun SearchScreen(
     val directoryListState = rememberLazyListState()
     val searchListState = rememberLazyListState()
 
-    if (state.selectedPassageForShare != null) {
-        BackHandler { onEvent(SearchUiEvent.OnCloseShare) }
-    } else if (state.selectedPassageForContext != null) {
-        BackHandler { onEvent(SearchUiEvent.OnCloseContext) }
-    } else if (state.selectedBook != null) {
-        BackHandler { onEvent(SearchUiEvent.OnSelectBook(null)) }
-    } else if (state.selectedTopic != null) {
-        BackHandler { onEvent(SearchUiEvent.OnSelectTopic(null)) }
-    } else if (state.searchQuery.isNotEmpty()) {
-        BackHandler { onEvent(SearchUiEvent.OnQueryChange("")) }
+    when {
+        state.selectedPassageForShare != null -> BackHandler { onEvent(SearchUiEvent.OnCloseShare) }
+        state.selectedPassageForContext != null -> BackHandler { onEvent(SearchUiEvent.OnCloseContext) }
+        state.selectedBook != null -> BackHandler { onEvent(SearchUiEvent.OnSelectBook(null)) }
+        state.selectedTopic != null -> BackHandler { onEvent(SearchUiEvent.OnSelectTopic(null)) }
+        state.searchQuery.isNotEmpty() -> BackHandler { onEvent(SearchUiEvent.OnQueryChange("")) }
     }
 
-    Box(
-        modifier = modifier
-            .fillMaxSize()
-            .background(FathomTheme.colors.background)
-    ) {
+    Box(modifier = modifier.fillMaxSize()) {
         AnimatedContent(
             targetState = state.selectedBook,
             transitionSpec = {
                 if (targetState != null) {
-                    (slideInHorizontally(tween(320)) { it } + fadeIn(tween(320)))
-                        .togetherWith(slideOutHorizontally(tween(260)) { -it / 3 } + fadeOut(tween(200)))
+                    (slideInHorizontally(tween(460, 0, FathomMotion.Emphasized)) { it / 5 } + fadeIn(tween(320, 80)))
+                        .togetherWith(slideOutHorizontally(tween(360, 0, FathomMotion.Emphasized)) { -it / 8 } + fadeOut(tween(200)))
                 } else {
-                    (slideInHorizontally(tween(300)) { -it / 3 } + fadeIn(tween(300)))
-                        .togetherWith(slideOutHorizontally(tween(280)) { it } + fadeOut(tween(200)))
+                    (slideInHorizontally(tween(460, 0, FathomMotion.Emphasized)) { -it / 8 } + fadeIn(tween(320, 80)))
+                        .togetherWith(slideOutHorizontally(tween(360, 0, FathomMotion.Emphasized)) { it / 5 } + fadeOut(tween(200)))
                 }
             },
-            label = "explore_screen_transition",
+            label = "explore_transition",
             modifier = Modifier.fillMaxSize()
-        ) { activeBook ->
-            if (activeBook != null) {
-                ChapterReaderView(
-                    book = activeBook,
+        ) { book ->
+            if (book != null) {
+                BookReader(
+                    book = book,
                     chapters = state.availableChapters,
                     selectedChapter = state.selectedChapter,
                     chapterPassagesMap = state.chapterPassagesMap,
@@ -151,7 +102,7 @@ fun SearchScreen(
                     onEvent = onEvent
                 )
             } else {
-                DirectoryAndSearchRootView(
+                ExploreRoot(
                     state = state,
                     directoryListState = directoryListState,
                     searchListState = searchListState,
@@ -160,1481 +111,208 @@ fun SearchScreen(
             }
         }
 
-        state.selectedPassageForContext?.let { contextPassage ->
-            PassageContextSheet(
-                passage = contextPassage,
-                onDismiss = { onEvent(SearchUiEvent.OnCloseContext) }
-            )
+        state.selectedPassageForContext?.let {
+            PassageContextSheet(passage = it, onDismiss = { onEvent(SearchUiEvent.OnCloseContext) })
         }
-
-        state.selectedPassageForShare?.let { sharePassage ->
-            QuoteCardModal(
-                passage = sharePassage,
-                onDismiss = { onEvent(SearchUiEvent.OnCloseShare) }
-            )
+        state.selectedPassageForShare?.let {
+            QuoteCardModal(passage = it, onDismiss = { onEvent(SearchUiEvent.OnCloseShare) })
         }
     }
 }
 
 @Composable
-private fun DirectoryAndSearchRootView(
+private fun ExploreRoot(
     state: SearchUiState,
-    directoryListState: androidx.compose.foundation.lazy.LazyListState,
-    searchListState: androidx.compose.foundation.lazy.LazyListState,
+    directoryListState: LazyListState,
+    searchListState: LazyListState,
     onEvent: (SearchUiEvent) -> Unit
 ) {
     val haptics = LocalFathomHaptics.current
-    val openSanctuary = com.masum.fathom.core.sanctuary.LocalOpenSanctuary.current
-    val subscriptionState = LocalSubscriptionState.current
-    val openPaywall = LocalOpenPaywall.current
+    val openSanctuary = LocalOpenSanctuary.current
+    val shell = LocalShell.current
+    val colors = FathomTheme.colors
+    val density = LocalDensity.current
 
-    Column(modifier = Modifier.fillMaxSize()) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .statusBarsPadding()
-                .padding(horizontal = 20.dp)
-                .padding(top = 10.dp, bottom = 6.dp)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(0.dp)
-                ) {
-                    Text(
-                        text = "explore",
-                        style = FathomTheme.typography.brandTitle,
-                        color = FathomTheme.colors.textPrimary
-                    )
-                    Text(
-                        text = ".",
-                        style = FathomTheme.typography.brandTitle.copy(color = FathomTheme.colors.accentGold)
-                    )
-                }
+    val focusTradition = state.selectedTradition ?: state.selectedTopic?.seed()
+    val tone = rememberTone(focusTradition)
+    NavToneEffect(state.selectedTradition)
 
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+    var panelHeight by remember { mutableIntStateOf(0) }
+    val panelDp = with(density) { panelHeight.toDp() }
+    val searching = state.searchQuery.isNotBlank()
+    val inTopic = !searching && state.selectedTopic != null
+    val listState = if (searching || inTopic) searchListState else directoryListState
+
+    CompositionLocalProvider(LocalTone provides tone) {
+        GlassLayer(
+            modifier = Modifier.fillMaxSize(),
+            background = {
+                Atmosphere(
+                    tone = tone,
+                    modifier = Modifier.fillMaxSize(),
+                    phase = { listState.firstVisibleItemIndex + listState.firstVisibleItemScrollOffset / 800f }
                 ) {
                     Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(FathomTheme.colors.accentGold.copy(alpha = 0.12f))
-                            .border(1.dp, FathomTheme.colors.accentGold.copy(alpha = 0.35f), RoundedCornerShape(12.dp))
-                            .padding(horizontal = 9.dp, vertical = 5.dp)
+                        modifier = Modifier.fillMaxSize().padding(start = shell.startInset),
+                        contentAlignment = Alignment.TopCenter
                     ) {
-                        Text(
-                            text = "10K+ VERSES",
-                            fontFamily = JakartaFontFamily,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 9.5.sp,
-                            letterSpacing = 1.sp,
-                            color = FathomTheme.colors.accentGold
-                        )
-                    }
-
-                    IconButton(
-                        onClick = {
-                            haptics.light()
-                            openSanctuary()
-                        },
-                        modifier = Modifier
-                            .clip(CircleShape)
-                            .background(FathomTheme.colors.surfaceElevated)
-                            .size(38.dp)
-                    ) {
-                        Icon(
-                            imageVector = PhosphorIcons.Regular.Sliders,
-                            contentDescription = "Sanctuary Settings",
-                            tint = FathomTheme.colors.textSecondary,
-                            modifier = Modifier.size(18.dp)
-                        )
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(14.dp))
-
-            SearchInputBar(
-                query = state.searchQuery,
-                onQueryChange = { onEvent(SearchUiEvent.OnQueryChange(it)) },
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            Spacer(modifier = Modifier.height(10.dp))
-
-            CanonFilterRow(
-                selectedTradition = state.selectedTradition,
-                onSelectTradition = { onEvent(SearchUiEvent.OnSelectTradition(it)) }
-            )
-
-            if (state.searchQuery.isEmpty()) {
-                Spacer(modifier = Modifier.height(10.dp))
-                ThematicSuggestionsRow(
-                    selectedTopic = state.selectedTopic,
-                    onSelectTopic = { topic ->
-                        haptics.light()
-                        onEvent(SearchUiEvent.OnSelectTopic(topic))
-                    }
-                )
-            }
-        }
-
-        SacredDivider(modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp))
-
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .weight(1f)
-        ) {
-            if (state.searchQuery.isNotBlank()) {
-                SearchResultsView(
-                    query = state.searchQuery,
-                    results = state.searchResults,
-                    isSearching = state.isSearching,
-                    bookmarkedIds = state.bookmarkedPassageIds,
-                    listState = searchListState,
-                    onEvent = onEvent
-                )
-            } else if (state.selectedTopic != null) {
-                TopicalPassagesView(
-                    topic = state.selectedTopic,
-                    passages = state.topicPassages,
-                    isLoading = state.isLoadingTopic,
-                    bookmarkedIds = state.bookmarkedPassageIds,
-                    listState = searchListState,
-                    onEvent = onEvent
-                )
-            } else {
-                ScripturesDirectoryView(
-                    books = state.allBooks,
-                    selectedTradition = state.selectedTradition,
-                    listState = directoryListState,
-                    onSelectBook = { onEvent(SearchUiEvent.OnSelectBook(it)) },
-                    onSelectTopic = { onEvent(SearchUiEvent.OnSelectTopic(it)) }
-                )
-            }
-
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(26.dp)
-                    .align(Alignment.TopCenter)
-                    .background(
-                        brush = Brush.verticalGradient(
-                            colors = listOf(
-                                FathomTheme.colors.background,
-                                FathomTheme.colors.background.copy(alpha = 0.75f),
-                                Color.Transparent
+                        LazyColumn(
+                            state = listState,
+                            modifier = Modifier.fillMaxSize().widthIn(max = shell.contentMaxWidth + 96.dp),
+                            contentPadding = PaddingValues(
+                                start = 24.dp,
+                                end = 24.dp,
+                                top = panelDp + 20.dp,
+                                bottom = shell.bottomInset + 32.dp
                             )
-                        )
-                    )
-            )
-        }
-    }
-}
-
-@Composable
-private fun SearchInputBar(
-    query: String,
-    onQueryChange: (String) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    val haptics = LocalFathomHaptics.current
-
-    Row(
-        modifier = modifier
-            .height(48.dp)
-            .clip(RoundedCornerShape(16.dp))
-            .background(FathomTheme.colors.surfaceElevated)
-            .border(
-                width = 1.dp,
-                color = if (query.isNotEmpty()) FathomTheme.colors.accentGold.copy(alpha = 0.7f) else FathomTheme.colors.borderSubtle,
-                shape = RoundedCornerShape(16.dp)
-            )
-            .padding(horizontal = 14.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Icon(
-            imageVector = PhosphorIcons.Regular.MagnifyingGlass,
-            contentDescription = null,
-            tint = if (query.isNotEmpty()) FathomTheme.colors.accentGold else FathomTheme.colors.textTertiary,
-            modifier = Modifier.size(18.dp)
-        )
-
-        Spacer(modifier = Modifier.width(10.dp))
-
-        BasicTextField(
-            value = query,
-            onValueChange = onQueryChange,
-            singleLine = true,
-            textStyle = TextStyle(
-                fontFamily = JakartaFontFamily,
-                fontSize = 13.5.sp,
-                color = FathomTheme.colors.textPrimary
-            ),
-            cursorBrush = SolidColor(FathomTheme.colors.accentGold),
-            modifier = Modifier.weight(1f),
-            decorationBox = { innerTextField ->
-                if (query.isEmpty()) {
-                    Text(
-                        text = "Search verses, keywords, wisdom...",
-                        fontFamily = JakartaFontFamily,
-                        fontSize = 13.sp,
-                        color = FathomTheme.colors.textTertiary,
-                        maxLines = 1
-                    )
-                }
-                innerTextField()
-            }
-        )
-
-        if (query.isNotEmpty()) {
-            IconButton(
-                onClick = {
-                    haptics.light()
-                    onQueryChange("")
-                },
-                modifier = Modifier.size(24.dp)
-            ) {
-                Icon(
-                    imageVector = PhosphorIcons.Regular.X,
-                    contentDescription = "Clear",
-                    tint = FathomTheme.colors.textTertiary,
-                    modifier = Modifier.size(14.dp)
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun CanonFilterRow(
-    selectedTradition: TraditionId?,
-    onSelectTradition: (TraditionId?) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    val haptics = LocalFathomHaptics.current
-    val gradientWidth = with(androidx.compose.ui.platform.LocalDensity.current) { 32.dp.toPx() }
-    val gradientColor = FathomTheme.colors.surfaceElevated.copy(alpha = 0.9f)
-    val items: List<Pair<TraditionId, String>> = remember {
-        listOf(
-            TraditionId.HINDUISM to "HINDUISM",
-            TraditionId.BUDDHISM to "BUDDHISM",
-            TraditionId.STOICISM to "STOICISM",
-            TraditionId.TAOISM to "TAOISM",
-            TraditionId.ISLAM to "ISLAM",
-            TraditionId.CHRISTIANITY to "CHRISTIANITY",
-            TraditionId.JUDAISM to "JUDAISM"
-        )
-    }
-
-    Row(
-        modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(10.dp)
-    ) {
-        Box(
-            modifier = Modifier
-                .clip(RoundedCornerShape(16.dp))
-                .background(
-                    if (selectedTradition == null) FathomTheme.colors.accentGold.copy(alpha = 0.18f)
-                    else FathomTheme.colors.surfaceElevated.copy(alpha = 0.4f)
-                )
-                .border(
-                    1.dp,
-                    if (selectedTradition == null) FathomTheme.colors.accentGold.copy(alpha = 0.8f) 
-                    else FathomTheme.colors.borderSubtle,
-                    RoundedCornerShape(16.dp)
-                )
-                .clickable {
-                    haptics.light()
-                    onSelectTradition(null)
-                }
-                .padding(horizontal = 16.dp, vertical = 14.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text = "ALL",
-                fontFamily = JakartaFontFamily,
-                fontWeight = if (selectedTradition == null) FontWeight.Bold else FontWeight.Medium,
-                fontSize = 10.5.sp,
-                letterSpacing = 0.6.sp,
-                color = if (selectedTradition == null) FathomTheme.colors.accentGold else FathomTheme.colors.textSecondary
-            )
-        }
-
-        Box(
-            modifier = Modifier
-                .weight(1f)
-                .clip(RoundedCornerShape(16.dp))
-                .background(FathomTheme.colors.surfaceElevated.copy(alpha = 0.4f))
-                .border(1.dp, FathomTheme.colors.borderSubtle, RoundedCornerShape(16.dp))
-        ) {
-            LazyRow(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .drawWithContent {
-                        drawContent()
-                        drawRect(
-                            brush = Brush.horizontalGradient(
-                                colors = listOf(gradientColor, Color.Transparent),
-                                startX = 0f,
-                                endX = gradientWidth
-                            ),
-                            size = Size(width = gradientWidth, height = size.height)
-                        )
-                        drawRect(
-                            brush = Brush.horizontalGradient(
-                                colors = listOf(Color.Transparent, gradientColor),
-                                startX = size.width - gradientWidth,
-                                endX = size.width
-                            ),
-                            topLeft = Offset(x = size.width - gradientWidth, y = 0f),
-                            size = Size(width = gradientWidth, height = size.height)
-                        )
-                    },
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
-            ) {
-                items(items, key = { it.second }) { (tradition, label) ->
-                    val isSelected = tradition == selectedTradition
-                    Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(
-                                if (isSelected) FathomTheme.colors.accentGold.copy(alpha = 0.18f)
-                                else Color.Transparent
-                            )
-                            .border(
-                                width = 1.dp,
-                                color = if (isSelected) FathomTheme.colors.accentGold.copy(alpha = 0.8f)
-                                else FathomTheme.colors.borderSubtle.copy(alpha = 0.5f),
-                                shape = RoundedCornerShape(12.dp)
-                            )
-                            .clickable {
-                                haptics.light()
-                                onSelectTradition(tradition)
-                            }
-                            .padding(horizontal = 12.dp, vertical = 6.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = label,
-                            fontFamily = JakartaFontFamily,
-                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                            fontSize = 10.5.sp,
-                            letterSpacing = 0.6.sp,
-                            color = if (isSelected) FathomTheme.colors.accentGold else FathomTheme.colors.textSecondary
-                        )
-                    }
-                }
-            }
-        }
-    }
-}
-@Composable
-private fun ThematicSuggestionsRow(
-    selectedTopic: SacredTopic?,
-    onSelectTopic: (SacredTopic?) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    val haptics = LocalFathomHaptics.current
-    val topics = remember { SacredTopic.entries }
-
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .horizontalScroll(rememberScrollState()),
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Icon(
-            imageVector = PhosphorIcons.Regular.Sparkle,
-            contentDescription = null,
-            tint = FathomTheme.colors.accentGold,
-            modifier = Modifier.size(13.dp)
-        )
-
-        Text(
-            text = "TOPICS:",
-            fontFamily = JakartaFontFamily,
-            fontWeight = FontWeight.Bold,
-            fontSize = 9.5.sp,
-            letterSpacing = 1.sp,
-            color = FathomTheme.colors.accentGold
-        )
-
-        Spacer(modifier = Modifier.width(2.dp))
-
-        topics.forEach { topic ->
-            val isSelected = selectedTopic == topic
-            Box(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(
-                        if (isSelected) FathomTheme.colors.accentGold.copy(alpha = 0.2f)
-                        else FathomTheme.colors.surface
-                    )
-                    .border(
-                        1.dp,
-                        if (isSelected) FathomTheme.colors.accentGold.copy(alpha = 0.8f)
-                        else FathomTheme.colors.borderSubtle,
-                        RoundedCornerShape(12.dp)
-                    )
-                    .clickable {
-                        haptics.light()
-                        if (isSelected) onSelectTopic(null) else onSelectTopic(topic)
-                    }
-                    .padding(horizontal = 9.dp, vertical = 4.dp)
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    Icon(
-                        imageVector = topic.icon,
-                        contentDescription = null,
-                        tint = if (isSelected) FathomTheme.colors.accentGold else FathomTheme.colors.textTertiary,
-                        modifier = Modifier.size(12.dp)
-                    )
-                    Text(
-                        text = topic.title,
-                        fontFamily = JakartaFontFamily,
-                        fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
-                        fontSize = 11.sp,
-                        color = if (isSelected) FathomTheme.colors.accentGold else FathomTheme.colors.textTertiary
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun TopicalPassagesView(
-    topic: SacredTopic,
-    passages: List<Passage>,
-    isLoading: Boolean,
-    bookmarkedIds: Set<String>,
-    listState: androidx.compose.foundation.lazy.LazyListState,
-    onEvent: (SearchUiEvent) -> Unit
-) {
-    val haptics = LocalFathomHaptics.current
-
-    if (isLoading) {
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
-        ) {
-            CircularProgressIndicator(color = FathomTheme.colors.accentGold)
-        }
-    } else if (passages.isEmpty()) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(32.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(
-                    text = "No Passages Found",
-                    style = FathomTheme.typography.commentaryTitle.copy(
-                        fontFamily = JakartaFontFamily,
-                        fontSize = 18.sp
-                    ),
-                    color = FathomTheme.colors.textPrimary
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = "No cross-tradition passages found for this theme with current filter.",
-                    style = FathomTheme.typography.commentaryBody,
-                    color = FathomTheme.colors.textTertiary,
-                    textAlign = TextAlign.Center
-                )
-            }
-        }
-    } else {
-        LazyColumn(
-            state = listState,
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(start = 20.dp, top = 20.dp, end = 20.dp, bottom = 96.dp)
-        ) {
-            item {
-                Column(modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(32.dp)
-                                    .clip(CircleShape)
-                                    .background(FathomTheme.colors.accentGold.copy(alpha = 0.15f)),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(
-                                    imageVector = topic.icon,
-                                    contentDescription = null,
-                                    tint = FathomTheme.colors.accentGold,
-                                    modifier = Modifier.size(16.dp)
-                                )
+                            when {
+                                searching -> resultsItems(state, onEvent)
+                                inTopic -> topicItems(state, state.selectedTopic!!, onEvent)
+                                else -> directoryItems(state, shell.widthClass != WidthClass.Compact, onEvent)
                             }
-                            Text(
-                                text = topic.title.uppercase(),
-                                style = FathomTheme.typography.canonicalHeader,
-                                color = FathomTheme.colors.accentGold
-                            )
                         }
-
-                        IconButton(
+                    }
+                }
+            },
+            overlay = {
+                DockedTopPanel(onHeight = { panelHeight = it }) {
+                    ScreenHeader(
+                        title = "explore",
+                        traditionId = focusTradition,
+                    ) {
+                        GlassIconButton(
+                            icon = PhosphorIcons.Light.Sliders,
+                            contentDescription = "Settings",
                             onClick = {
                                 haptics.light()
-                                onEvent(SearchUiEvent.OnSelectTopic(null))
-                            },
-                            modifier = Modifier
-                                .size(28.dp)
-                                .clip(CircleShape)
-                                .background(FathomTheme.colors.surfaceElevated)
-                        ) {
-                            Icon(
-                                imageVector = PhosphorIcons.Regular.X,
-                                contentDescription = "Close Topic",
-                                tint = FathomTheme.colors.textSecondary,
-                                modifier = Modifier.size(14.dp)
-                            )
-                        }
+                                openSanctuary()
+                            }
+                        )
                     }
-
-                    Spacer(modifier = Modifier.height(6.dp))
-
-                    Text(
-                        text = topic.subtitle,
-                        fontFamily = JakartaFontFamily,
-                        fontSize = 13.sp,
-                        color = FathomTheme.colors.textSecondary
+                    Spacer(Modifier.height(10.dp))
+                    EditorialSearchField(
+                        query = state.searchQuery,
+                        onQueryChange = { onEvent(SearchUiEvent.OnQueryChange(it)) },
+                        modifier = Modifier.padding(horizontal = 24.dp)
                     )
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    Text(
-                        text = "${passages.size} CROSS-TRADITION VERSES",
-                        fontFamily = JakartaFontFamily,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 10.sp,
-                        letterSpacing = 1.sp,
-                        color = FathomTheme.colors.accentGold.copy(alpha = 0.8f)
-                    )
-                }
-            }
-
-            items(passages, key = { it.id }) { passage ->
-                SearchPassageCard(
-                    passage = passage,
-                    isBookmarked = passage.id in bookmarkedIds,
-                    onToggleBookmark = { onEvent(SearchUiEvent.OnToggleBookmark(passage)) },
-                    onOpenContext = { onEvent(SearchUiEvent.OnOpenContext(passage)) },
-                    onOpenShare = { onEvent(SearchUiEvent.OnOpenShare(passage)) }
-                )
-                Spacer(modifier = Modifier.height(14.dp))
-            }
-        }
-    }
-}
-
-@Composable
-private fun SearchResultsView(
-    query: String,
-    results: List<Passage>,
-    isSearching: Boolean,
-    bookmarkedIds: Set<String>,
-    listState: androidx.compose.foundation.lazy.LazyListState,
-    onEvent: (SearchUiEvent) -> Unit
-) {
-    if (isSearching) {
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
-        ) {
-            CircularProgressIndicator(color = FathomTheme.colors.accentGold)
-        }
-    } else if (results.isEmpty()) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(32.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(
-                    text = "No Passages Found",
-                    style = FathomTheme.typography.commentaryTitle.copy(
-                        fontFamily = JakartaFontFamily,
-                        fontSize = 18.sp
-                    ),
-                    color = FathomTheme.colors.textPrimary
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = "No sacred verses matched “$query”. Try searching for broader themes like stillness, duty, light, or path.",
-                    style = FathomTheme.typography.commentaryBody,
-                    color = FathomTheme.colors.textTertiary,
-                    textAlign = TextAlign.Center
-                )
-            }
-        }
-    } else {
-        LazyColumn(
-            state = listState,
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(start = 20.dp, top = 20.dp, end = 20.dp, bottom = 96.dp)
-        ) {
-            item {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 12.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "${results.size} VERSES FOUND",
-                        style = FathomTheme.typography.canonicalHeader,
-                        color = FathomTheme.colors.accentGold
-                    )
-                }
-            }
-
-            items(results, key = { it.id }) { passage ->
-                SearchPassageCard(
-                    passage = passage,
-                    isBookmarked = passage.id in bookmarkedIds,
-                    onToggleBookmark = { onEvent(SearchUiEvent.OnToggleBookmark(passage)) },
-                    onOpenContext = { onEvent(SearchUiEvent.OnOpenContext(passage)) },
-                    onOpenShare = { onEvent(SearchUiEvent.OnOpenShare(passage)) }
-                )
-                Spacer(modifier = Modifier.height(14.dp))
-            }
-        }
-    }
-}
-
-@Composable
-private fun SearchPassageCard(
-    passage: Passage,
-    isBookmarked: Boolean,
-    onToggleBookmark: () -> Unit,
-    onOpenContext: () -> Unit,
-    onOpenShare: () -> Unit
-) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(20.dp))
-            .background(
-                Brush.verticalGradient(
-                    listOf(
-                        FathomTheme.colors.surfaceElevated,
-                        FathomTheme.colors.surface
-                    )
-                )
-            )
-            .border(
-                width = 1.dp,
-                color = FathomTheme.colors.borderSubtle,
-                shape = RoundedCornerShape(20.dp)
-            )
-            .padding(18.dp)
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            TraditionBadge(traditionId = passage.traditionId)
-            Text(
-                text = passage.canonicalReference,
-                style = FathomTheme.typography.canonicalHeader,
-                color = FathomTheme.colors.textSecondary
-            )
-        }
-
-        Spacer(modifier = Modifier.height(12.dp))
-
-        if (!passage.originalText.isNullOrBlank()) {
-            Text(
-                text = passage.originalText ?: "",
-                style = FathomTheme.typography.verseOriginal.copy(
-                    fontSize = 13.5.sp,
-                    lineHeight = 20.sp
-                ),
-                color = FathomTheme.colors.textTertiary
-            )
-            Spacer(modifier = Modifier.height(6.dp))
-        }
-
-        Text(
-            text = passage.translation,
-            style = FathomTheme.typography.verseDisplay.copy(
-                fontSize = 16.sp,
-                lineHeight = 24.sp
-            ),
-            color = FathomTheme.colors.textPrimary
-        )
-
-        SacredDivider(modifier = Modifier.padding(vertical = 12.dp))
-
-        val audioEngine = LocalSacredAudioEngine.current
-        val playbackState by audioEngine.playbackState.collectAsState()
-        val haptics = LocalFathomHaptics.current
-        val isSpeakingThis = (playbackState as? SacredAudioState.Playing)?.passage?.id == passage.id
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                IconButton(
-                    onClick = {
-                        haptics.medium()
-                        audioEngine.toggle(passage)
-                    },
-                    modifier = Modifier.size(32.dp)
-                ) {
-                    Icon(
-                        imageVector = PhosphorIcons.Regular.SpeakerHigh,
-                        contentDescription = "Sacred Recitation",
-                        tint = if (isSpeakingThis) FathomTheme.colors.accentGold else FathomTheme.colors.textSecondary,
-                        modifier = Modifier.size(16.dp)
-                    )
-                }
-
-                IconButton(
-                    onClick = {
-                        haptics.light()
-                        onOpenShare()
-                    },
-                    modifier = Modifier.size(32.dp)
-                ) {
-                    Icon(
-                        imageVector = PhosphorIcons.Regular.ShareNetwork,
-                        contentDescription = "Share Quote Card",
-                        tint = FathomTheme.colors.textSecondary,
-                        modifier = Modifier.size(16.dp)
-                    )
-                }
-
-                IconButton(
-                    onClick = {
-                        haptics.light()
-                        onOpenContext()
-                    },
-                    modifier = Modifier.size(32.dp)
-                ) {
-                    Icon(
-                        imageVector = PhosphorIcons.Regular.Info,
-                        contentDescription = "Context & Commentary",
-                        tint = FathomTheme.colors.textSecondary,
-                        modifier = Modifier.size(16.dp)
-                    )
-                }
-
-                IconButton(
-                    onClick = {
-                        if (!isBookmarked) {
-                            haptics.success()
-                        } else {
+                    Spacer(Modifier.height(14.dp))
+                    TraditionChips(
+                        selected = state.selectedTradition,
+                        onSelect = {
                             haptics.light()
+                            onEvent(SearchUiEvent.OnSelectTradition(it))
                         }
-                        onToggleBookmark()
-                    },
-                    modifier = Modifier.size(32.dp)
-                ) {
-                    Icon(
-                        imageVector = if (isBookmarked) PhosphorIcons.Fill.BookmarkSimpleFill else PhosphorIcons.Regular.BookmarkSimple,
-                        contentDescription = "Bookmark",
-                        tint = if (isBookmarked) FathomTheme.colors.accentGold else FathomTheme.colors.textSecondary,
-                        modifier = Modifier.size(16.dp)
                     )
                 }
             }
-
-            TextButton(
-                onClick = {
-                    haptics.light()
-                    onOpenContext()
-                },
-                contentPadding = PaddingValues(horizontal = 6.dp)
-            ) {
-                Text(
-                    text = "INSIGHTS",
-                    fontFamily = JakartaFontFamily,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 11.5.sp,
-                    letterSpacing = 0.8.sp,
-                    color = FathomTheme.colors.accentGold
-                )
-            }
-        }
+        )
     }
 }
 
-@Composable
-private fun ScripturesDirectoryView(
-    books: List<Book>,
-    selectedTradition: TraditionId?,
-    listState: androidx.compose.foundation.lazy.LazyListState,
-    onSelectBook: (Book) -> Unit,
-    onSelectTopic: (SacredTopic) -> Unit
-) {
-    val haptics = LocalFathomHaptics.current
-    val filteredBooks = if (selectedTradition != null) {
-        books.filter { it.traditionId == selectedTradition }
-    } else {
-        books
-    }
-
-    LazyColumn(
-        state = listState,
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(start = 20.dp, top = 16.dp, end = 20.dp, bottom = 120.dp)
-    ) {
-        item {
-            Column(modifier = Modifier.fillMaxWidth().padding(bottom = 20.dp)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "TOPICAL EXPLORER",
-                        style = FathomTheme.typography.canonicalHeader,
-                        color = FathomTheme.colors.accentGold
-                    )
-                    Text(
-                        text = "Cross-Tradition",
-                        fontFamily = JakartaFontFamily,
-                        fontSize = 11.sp,
-                        color = FathomTheme.colors.textTertiary
-                    )
-                }
-
-                val topics = SacredTopic.entries
-                for (i in 0 until topics.size step 2) {
-                    val topic1 = topics[i]
-                    val topic2 = if (i + 1 < topics.size) topics[i + 1] else null
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .weight(1f)
-                                .clip(RoundedCornerShape(18.dp))
-                                .background(
-                                    Brush.verticalGradient(
-                                        listOf(
-                                            FathomTheme.colors.surfaceElevated,
-                                            FathomTheme.colors.surface
-                                        )
-                                    )
-                                )
-                                .border(1.dp, FathomTheme.colors.borderSubtle, RoundedCornerShape(18.dp))
-                                .clickable {
-                                    haptics.light()
-                                    onSelectTopic(topic1)
-                                }
-                                .padding(14.dp)
-                        ) {
-                            Column {
-                                Box(
-                                    modifier = Modifier
-                                        .size(34.dp)
-                                        .clip(CircleShape)
-                                        .background(FathomTheme.colors.accentGold.copy(alpha = 0.15f)),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Icon(
-                                        imageVector = topic1.icon,
-                                        contentDescription = null,
-                                        tint = FathomTheme.colors.accentGold,
-                                        modifier = Modifier.size(17.dp)
-                                    )
-                                }
-                                Spacer(modifier = Modifier.height(10.dp))
-                                Text(
-                                    text = topic1.title,
-                                    fontFamily = JakartaFontFamily,
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 14.sp,
-                                    color = FathomTheme.colors.textPrimary
-                                )
-                                Spacer(modifier = Modifier.height(3.dp))
-                                Text(
-                                    text = topic1.subtitle,
-                                    fontFamily = JakartaFontFamily,
-                                    fontSize = 11.sp,
-                                    lineHeight = 15.sp,
-                                    color = FathomTheme.colors.textTertiary,
-                                    maxLines = 2,
-                                    overflow = TextOverflow.Ellipsis
-                                )
-                            }
-                        }
-
-                        if (topic2 != null) {
-                            Box(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .clip(RoundedCornerShape(18.dp))
-                                    .background(
-                                        Brush.verticalGradient(
-                                            listOf(
-                                                FathomTheme.colors.surfaceElevated,
-                                                FathomTheme.colors.surface
-                                            )
-                                        )
-                                    )
-                                    .border(1.dp, FathomTheme.colors.borderSubtle, RoundedCornerShape(18.dp))
-                                    .clickable {
-                                        haptics.light()
-                                        onSelectTopic(topic2)
-                                    }
-                                    .padding(14.dp)
-                            ) {
-                                Column {
-                                    Box(
-                                        modifier = Modifier
-                                            .size(34.dp)
-                                            .clip(CircleShape)
-                                            .background(FathomTheme.colors.accentGold.copy(alpha = 0.15f)),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Icon(
-                                            imageVector = topic2.icon,
-                                            contentDescription = null,
-                                            tint = FathomTheme.colors.accentGold,
-                                            modifier = Modifier.size(17.dp)
-                                        )
-                                    }
-                                    Spacer(modifier = Modifier.height(10.dp))
-                                    Text(
-                                        text = topic2.title,
-                                        fontFamily = JakartaFontFamily,
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 14.sp,
-                                        color = FathomTheme.colors.textPrimary
-                                    )
-                                    Spacer(modifier = Modifier.height(3.dp))
-                                    Text(
-                                        text = topic2.subtitle,
-                                        fontFamily = JakartaFontFamily,
-                                        fontSize = 11.sp,
-                                        lineHeight = 15.sp,
-                                        color = FathomTheme.colors.textTertiary,
-                                        maxLines = 2,
-                                        overflow = TextOverflow.Ellipsis
-                                    )
-                                }
-                            }
-                        }
-                    }
-                    Spacer(modifier = Modifier.height(10.dp))
-                }
-            }
-        }
-
-        item {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 8.dp, bottom = 14.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "CANONS & SCRIPTURES",
-                    style = FathomTheme.typography.canonicalHeader,
-                    color = FathomTheme.colors.accentGold
-                )
-                Text(
-                    text = "${filteredBooks.size} Books Available",
-                    fontFamily = JakartaFontFamily,
-                    fontSize = 11.sp,
-                    color = FathomTheme.colors.textTertiary
-                )
-            }
-        }
-
-        items(filteredBooks, key = { it.id }) { book ->
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(140.dp)
-                    .clip(RoundedCornerShape(24.dp))
-                    .background(
-                        Brush.horizontalGradient(
-                            listOf(
-                                FathomTheme.colors.surfaceElevated,
-                                FathomTheme.colors.surface
-                            )
-                        )
-                    )
-                    .border(
-                        width = 1.dp,
-                        color = FathomTheme.colors.borderSubtle,
-                        shape = RoundedCornerShape(24.dp)
-                    )
-                    .clickable {
-                        haptics.light()
-                        onSelectBook(book)
-                    }
-            ) {
-                Icon(
-                    imageVector = PhosphorIcons.Regular.BookBookmark,
-                    contentDescription = null,
-                    tint = FathomTheme.colors.accentGold.copy(alpha = 0.05f),
-                    modifier = Modifier
-                        .size(140.dp)
-                        .align(Alignment.BottomEnd)
-                        .offset(x = 20.dp, y = 30.dp)
-                )
-
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(20.dp),
-                    verticalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.Top
-                    ) {
-                        TraditionBadge(traditionId = book.traditionId)
-                        
-                        Box(
-                            modifier = Modifier
-                                .size(32.dp)
-                                .clip(CircleShape)
-                                .background(FathomTheme.colors.background.copy(alpha = 0.6f))
-                                .border(1.dp, FathomTheme.colors.borderSubtle, CircleShape),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = PhosphorIcons.Regular.CaretRight,
-                                contentDescription = "Browse Chapters",
-                                tint = FathomTheme.colors.textSecondary,
-                                modifier = Modifier.size(14.dp)
-                            )
-                        }
-                    }
-
-                    Column {
-                        Text(
-                            text = book.title,
-                            fontFamily = JakartaFontFamily,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 22.sp,
-                            color = FathomTheme.colors.textPrimary,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                        Spacer(modifier = Modifier.height(6.dp))
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Box(
-                                modifier = Modifier
-                                    .clip(RoundedCornerShape(6.dp))
-                                    .background(FathomTheme.colors.accentGold.copy(alpha = 0.15f))
-                                    .padding(horizontal = 6.dp, vertical = 2.dp)
-                            ) {
-                                Text(
-                                    text = "${book.totalPassages} VERSES",
-                                    fontFamily = JakartaFontFamily,
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 9.sp,
-                                    letterSpacing = 1.sp,
-                                    color = FathomTheme.colors.accentGold
-                                )
-                            }
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = book.language.uppercase(),
-                                fontFamily = JakartaFontFamily,
-                                fontSize = 10.sp,
-                                letterSpacing = 1.sp,
-                                color = FathomTheme.colors.textTertiary
-                            )
-                        }
-                    }
-                }
-            }
-            Spacer(modifier = Modifier.height(16.dp))
-        }
-    }
-}
-
-@Composable
-private fun ChapterReaderView(
-    book: Book,
-    chapters: List<Int>,
-    selectedChapter: Int?,
-    chapterPassagesMap: Map<Int, List<Passage>>,
-    isLoading: Boolean,
-    bookmarkedIds: Set<String>,
+private fun androidx.compose.foundation.lazy.LazyListScope.directoryItems(
+    state: SearchUiState,
+    wide: Boolean,
     onEvent: (SearchUiEvent) -> Unit
 ) {
-    val haptics = LocalFathomHaptics.current
-    val coroutineScope = rememberCoroutineScope()
-    val chapterScrollState = rememberLazyListState()
+    item(key = "topics_heading") {
+        SectionHeading(overline = "Cross-tradition", title = "Begin with a feeling", modifier = Modifier.padding(bottom = 20.dp))
+    }
+    item(key = "topics") {
+        TopicMosaic(columns = if (wide) 4 else 2, onSelect = { onEvent(SearchUiEvent.OnSelectTopic(it)) })
+    }
+    val books = if (state.selectedTradition != null) state.allBooks.filter { it.traditionId == state.selectedTradition } else state.allBooks
+    item(key = "books_heading") {
+        SectionHeading(
+            overline = "Canons",
+            title = "The scriptures",
+            trailing = "${books.size} ${if (books.size == 1) "book" else "books"}",
+            modifier = Modifier.padding(top = 44.dp, bottom = 6.dp)
+        )
+    }
+    items(books, key = { it.id }) { book ->
+        BookRow(book = book, onClick = { onEvent(SearchUiEvent.OnSelectBook(book)) })
+    }
+}
 
-    val initialPage = if (selectedChapter != null) {
-        val idx = chapters.indexOf(selectedChapter)
-        if (idx >= 0) idx else 0
-    } else 0
-
-    val pagerState = rememberPagerState(
-        initialPage = initialPage,
-        pageCount = { chapters.size }
-    )
-
-    LaunchedEffect(pagerState.currentPage, chapters) {
-        if (chapters.isNotEmpty() && pagerState.currentPage in chapters.indices) {
-            val targetChapter = chapters[pagerState.currentPage]
-            if (targetChapter != selectedChapter) {
-                haptics.light()
-                onEvent(SearchUiEvent.OnSelectChapter(targetChapter))
+private fun androidx.compose.foundation.lazy.LazyListScope.topicItems(
+    state: SearchUiState,
+    topic: SacredTopic,
+    onEvent: (SearchUiEvent) -> Unit
+) {
+    item(key = "topic_header") {
+        TopicHeader(topic = topic, count = state.topicPassages.size, loading = state.isLoadingTopic, onBack = { onEvent(SearchUiEvent.OnSelectTopic(null)) })
+    }
+    when {
+        state.isLoadingTopic -> item(key = "topic_loading") {
+            Box(Modifier.fillMaxWidth().height(240.dp), contentAlignment = Alignment.Center) { BreathingMark() }
+        }
+        state.topicPassages.isEmpty() -> item(key = "topic_empty") {
+            Box(Modifier.fillMaxWidth().padding(vertical = 56.dp), contentAlignment = Alignment.Center) {
+                QuietMessage(title = "No verses yet", body = "This theme has no passages in the selected tradition.")
             }
-            val targetScrollIndex = (pagerState.currentPage - 1).coerceAtLeast(0)
-            chapterScrollState.animateScrollToItem(targetScrollIndex)
+        }
+        else -> items(state.topicPassages, key = { it.id }) { passage ->
+            PassageEntry(
+                passage = passage,
+                saved = passage.id in state.bookmarkedPassageIds,
+                onSave = { onEvent(SearchUiEvent.OnToggleBookmark(passage)) },
+                onReflect = { onEvent(SearchUiEvent.OnOpenContext(passage)) },
+                onShare = { onEvent(SearchUiEvent.OnOpenShare(passage)) },
+                modifier = Modifier.padding(top = 28.dp)
+            )
         }
     }
+}
 
-    LaunchedEffect(selectedChapter, chapters) {
-        if (selectedChapter != null && chapters.isNotEmpty()) {
-            val targetPage = chapters.indexOf(selectedChapter)
-            if (targetPage >= 0 && targetPage != pagerState.currentPage) {
-                pagerState.scrollToPage(targetPage)
+private fun androidx.compose.foundation.lazy.LazyListScope.resultsItems(
+    state: SearchUiState,
+    onEvent: (SearchUiEvent) -> Unit
+) {
+    when {
+        state.isSearching -> item(key = "searching") {
+            Box(Modifier.fillMaxWidth().height(280.dp), contentAlignment = Alignment.Center) { BreathingMark() }
+        }
+        state.searchResults.isEmpty() -> item(key = "no_results") {
+            Box(Modifier.fillMaxWidth().padding(vertical = 72.dp), contentAlignment = Alignment.Center) {
+                QuietMessage(
+                    title = "Nothing found",
+                    body = "No verses matched “${state.searchQuery}”. Try a broader idea such as stillness, duty, light, or path."
+                )
             }
         }
-    }
-
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(FathomTheme.colors.background)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .statusBarsPadding()
-                .padding(horizontal = 16.dp, vertical = 6.dp)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                IconButton(
-                    onClick = { onEvent(SearchUiEvent.OnSelectBook(null)) },
-                    modifier = Modifier
-                        .clip(CircleShape)
-                        .background(FathomTheme.colors.surfaceElevated)
-                        .size(36.dp)
-                ) {
-                    Icon(
-                        imageVector = PhosphorIcons.Regular.ArrowLeft,
-                        contentDescription = "Back to Scriptures",
-                        tint = FathomTheme.colors.textPrimary,
-                        modifier = Modifier.size(18.dp)
-                    )
-                }
-
-                Spacer(modifier = Modifier.width(12.dp))
-
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = book.title,
-                        fontFamily = JakartaFontFamily,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 17.5.sp,
-                        color = FathomTheme.colors.textPrimary,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                    Text(
-                        text = "${book.traditionId.displayName.uppercase()} CANON • ${book.totalPassages} VERSES",
-                        style = FathomTheme.typography.caption.copy(
-                            fontSize = 10.sp,
-                            letterSpacing = 0.9.sp
-                        ),
-                        color = FathomTheme.colors.accentGold
-                    )
-                }
+        else -> {
+            item(key = "results_heading") {
+                MonoLabel(
+                    text = "${state.searchResults.size} ${if (state.searchResults.size == 1) "verse" else "verses"}",
+                    color = FathomTheme.tone.hue,
+                    modifier = Modifier.padding(bottom = 4.dp)
+                )
             }
-
-            if (chapters.isNotEmpty()) {
-                Spacer(modifier = Modifier.height(10.dp))
-
-                LazyRow(
-                    state = chapterScrollState,
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    contentPadding = PaddingValues(horizontal = 4.dp)
-                ) {
-                    items(chapters.size, key = { chapters[it] }) { index ->
-                        val chapter = chapters[index]
-                        val isSelected = pagerState.currentPage == index
-                        val prefix = when (book.traditionId) {
-                            TraditionId.ISLAM -> "SURAH"
-                            TraditionId.TAOISM -> "CH"
-                            TraditionId.STOICISM -> "BOOK"
-                            else -> "CH"
-                        }
-
-                        val animatedBg by animateColorAsState(
-                            targetValue = if (isSelected) FathomTheme.colors.accentGold.copy(alpha = 0.22f) else FathomTheme.colors.surfaceElevated,
-                            animationSpec = tween(durationMillis = 220, easing = FastOutSlowInEasing),
-                            label = "chapter_tab_bg"
-                        )
-                        val animatedBorder by animateColorAsState(
-                            targetValue = if (isSelected) FathomTheme.colors.accentGold else FathomTheme.colors.borderSubtle,
-                            animationSpec = tween(durationMillis = 220, easing = FastOutSlowInEasing),
-                            label = "chapter_tab_border"
-                        )
-                        val animatedTextColor by animateColorAsState(
-                            targetValue = if (isSelected) FathomTheme.colors.accentGold else FathomTheme.colors.textSecondary,
-                            animationSpec = tween(durationMillis = 220, easing = FastOutSlowInEasing),
-                            label = "chapter_tab_text"
-                        )
-
-                        val interactionSource = remember { MutableInteractionSource() }
-
-                        Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(14.dp))
-                                .background(animatedBg)
-                                .border(
-                                    width = 1.dp,
-                                    color = animatedBorder,
-                                    shape = RoundedCornerShape(14.dp)
-                                )
-                                .clickable(
-                                    interactionSource = interactionSource,
-                                    indication = null
-                                ) {
-                                    if (pagerState.currentPage != index) {
-                                        haptics.light()
-                                        coroutineScope.launch {
-                                            pagerState.scrollToPage(index)
-                                        }
-                                        onEvent(SearchUiEvent.OnSelectChapter(chapter))
-                                    }
-                                }
-                                .padding(horizontal = 14.dp, vertical = 7.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = "$prefix $chapter",
-                                fontFamily = JakartaFontFamily,
-                                fontWeight = FontWeight.SemiBold,
-                                fontSize = 11.5.sp,
-                                color = animatedTextColor
-                            )
-                        }
-                    }
-                }
-            }
-        }
-
-        SacredDivider(modifier = Modifier.padding(horizontal = 16.dp, vertical = 2.dp))
-
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .weight(1f)
-        ) {
-            HorizontalPager(
-                state = pagerState,
-                key = { page -> if (page in chapters.indices) chapters[page] else page },
-                modifier = Modifier.fillMaxSize()
-            ) { page ->
-                val currentCh = if (page in chapters.indices) chapters[page] else null
-                val passages = currentCh?.let { chapterPassagesMap[it] } ?: emptyList()
-                val isChapterLoading = isLoading && selectedChapter == currentCh
-
-                if (passages.isEmpty()) {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        if (isChapterLoading || isLoading) {
-                            CircularProgressIndicator(color = FathomTheme.colors.accentGold)
-                        } else {
-                            Text(
-                                text = "No verses found in this chapter",
-                                fontFamily = JakartaFontFamily,
-                                fontSize = 13.sp,
-                                color = FathomTheme.colors.textSecondary
-                            )
-                        }
-                    }
-                } else {
-                    LazyColumn(
-                        modifier = Modifier.fillMaxSize(),
-                        contentPadding = PaddingValues(start = 16.dp, top = 8.dp, end = 16.dp, bottom = 96.dp)
-                    ) {
-                        items(passages, key = { it.id }) { passage ->
-                            ChapterVerseCard(
-                                passage = passage,
-                                isBookmarked = passage.id in bookmarkedIds,
-                                onToggleBookmark = { onEvent(SearchUiEvent.OnToggleBookmark(passage)) },
-                                onOpenContext = { onEvent(SearchUiEvent.OnOpenContext(passage)) },
-                                onOpenShare = { onEvent(SearchUiEvent.OnOpenShare(passage)) }
-                            )
-                            Spacer(modifier = Modifier.height(12.dp))
-                        }
-                    }
-                }
+            items(state.searchResults, key = { it.id }) { passage ->
+                PassageEntry(
+                    passage = passage,
+                    saved = passage.id in state.bookmarkedPassageIds,
+                    onSave = { onEvent(SearchUiEvent.OnToggleBookmark(passage)) },
+                    onReflect = { onEvent(SearchUiEvent.OnOpenContext(passage)) },
+                    onShare = { onEvent(SearchUiEvent.OnOpenShare(passage)) },
+                    highlight = state.searchQuery,
+                    modifier = Modifier.padding(top = 24.dp)
+                )
             }
         }
     }
 }
 
 @Composable
-private fun ChapterVerseCard(
-    passage: Passage,
-    isBookmarked: Boolean,
-    onToggleBookmark: () -> Unit,
-    onOpenContext: () -> Unit,
-    onOpenShare: () -> Unit
-) {
-    val audioEngine = LocalSacredAudioEngine.current
-    val playbackState by audioEngine.playbackState.collectAsState()
-    val isSpeakingThis = (playbackState as? SacredAudioState.Playing)?.passage?.id == passage.id
-
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(18.dp))
-            .background(
-                Brush.verticalGradient(
-                    listOf(
-                        FathomTheme.colors.surfaceElevated,
-                        FathomTheme.colors.surface
-                    )
-                )
-            )
-            .border(
-                width = 1.dp,
-                color = FathomTheme.colors.borderSubtle,
-                shape = RoundedCornerShape(18.dp)
-            )
-            .padding(16.dp)
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Box(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(6.dp))
-                    .background(FathomTheme.colors.accentGold.copy(alpha = 0.12f))
-                    .border(1.dp, FathomTheme.colors.accentGold.copy(alpha = 0.4f), RoundedCornerShape(6.dp))
-                    .padding(horizontal = 8.dp, vertical = 2.dp)
-            ) {
-                Text(
-                    text = passage.canonicalReference.uppercase(),
-                    fontFamily = JakartaFontFamily,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 11.sp,
-                    letterSpacing = 0.9.sp,
-                    color = FathomTheme.colors.accentGold
-                )
-            }
-
-            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                IconButton(
-                    onClick = { audioEngine.toggle(passage) },
-                    modifier = Modifier.size(30.dp)
-                ) {
-                    Icon(
-                        imageVector = PhosphorIcons.Regular.SpeakerHigh,
-                        contentDescription = "Sacred Recitation",
-                        tint = if (isSpeakingThis) FathomTheme.colors.accentGold else FathomTheme.colors.textSecondary,
-                        modifier = Modifier.size(15.dp)
-                    )
-                }
-
-                IconButton(
-                    onClick = onOpenShare,
-                    modifier = Modifier.size(30.dp)
-                ) {
-                    Icon(
-                        imageVector = PhosphorIcons.Regular.ShareNetwork,
-                        contentDescription = "Share Quote Card",
-                        tint = FathomTheme.colors.textSecondary,
-                        modifier = Modifier.size(15.dp)
-                    )
-                }
-
-                IconButton(
-                    onClick = onOpenContext,
-                    modifier = Modifier.size(30.dp)
-                ) {
-                    Icon(
-                        imageVector = PhosphorIcons.Regular.Info,
-                        contentDescription = "Context & Commentary",
-                        tint = FathomTheme.colors.textSecondary,
-                        modifier = Modifier.size(15.dp)
-                    )
-                }
-
-                IconButton(
-                    onClick = onToggleBookmark,
-                    modifier = Modifier.size(30.dp)
-                ) {
-                    Icon(
-                        imageVector = if (isBookmarked) PhosphorIcons.Fill.BookmarkSimpleFill else PhosphorIcons.Regular.BookmarkSimple,
-                        contentDescription = "Bookmark",
-                        tint = if (isBookmarked) FathomTheme.colors.accentGold else FathomTheme.colors.textSecondary,
-                        modifier = Modifier.size(15.dp)
-                    )
-                }
-            }
+private fun TopicHeader(topic: SacredTopic, count: Int, loading: Boolean, onBack: () -> Unit) {
+    val colors = FathomTheme.colors
+    Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Box(Modifier.tappable(scale = 0.95f, onClick = onBack).padding(vertical = 6.dp)) {
+            MonoLabel(text = "← All themes", color = colors.textSecondary)
         }
-
-        Spacer(modifier = Modifier.height(10.dp))
-
-        if (!passage.originalText.isNullOrBlank()) {
-            Text(
-                text = passage.originalText ?: "",
-                style = FathomTheme.typography.verseOriginal.copy(
-                    fontSize = 14.sp,
-                    lineHeight = 22.sp
-                ),
-                color = FathomTheme.colors.textTertiary
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-        }
-
-        Text(
-            text = passage.translation,
-            style = FathomTheme.typography.verseDisplay.copy(
-                fontSize = 16.sp,
-                lineHeight = 25.sp
-            ),
-            color = FathomTheme.colors.textPrimary
-        )
+        Text(text = topic.title, style = FathomTheme.typography.display, color = colors.textPrimary)
+        Text(text = topic.subtitle, style = FathomTheme.typography.commentaryBody, color = colors.textSecondary)
+        if (!loading) MonoLabel(text = "$count verses across traditions", color = FathomTheme.tone.hue, modifier = Modifier.padding(top = 4.dp))
     }
 }

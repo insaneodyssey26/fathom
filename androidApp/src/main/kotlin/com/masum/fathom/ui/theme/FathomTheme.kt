@@ -2,21 +2,22 @@ package com.masum.fathom.ui.theme
 
 import android.app.Activity
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.tween
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
+import androidx.compose.animation.core.tween
 
 enum class ReadingTheme(val displayName: String) {
-    OBSIDIAN("Obsidian Gold"),
-    SEPIA("Parchment Cream"),
-    SLATE("Midnight Slate"),
-    FOREST("Forest Zen")
+    OBSIDIAN("Nocturne"),
+    SEPIA("Vellum"),
+    SLATE("Abyss"),
+    FOREST("Moss")
 }
 
 object FathomTheme {
@@ -29,59 +30,70 @@ object FathomTheme {
         @Composable
         @ReadOnlyComposable
         get() = LocalFathomTypography.current
+
+    val tone: Tone
+        @Composable
+        @ReadOnlyComposable
+        get() = LocalTone.current
+}
+
+fun ReadingTheme.palette(): FathomColors = when (this) {
+    ReadingTheme.OBSIDIAN -> NocturneColors
+    ReadingTheme.SEPIA -> VellumColors
+    ReadingTheme.SLATE -> AbyssColors
+    ReadingTheme.FOREST -> MossColors
 }
 
 @Composable
 fun FathomTheme(
     readingTheme: ReadingTheme = ReadingTheme.OBSIDIAN,
-    typography: FathomTypography = FathomTypography(),
+    typography: FathomTypography = remember { FathomTypography() },
     content: @Composable () -> Unit
 ) {
-    val targetColors = when (readingTheme) {
-        ReadingTheme.OBSIDIAN -> ObsidianColors
-        ReadingTheme.SEPIA -> SepiaColors
-        ReadingTheme.SLATE -> SlateColors
-        ReadingTheme.FOREST -> ForestColors
-    }
+    val target = readingTheme.palette()
+    val spec = tween<Color>(durationMillis = 420)
 
-    val animSpec = tween<Color>(durationMillis = 350)
+    val background by animateColorAsState(target.background, spec, label = "th_bg")
+    val surface by animateColorAsState(target.surface, spec, label = "th_surface")
+    val surfaceElevated by animateColorAsState(target.surfaceElevated, spec, label = "th_raised")
+    val textPrimary by animateColorAsState(target.textPrimary, spec, label = "th_ink")
+    val textSecondary by animateColorAsState(target.textSecondary, spec, label = "th_muted")
+    val textTertiary by animateColorAsState(target.textTertiary, spec, label = "th_faint")
+    val accent by animateColorAsState(target.accent, spec, label = "th_accent")
+    val onAccent by animateColorAsState(target.onAccent, spec, label = "th_on_accent")
+    val hairline by animateColorAsState(target.hairline, spec, label = "th_hairline")
 
-    val background by animateColorAsState(targetColors.background, animSpec, label = "th_bg")
-    val surface by animateColorAsState(targetColors.surface, animSpec, label = "th_surface")
-    val surfaceElevated by animateColorAsState(targetColors.surfaceElevated, animSpec, label = "th_surfaceElevated")
-    val textPrimary by animateColorAsState(targetColors.textPrimary, animSpec, label = "th_textPrimary")
-    val textSecondary by animateColorAsState(targetColors.textSecondary, animSpec, label = "th_textSecondary")
-    val textTertiary by animateColorAsState(targetColors.textTertiary, animSpec, label = "th_textTertiary")
-    val accentGold by animateColorAsState(targetColors.accentGold, animSpec, label = "th_accentGold")
-    val borderSubtle by animateColorAsState(targetColors.borderSubtle, animSpec, label = "th_borderSubtle")
-
-    val animatedColors = FathomColors(
+    val colors = FathomColors(
         background = background,
         surface = surface,
         surfaceElevated = surfaceElevated,
         textPrimary = textPrimary,
         textSecondary = textSecondary,
         textTertiary = textTertiary,
-        accentGold = accentGold,
-        borderSubtle = borderSubtle,
-        isDark = targetColors.isDark
+        accent = accent,
+        onAccent = onAccent,
+        hairline = hairline,
+        isDark = target.isDark
     )
+
+    val neutralTone = remember(colors.isDark, target) { toneFor(null, target) }
 
     val view = LocalView.current
     if (!view.isInEditMode) {
         SideEffect {
             val window = (view.context as? Activity)?.window
             if (window != null) {
-                val insetsController = WindowCompat.getInsetsController(window, view)
-                insetsController.isAppearanceLightStatusBars = !animatedColors.isDark
-                insetsController.isAppearanceLightNavigationBars = !animatedColors.isDark
+                val controller = WindowCompat.getInsetsController(window, view)
+                controller.isAppearanceLightStatusBars = !colors.isDark
+                controller.isAppearanceLightNavigationBars = !colors.isDark
             }
         }
     }
 
     CompositionLocalProvider(
-        LocalFathomColors provides animatedColors,
+        LocalFathomColors provides colors,
         LocalFathomTypography provides typography,
+        LocalTone provides neutralTone,
         content = content
     )
 }

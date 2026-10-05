@@ -2,20 +2,21 @@
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
     <item>
         <shape android:shape="rectangle">
-            <solid android:color="#0F0F12" />
+            <solid android:color="#0B0A09" />
             <stroke
                 android:width="1.5dp"
-                android:color="#363228" />
-            <corners android:radius="20dp" />
+                android:color="#2C2824" />
+            <corners android:radius="28dp" />
         </shape>
     </item>
     <item
-        android:top="16dp"
-        android:left="16dp"
-        android:right="16dp"
-        android:bottom="16dp">
-        <bitmap
-            android:gravity="center"
-            android:src="@drawable/widget_card_background" />
+        android:top="20dp"
+        android:left="20dp"
+        android:right="20dp"
+        android:bottom="20dp">
+        <shape android:shape="rectangle">
+            <solid android:color="#1F1C18" />
+            <corners android:radius="20dp" />
+        </shape>
     </item>
 </layer-list>
