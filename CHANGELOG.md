@@ -2,20 +2,37 @@
 
 All notable changes to the Fathom project are documented in this file.
 
-## [Unreleased]
+## [1.4.0] - 2026-10-05
+
+### Added
+- **Daily verse notification.** One verse a day at a time you choose, picked from the bundled texts. Short verses are preferred so they read well on a lock screen. You can draw from every tradition or only your own. The notification has Save and Share buttons, and tapping it opens that verse.
+- **Update alerts.** Fathom checks Google Play about twice a day and posts one quiet notification for each new version. It can be switched off in Settings.
+- **Notification settings.** Time presets plus hour and minute steppers, verse source, a lock-screen privacy option, a preview button, and a clear message when Android is blocking notifications.
+- **Verse jog knob.** A small control at the bottom right of the Read screen. Push it down for the next verse and up for the previous one. The further you push, the faster it moves.
+- **More menu.** Opened from the Read screen header. It links to soundscapes, Settings, what's new, the Privacy Policy and the Terms of Use.
+- **Privacy Policy and Terms of Use** inside the app, with the Journal and Settings linking to them. Settings also has version info, send feedback and rate.
+- **Predictive back.** Back gestures follow your finger and show the screen underneath.
+- **Side rail** for tablets, foldables and landscape phones.
 
 ### Changed
-- **Complete visual redesign**: a new design system built around the idea of a reading instrument. Per-tradition tones tint every screen, scripture is set in Newsreader, display type in Fraunces, interface in Geist and citations in Geist Mono.
-- **Docked navigation**: an edge-attached bottom bar with a tick-mark ruler and tone-coloured marker, replaced by a docked rail on tablets, foldables and landscape phones.
-- **Feed**: full-bleed verse pages with scroll-linked text reveal, a depth gauge, morphing tradition emblem, and a compact action pill.
-- **Paths**: a sounding-line chapter timeline with a tick-ring progress dial, a redesigned chapter reader, jump-to-verse sheet and completion celebration.
-- **Explore**: editorial search, tradition chips, a staggered topic mosaic and a scripture directory; verses now highlight matched search terms.
-- **Journal** (formerly Library): a personal almanac with greeting, weekly tide chart, reading ledger, per-tradition progress, milestones, saved passages, reflections and history.
-- **Sheets and settings**: share cards now preview the exact exported image, settings became a full page, and the paywall, release notes, soundscapes and passage context were redrawn.
-- **Widget and launcher icon**: the home screen widget follows the reading theme and verse tradition, and the app has a new adaptive icon.
+- **Full redesign.** New typography (Fraunces for headings, Newsreader for scripture, Geist for the interface, Geist Mono for citations), a colour for each tradition that tints the screen you are on, and a background that shifts as you move between traditions.
+- **Themes** are now Nocturne, Vellum, Abyss and Moss. The saved choice carries over.
+- **Navigation.** A docked bottom bar with a tick-mark ruler replaces the floating bar. The whole app now sits on Navigation 3, so rotation and process death keep your place.
+- **Read.** Full-bleed verse pages, a verse number ruler, long original text collapsed behind "Show full original", and a smaller action bar.
+- **Paths.** A timeline with a progress dial, a rebuilt chapter reader with a jump-to-verse grid, and a new completion screen. The header stays put while the list scrolls under it.
+- **Explore.** Search highlights matches, tradition chips, a mosaic of the eight topics, a scripture list, and chapter tabs in the book reader.
+- **Journal** (previously You). Greeting, streak with a week chart, reading tallies, progress per tradition, milestones, saved passages, reflections and history.
+- **Share cards** render the exact image shown in the preview, in four palettes and three sizes.
+- **Sheets and Settings.** Bottom sheets fit short screens and landscape and slide away when dismissed. Settings is a page rather than a pop-up.
+- **Widget** follows your theme and the colour of the verse's tradition.
+- **Mini player, soundscapes and update banner** redrawn.
 
 ### Fixed
-- Reading streaks, the weekly chart and history grouping never worked because every read was stamped with a placeholder 1970 timestamp.
+- Reading streaks, the weekly chart and history grouping never counted, because every read was saved with a placeholder date in 1970. New reads are saved correctly. Reads from older versions keep their old dates.
+- A verse opened from the widget could be replaced by a random one when the app started cold.
+- A white flash between screens.
+- A crash when switching a toggle in Settings.
+- The daily reminder did not reliably appear: the notification permission was never requested and the alarm was lost after a restart.
 
 ---
 
