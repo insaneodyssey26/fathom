@@ -48,7 +48,6 @@ fun WhatsNewModal(
     modifier: Modifier = Modifier
 ) {
     val haptics = LocalFathomHaptics.current
-    val maxHeight = (LocalConfiguration.current.screenHeightDp * 0.78f).dp
 
     val releases = remember {
         listOf(
@@ -108,7 +107,7 @@ fun WhatsNewModal(
 
     FathomSheet(onDismiss = onDismiss, modifier = modifier) {
         SheetHeader(overline = "Release notes", title = "What's new", onClose = onDismiss)
-        Column(modifier = Modifier.fillMaxWidth().heightIn(max = maxHeight).verticalScroll(rememberScrollState())) {
+        Column(modifier = Modifier.fillMaxWidth().weight(1f, fill = false).verticalScroll(rememberScrollState())) {
             releases.forEachIndexed { index, release ->
                 ReleaseEntry(release = release, isLast = index == releases.lastIndex)
             }

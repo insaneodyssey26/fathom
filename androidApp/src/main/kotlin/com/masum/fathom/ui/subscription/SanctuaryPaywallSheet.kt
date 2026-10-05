@@ -62,11 +62,10 @@ fun SanctuaryPaywallSheet(onDismiss: () -> Unit) {
     val tone = FathomTheme.tone
     val typography = FathomTheme.typography
     var selected by remember { mutableStateOf(SubscriptionTier.ANNUAL) }
-    val maxHeight = (LocalConfiguration.current.screenHeightDp * 0.82f).dp
 
     FathomSheet(onDismiss = onDismiss) {
         Column(
-            modifier = Modifier.fillMaxWidth().heightIn(max = maxHeight).verticalScroll(rememberScrollState())
+            modifier = Modifier.fillMaxWidth().weight(1f, fill = false).verticalScroll(rememberScrollState())
         ) {
             Column(Modifier.padding(top = 6.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 MonoLabel(text = "Sanctuary+", color = tone.hue)

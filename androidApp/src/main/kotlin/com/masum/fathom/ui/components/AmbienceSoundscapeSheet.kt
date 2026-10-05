@@ -48,7 +48,6 @@ fun AmbienceSoundscapeSheet(onDismiss: () -> Unit) {
     val state by engine.state.collectAsState()
     val colors = FathomTheme.colors
     val tone = FathomTheme.tone
-    val maxHeight = (LocalConfiguration.current.screenHeightDp * 0.74f).dp
 
     FathomSheet(onDismiss = onDismiss) {
         SheetHeader(
@@ -57,7 +56,7 @@ fun AmbienceSoundscapeSheet(onDismiss: () -> Unit) {
             subtitle = "A quiet backdrop for reading and prayer.",
             onClose = onDismiss
         )
-        Column(modifier = Modifier.fillMaxWidth().heightIn(max = maxHeight).verticalScroll(rememberScrollState())) {
+        Column(modifier = Modifier.fillMaxWidth().weight(1f, fill = false).verticalScroll(rememberScrollState())) {
             Hairline()
             SoundscapeTrack.entries.forEach { track ->
                 val selected = state.currentTrack == track

@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -317,7 +318,7 @@ private fun JumpSheet(total: Int, current: Int, onSelect: (Int) -> Unit, onDismi
         LazyVerticalGrid(
             columns = GridCells.Adaptive(minSize = 56.dp),
             state = gridState,
-            modifier = Modifier.fillMaxWidth().height(300.dp),
+            modifier = Modifier.fillMaxWidth().weight(1f, fill = false).heightIn(max = 320.dp),
             horizontalArrangement = Arrangement.spacedBy(10.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {

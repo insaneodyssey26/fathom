@@ -60,13 +60,12 @@ fun ScriptureSelectorSheet(
     val grouped = remember(availableBooks) { availableBooks.groupBy { it.traditionId } }
     val activeTradition = availableBooks.find { it.id == selectedBookId }?.traditionId
         ?: if (selectedTraditions.size == 1) selectedTraditions.first() else null
-    val maxHeight = (LocalConfiguration.current.screenHeightDp * 0.72f).dp
     val expanded = remember { mutableStateMapOf<TraditionId, Boolean>().apply { activeTradition?.let { put(it, true) } } }
     val everything = selectedBookId == null && (selectedTraditions.isEmpty() || selectedTraditions.size == TraditionId.entries.size)
 
     FathomSheet(onDismiss = onDismiss) {
         SheetHeader(overline = "Library", title = "Choose a scripture", subtitle = "Read one text, one tradition, or everything.", onClose = onDismiss)
-        Column(modifier = Modifier.fillMaxWidth().heightIn(max = maxHeight).verticalScroll(rememberScrollState())) {
+        Column(modifier = Modifier.fillMaxWidth().weight(1f, fill = false).verticalScroll(rememberScrollState())) {
             Hairline()
             SelectorRow(
                 title = "All scriptures",

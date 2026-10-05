@@ -75,7 +75,6 @@ fun PassageContextSheet(
     val playback by audio.playbackState.collectAsState()
     val exegesis = remember(passage.id) { ScriptureExegesisEngine.generateExegesis(passage) }
     val background = remember(passage.bookId) { getScriptureBackground(passage.bookId, passage.traditionId) }
-    val maxHeight = (LocalConfiguration.current.screenHeightDp * 0.8f).dp
     val tone = rememberTone(passage.traditionId)
 
     CompositionLocalProvider(LocalTone provides tone) {
@@ -88,7 +87,7 @@ fun PassageContextSheet(
             )
 
             Column(
-                modifier = Modifier.fillMaxWidth().heightIn(max = maxHeight).verticalScroll(rememberScrollState()),
+                modifier = Modifier.fillMaxWidth().weight(1f, fill = false).verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(30.dp)
             ) {
                 Recitation(passage = passage, state = playback, onToggle = {
