@@ -2,6 +2,8 @@ package com.masum.fathom.core.sanctuary
 
 import android.content.Context
 import android.content.SharedPreferences
+import com.masum.fathom.core.model.TraditionId
+import com.masum.fathom.core.model.user.FeedMode
 import com.masum.fathom.ui.theme.ReadingTheme
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -30,7 +32,10 @@ data class SanctuarySettings(
     val byokProvider: ByokProvider = ByokProvider.NONE,
     val byokApiKey: String = "",
     val byokVoiceId: String = "",
-    val lastSeenWhatsNewVersion: Int = 0
+    val lastSeenWhatsNewVersion: Int = 0,
+    val feedSelectedTraditions: Set<TraditionId> = TraditionId.entries.toSet(),
+    val feedSelectedBookId: String? = null,
+    val feedMode: FeedMode = FeedMode.EXPLORATION_DISCOVERY
 )
 
 class SanctuaryPreferences(context: Context) {
@@ -78,6 +83,16 @@ class SanctuaryPreferences(context: Context) {
         val voiceId = prefs.getString("byok_voice_id", "") ?: ""
         val lastSeenWhatsNew = prefs.getInt("last_seen_whats_new_version", 0)
 
+        val savedTraditionKeys = prefs.getStringSet("feed_selected_traditions", null)
+        val feedTraditions = if (savedTraditionKeys != null && savedTraditionKeys.isNotEmpty()) {
+            savedTraditionKeys.mapNotNull { TraditionId.fromKeyOrNull(it) }.toSet().ifEmpty { TraditionId.entries.toSet() }
+        } else {
+            TraditionId.entries.toSet()
+        }
+        val feedBookId = prefs.getString("feed_selected_book_id", null)
+        val feedModeName = prefs.getString("feed_mode", FeedMode.EXPLORATION_DISCOVERY.name) ?: FeedMode.EXPLORATION_DISCOVERY.name
+        val feedMode = runCatching { FeedMode.valueOf(feedModeName) }.getOrDefault(FeedMode.EXPLORATION_DISCOVERY)
+
         return SanctuarySettings(
             userName = name,
             userTradition = tradition,
@@ -93,26 +108,57 @@ class SanctuaryPreferences(context: Context) {
             byokProvider = provider,
             byokApiKey = apiKey,
             byokVoiceId = voiceId,
-            lastSeenWhatsNewVersion = lastSeenWhatsNew
+            lastSeenWhatsNewVersion = lastSeenWhatsNew,
+            feedSelectedTraditions = feedTraditions,
+            feedSelectedBookId = feedBookId,
+            feedMode = feedMode
         )
     }
 
     fun completeOnboarding(name: String, tradition: String?, personalizeFeed: Boolean) {
         val cleanName = name.trim().ifBlank { "Sanctuary Reader" }
         val cleanTradition = tradition?.trim()?.ifBlank { null }
+        val traditions = if (personalizeFeed && cleanTradition != null) {
+            val trad = TraditionId.entries.firstOrNull {
+                it.key.equals(cleanTradition, ignoreCase = true) || it.displayName.equals(cleanTradition, ignoreCase = true)
+            } ?: TraditionId.HINDUISM
+            setOf(trad)
+        } else {
+            TraditionId.entries.toSet()
+        }
+        val traditionKeys = traditions.map { it.key }.toSet()
+
         prefs.edit()
             .putString("user_name", cleanName)
             .putString("user_tradition", cleanTradition)
             .putBoolean("feed_personalized", personalizeFeed)
             .putBoolean("has_completed_onboarding", true)
             .putInt("completed_onboarding_version", CURRENT_ONBOARDING_VERSION)
+            .putStringSet("feed_selected_traditions", traditionKeys)
             .apply()
         _settings.value = _settings.value.copy(
             userName = cleanName,
             userTradition = cleanTradition,
             feedPersonalizedToTradition = personalizeFeed,
-            hasCompletedOnboarding = true
+            hasCompletedOnboarding = true,
+            feedSelectedTraditions = traditions
         )
+    }
+
+    fun updateFeedTraditions(traditions: Set<TraditionId>) {
+        val keys = traditions.map { it.key }.toSet()
+        prefs.edit().putStringSet("feed_selected_traditions", keys).apply()
+        _settings.value = _settings.value.copy(feedSelectedTraditions = traditions)
+    }
+
+    fun updateFeedBook(bookId: String?) {
+        prefs.edit().putString("feed_selected_book_id", bookId).apply()
+        _settings.value = _settings.value.copy(feedSelectedBookId = bookId)
+    }
+
+    fun updateFeedMode(mode: FeedMode) {
+        prefs.edit().putString("feed_mode", mode.name).apply()
+        _settings.value = _settings.value.copy(feedMode = mode)
     }
 
     fun updateProfile(name: String, tradition: String?) {

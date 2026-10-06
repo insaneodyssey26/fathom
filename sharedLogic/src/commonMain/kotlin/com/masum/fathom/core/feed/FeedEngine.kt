@@ -34,7 +34,7 @@ class FeedEngine(
                 val passages: List<Passage> = when (config.mode) {
                     FeedMode.EXPLORATION_DISCOVERY -> getExplorationBatch(config, batchSize, seenPassageIds)
                     FeedMode.THEMATIC -> getThematicBatch(config, batchSize, seenPassageIds)
-                    FeedMode.SEQUENTIAL_STUDY -> getSequentialBatch(config, batchSize)
+                    FeedMode.SEQUENTIAL_STUDY -> getSequentialBatch(config, batchSize, seenPassageIds)
                 }
 
                 FathomResult.Success(passages)
@@ -48,7 +48,7 @@ class FeedEngine(
         batchSize: Int,
         seenPassageIds: Set<String>
     ): List<Passage> {
-        val candidateLimit = (batchSize * 3L).coerceAtLeast(30L)
+        val candidateLimit = (batchSize * 5L).coerceAtLeast(80L)
         val candidates = if (config.selectedBookId != null) {
             contentQueries.selectCandidatePassagesForBook(
                 book_id = config.selectedBookId,
@@ -64,7 +64,14 @@ class FeedEngine(
         }
 
         val unseen = candidates.filter { it.id !in seenPassageIds }
-        val pool = if (unseen.size >= batchSize) unseen else candidates
+        val pool = if (unseen.size >= batchSize) {
+            unseen
+        } else if (unseen.isNotEmpty()) {
+            val seenRemaining = candidates.filter { it.id in seenPassageIds }
+            unseen + seenRemaining
+        } else {
+            candidates
+        }
 
         return balanceDiversity(pool, batchSize)
     }
@@ -79,30 +86,48 @@ class FeedEngine(
             return getExplorationBatch(config, batchSize, seenPassageIds)
         }
 
-        val candidateLimit = (batchSize * 3L).coerceAtLeast(30L)
+        val candidateLimit = (batchSize * 5L).coerceAtLeast(80L)
         val candidates = contentQueries.selectCandidatePassagesByThemes(
             theme_ids = themeIds,
             limit = candidateLimit
         ).executeAsList()
 
         val unseen = candidates.filter { it.id !in seenPassageIds }
-        val pool = if (unseen.size >= batchSize) unseen else candidates
+        val pool = if (unseen.size >= batchSize) {
+            unseen
+        } else if (unseen.isNotEmpty()) {
+            val seenRemaining = candidates.filter { it.id in seenPassageIds }
+            unseen + seenRemaining
+        } else {
+            candidates
+        }
 
         return balanceDiversity(pool, batchSize)
     }
 
     private fun getSequentialBatch(
         config: FeedConfig,
-        batchSize: Int
+        batchSize: Int,
+        seenPassageIds: Set<String>
     ): List<Passage> {
         val bookId = config.selectedBookId ?: return emptyList()
+        val offset = seenPassageIds.size.toLong()
         val entities = contentQueries.selectPassagesForBook(
             book_id = bookId,
             limit = batchSize.toLong(),
-            offset = 0L
+            offset = offset
         ).executeAsList()
+        val resolvedEntities = if (entities.isEmpty() && offset > 0) {
+            contentQueries.selectPassagesForBook(
+                book_id = bookId,
+                limit = batchSize.toLong(),
+                offset = 0L
+            ).executeAsList()
+        } else {
+            entities
+        }
 
-        return entities.map { entity ->
+        return resolvedEntities.map { entity ->
             val traditionId = TraditionId.fromKeyOrNull(entity.tradition_id) ?: TraditionId.HINDUISM
             Passage(
                 id = entity.id,

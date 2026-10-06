@@ -5,12 +5,14 @@ import androidx.lifecycle.viewModelScope
 import com.masum.fathom.core.common.result.FathomResult
 import com.masum.fathom.core.model.Book
 import com.masum.fathom.core.model.Passage
+import com.masum.fathom.core.model.TraditionId
 import com.masum.fathom.core.model.user.Bookmark
 import com.masum.fathom.core.model.user.FeedConfig
 import com.masum.fathom.core.model.user.FeedMode
 import com.masum.fathom.core.repository.FeedRepository
 import com.masum.fathom.core.repository.PassageRepository
 import com.masum.fathom.core.repository.UserDataRepository
+import com.masum.fathom.core.sanctuary.SanctuaryPreferences
 import com.masum.fathom.ui.theme.ReadingTheme
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -23,14 +25,20 @@ import kotlinx.coroutines.launch
 class FeedViewModel(
     private val feedRepository: FeedRepository,
     private val userDataRepository: UserDataRepository,
-    private val passageRepository: PassageRepository
+    private val passageRepository: PassageRepository,
+    private val sanctuaryPreferences: SanctuaryPreferences
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<FeedUiState>(FeedUiState.Loading)
     val uiState: StateFlow<FeedUiState> = _uiState.asStateFlow()
 
-    private var currentConfig = FeedConfig()
+    private var currentConfig = FeedConfig(
+        selectedTraditions = sanctuaryPreferences.settings.value.feedSelectedTraditions,
+        selectedBookId = sanctuaryPreferences.settings.value.feedSelectedBookId,
+        mode = sanctuaryPreferences.settings.value.feedMode
+    )
     private var availableBooks: List<Book> = emptyList()
+    private var pinnedPassage: Passage? = null
 
     init {
         observeBookmarks()
@@ -76,7 +84,7 @@ class FeedViewModel(
                 is FathomResult.Failure -> Unit
             }
 
-            when (val result = feedRepository.getFeedBatch(currentConfig, batchSize = 10)) {
+            when (val result = feedRepository.getFeedBatch(currentConfig, batchSize = 20)) {
                 is FathomResult.Success -> {
                     val pinned = pinnedPassage
                     val initial = if (pinned != null) listOf(pinned) + result.data.filter { it.id != pinned.id } else result.data
@@ -109,25 +117,36 @@ class FeedViewModel(
             recordCurrentReading(currentState.passages[index])
         }
 
-        if (index >= currentState.passages.size - 3 && !currentState.isLoadingMore) {
+        if (index >= currentState.passages.size - 6 && !currentState.isLoadingMore) {
             loadMorePassages()
         }
     }
 
     private fun loadMorePassages() {
         val currentState = _uiState.value as? FeedUiState.Success ?: return
+        if (currentState.isLoadingMore) return
         _uiState.update { currentState.copy(isLoadingMore = true) }
 
         viewModelScope.launch {
-            when (val result = feedRepository.getFeedBatch(currentConfig, batchSize = 10)) {
+            when (val result = feedRepository.getFeedBatch(currentConfig, batchSize = 20)) {
                 is FathomResult.Success -> {
+                    var shouldFetchAgain = false
                     _uiState.update {
                         if (it is FeedUiState.Success) {
+                            val existingIds = it.passages.map { p -> p.id }.toSet()
+                            val newPassages = result.data.filter { p -> p.id !in existingIds }
+                            val updatedPassages = it.passages + newPassages
+                            if (newPassages.isNotEmpty() && it.currentIndex >= updatedPassages.size - 6) {
+                                shouldFetchAgain = true
+                            }
                             it.copy(
-                                passages = it.passages + result.data,
+                                passages = updatedPassages,
                                 isLoadingMore = false
                             )
                         } else it
+                    }
+                    if (shouldFetchAgain) {
+                        loadMorePassages()
                     }
                 }
                 is FathomResult.Failure -> {
@@ -205,6 +224,7 @@ class FeedViewModel(
     }
 
     private fun handleSelectBook(bookId: String?) {
+        sanctuaryPreferences.updateFeedBook(bookId)
         currentConfig = currentConfig.copy(selectedBookId = bookId)
         _uiState.update { state ->
             if (state is FeedUiState.Success) state.copy(selectedBookId = bookId) else state
@@ -212,7 +232,7 @@ class FeedViewModel(
         refreshFeedPreservingState()
     }
 
-    private fun handleToggleTradition(traditionId: com.masum.fathom.core.model.TraditionId) {
+    private fun handleToggleTradition(traditionId: TraditionId) {
         val currentState = _uiState.value as? FeedUiState.Success ?: return
         val updatedTraditions = if (traditionId in currentState.selectedTraditions) {
             if (currentState.selectedTraditions.size > 1) {
@@ -224,6 +244,8 @@ class FeedViewModel(
             currentState.selectedTraditions + traditionId
         }
 
+        sanctuaryPreferences.updateFeedTraditions(updatedTraditions)
+        sanctuaryPreferences.updateFeedBook(null)
         currentConfig = currentConfig.copy(
             selectedTraditions = updatedTraditions,
             selectedBookId = null
@@ -240,12 +262,14 @@ class FeedViewModel(
         refreshFeedPreservingState()
     }
 
-    fun setTraditionFocus(traditionId: com.masum.fathom.core.model.TraditionId?) {
+    fun setTraditionFocus(traditionId: TraditionId?) {
         val traditions = if (traditionId == null) {
-            com.masum.fathom.core.model.TraditionId.entries.toSet()
+            TraditionId.entries.toSet()
         } else {
             setOf(traditionId)
         }
+        sanctuaryPreferences.updateFeedTraditions(traditions)
+        sanctuaryPreferences.updateFeedBook(null)
         currentConfig = currentConfig.copy(
             selectedTraditions = traditions,
             selectedBookId = null
@@ -262,6 +286,7 @@ class FeedViewModel(
     }
 
     private fun handleChangeMode(mode: FeedMode) {
+        sanctuaryPreferences.updateFeedMode(mode)
         currentConfig = currentConfig.copy(mode = mode)
         _uiState.update { state ->
             if (state is FeedUiState.Success) state.copy(activeMode = mode) else state
@@ -271,7 +296,7 @@ class FeedViewModel(
 
     private fun refreshFeedPreservingState() {
         viewModelScope.launch {
-            when (val result = feedRepository.getFeedBatch(currentConfig, batchSize = 10)) {
+            when (val result = feedRepository.getFeedBatch(currentConfig, batchSize = 20)) {
                 is FathomResult.Success -> {
                     _uiState.update { state ->
                         if (state is FeedUiState.Success) {
@@ -291,8 +316,6 @@ class FeedViewModel(
             }
         }
     }
-
-    private var pinnedPassage: Passage? = null
 
     fun loadSpecificPassage(passageId: String) {
         viewModelScope.launch {
@@ -328,4 +351,3 @@ class FeedViewModel(
         }
     }
 }
-

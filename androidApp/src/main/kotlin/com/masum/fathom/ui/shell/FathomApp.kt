@@ -129,20 +129,21 @@ fun traditionIdForLabel(label: String?): TraditionId? = when (label) {
 fun FathomApp(graph: AppGraph, launchPassageId: String?) {
     val context = LocalContext.current
 
+    val preferences = remember { SanctuaryPreferences(context) }
+    val dataEngine = remember { SanctuaryDataEngine(context, graph.userRepository, graph.passageRepository) }
+    val settings by preferences.settings.collectAsState()
+
     val feedViewModel: FeedViewModel = viewModel {
         FeedViewModel(
             feedRepository = graph.feedEngine,
             userDataRepository = graph.userRepository,
-            passageRepository = graph.passageRepository
+            passageRepository = graph.passageRepository,
+            sanctuaryPreferences = preferences
         )
     }
     val searchViewModel: SearchViewModel = viewModel {
         SearchViewModel(passageRepository = graph.passageRepository, userDataRepository = graph.userRepository)
     }
-
-    val preferences = remember { SanctuaryPreferences(context) }
-    val dataEngine = remember { SanctuaryDataEngine(context, graph.userRepository, graph.passageRepository) }
-    val settings by preferences.settings.collectAsState()
 
     val libraryViewModel: LibraryViewModel = viewModel {
         LibraryViewModel(
@@ -200,12 +201,6 @@ fun FathomApp(graph: AppGraph, launchPassageId: String?) {
         if (!launchPassageId.isNullOrEmpty()) {
             navigator.resetToFeed()
             feedViewModel.loadSpecificPassage(launchPassageId)
-        }
-    }
-
-    LaunchedEffect(settings.hasCompletedOnboarding, settings.userTradition, settings.feedPersonalizedToTradition) {
-        if (settings.hasCompletedOnboarding && settings.feedPersonalizedToTradition) {
-            traditionIdForLabel(settings.userTradition)?.let { feedViewModel.setTraditionFocus(it) }
         }
     }
 
