@@ -6,6 +6,8 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -58,8 +60,12 @@ fun AmbienceFloatingPill(
 
     AnimatedVisibility(
         visible = state.currentTrack != null,
-        enter = fadeIn(tween(240)) + scaleIn(tween(360, easing = FathomMotion.Emphasized), initialScale = 0.88f),
-        exit = fadeOut(tween(160)) + scaleOut(tween(200), targetScale = 0.90f),
+        enter = fadeIn(tween(240)) +
+                slideInVertically(tween(380, 0, FathomMotion.Emphasized)) { -it } +
+                scaleIn(tween(340, easing = FathomMotion.Emphasized), initialScale = 0.90f),
+        exit = fadeOut(tween(160)) +
+                slideOutVertically(tween(240, 0, FathomMotion.EmphasizedOut)) { -it } +
+                scaleOut(tween(200), targetScale = 0.92f),
         modifier = modifier
     ) {
         val track = state.currentTrack ?: return@AnimatedVisibility
