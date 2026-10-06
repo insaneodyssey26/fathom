@@ -25,6 +25,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.isImeVisible
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.union
 import androidx.compose.runtime.Composable
@@ -446,10 +447,6 @@ private fun MainStage(
                     .padding(start = metrics.startInset),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                AmbienceFloatingPill(
-                    onClick = onOpenAmbience,
-                    modifier = Modifier.padding(bottom = 8.dp)
-                )
                 SacredAudioPlayerBar(isNavbarVisible = !isStudyingChapter && !usesRail)
                 if (!usesRail) {
                     AnimatedVisibility(
@@ -483,6 +480,14 @@ private fun MainStage(
                     )
                 }
             }
+
+            AmbienceFloatingPill(
+                onClick = onOpenAmbience,
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .statusBarsPadding()
+                    .padding(top = 64.dp)
+            )
 
             AppUpdateBanner(updateEngine = updateEngine, modifier = Modifier.align(Alignment.TopCenter))
 
