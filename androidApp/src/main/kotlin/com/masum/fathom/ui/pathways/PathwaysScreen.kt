@@ -211,7 +211,7 @@ private fun PathwaysHome(
             val wide = maxWidth >= 840.dp
             val heroInList = if (wide) 0 else 1
             var panelHeight by remember { androidx.compose.runtime.mutableIntStateOf(0) }
-            val topPad = with(androidx.compose.ui.platform.LocalDensity.current) { panelHeight.toDp() } + 4.dp
+            val topPad = with(androidx.compose.ui.platform.LocalDensity.current) { panelHeight.toDp() } + 24.dp
             val bottomPad = shell.bottomInset + 28.dp
 
             val jumpVisible by remember(currentIndex, heroInList) {

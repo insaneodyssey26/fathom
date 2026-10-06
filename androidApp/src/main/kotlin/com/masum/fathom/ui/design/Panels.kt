@@ -15,11 +15,15 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.masum.fathom.ui.theme.FathomTheme
 
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.graphics.RectangleShape
+
 @Composable
 fun BoxScope.DockedTopPanel(
     onHeight: (Int) -> Unit,
     modifier: Modifier = Modifier,
-    bottomPadding: Dp = 16.dp,
+    bottomPadding: Dp = 12.dp,
     content: @Composable ColumnScope.() -> Unit
 ) {
     val colors = FathomTheme.colors
@@ -28,10 +32,11 @@ fun BoxScope.DockedTopPanel(
         modifier = modifier
             .align(Alignment.TopCenter)
             .fillMaxWidth()
+            .pointerInput(Unit) { detectTapGestures { } }
             .glass(
-                shape = RoundedCornerShape(bottomStart = 28.dp, bottomEnd = 28.dp),
-                tint = colors.background.copy(alpha = if (colors.isDark) 0.70f else 0.80f),
-                blur = 26.dp,
+                shape = RectangleShape,
+                tint = colors.background.copy(alpha = if (colors.isDark) 0.82f else 0.88f),
+                blur = 24.dp,
                 outline = false
             )
             .onSizeChanged { onHeight(it.height) }

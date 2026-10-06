@@ -47,7 +47,7 @@ fun Modifier.glass(
         ).then(if (outline) Modifier.border(0.75.dp, edge, shape) else Modifier)
     } else {
         this.clip(shape)
-            .background(colors.surfaceElevated.copy(alpha = 0.94f))
+            .background(if (outline) colors.surfaceElevated.copy(alpha = 0.94f) else tint.copy(alpha = 0.95f))
             .then(if (outline) Modifier.border(0.75.dp, edge, shape) else Modifier)
     }
 }

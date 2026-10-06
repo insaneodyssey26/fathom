@@ -59,6 +59,7 @@ import com.masum.fathom.ui.theme.FathomTheme
 import com.masum.fathom.ui.theme.LocalTone
 import com.masum.fathom.ui.theme.rememberTone
 
+
 @Composable
 fun SearchScreen(
     state: SearchUiState,
@@ -162,10 +163,28 @@ private fun ExploreRoot(
                             contentPadding = PaddingValues(
                                 start = 24.dp,
                                 end = 24.dp,
-                                top = panelDp + 20.dp,
+                                top = panelDp + 8.dp,
                                 bottom = shell.bottomInset + 32.dp
                             )
                         ) {
+                            item(key = "search_and_chips") {
+                                Column(modifier = Modifier.fillMaxWidth().padding(bottom = 28.dp)) {
+                                    EditorialSearchField(
+                                        query = state.searchQuery,
+                                        onQueryChange = { onEvent(SearchUiEvent.OnQueryChange(it)) },
+                                        modifier = Modifier.fillMaxWidth()
+                                    )
+                                    Spacer(Modifier.height(14.dp))
+                                    TraditionChips(
+                                        selected = state.selectedTradition,
+                                        onSelect = {
+                                            haptics.light()
+                                            onEvent(SearchUiEvent.OnSelectTradition(it))
+                                        },
+                                        horizontalPadding = 0.dp
+                                    )
+                                }
+                            }
                             when {
                                 searching -> resultsItems(state, onEvent)
                                 inTopic -> topicItems(state, state.selectedTopic!!, onEvent)
@@ -190,20 +209,6 @@ private fun ExploreRoot(
                             }
                         )
                     }
-                    Spacer(Modifier.height(10.dp))
-                    EditorialSearchField(
-                        query = state.searchQuery,
-                        onQueryChange = { onEvent(SearchUiEvent.OnQueryChange(it)) },
-                        modifier = Modifier.padding(horizontal = 24.dp)
-                    )
-                    Spacer(Modifier.height(14.dp))
-                    TraditionChips(
-                        selected = state.selectedTradition,
-                        onSelect = {
-                            haptics.light()
-                            onEvent(SearchUiEvent.OnSelectTradition(it))
-                        }
-                    )
                 }
             }
         )
