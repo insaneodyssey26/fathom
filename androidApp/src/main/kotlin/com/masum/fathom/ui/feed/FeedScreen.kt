@@ -43,17 +43,21 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.adamglin.PhosphorIcons
 import com.adamglin.phosphoricons.Fill
 import com.adamglin.phosphoricons.Light
 import com.adamglin.phosphoricons.fill.BookmarkSimple as BookmarkFilled
+import com.adamglin.phosphoricons.fill.Pause as PauseFill
+import com.adamglin.phosphoricons.fill.Play as PlayFill
 import com.adamglin.phosphoricons.light.BookmarkSimple
 import com.adamglin.phosphoricons.light.CaretDown
 import com.adamglin.phosphoricons.light.ChatCenteredText
 import com.adamglin.phosphoricons.light.ShareFat
 import com.adamglin.phosphoricons.light.SpeakerHigh
 import com.adamglin.phosphoricons.light.DotsThree
+import com.adamglin.phosphoricons.light.X
 import com.masum.fathom.core.audio.LocalOpenAmbience
 import com.masum.fathom.core.audio.LocalSacredAudioEngine
 import com.masum.fathom.core.audio.LocalSanctuaryAmbienceEngine
@@ -67,7 +71,6 @@ import com.masum.fathom.ui.design.QuietMessage
 import com.masum.fathom.ui.design.ScreenHeader
 import com.masum.fathom.ui.design.StateFrame
 import com.masum.fathom.ui.design.DepthGauge
-import com.masum.fathom.ui.design.JogPill
 import com.masum.fathom.ui.design.Equalizer
 import com.masum.fathom.ui.design.FathomButton
 import com.masum.fathom.ui.design.GlassIconButton
@@ -159,8 +162,10 @@ private fun FeedContent(
     val screenWidth = LocalConfiguration.current.screenWidthDp
     val colors = FathomTheme.colors
     val audioEngine = LocalSacredAudioEngine.current
+    val ambienceEngine = LocalSanctuaryAmbienceEngine.current
     val playbackState by audioEngine.playbackState.collectAsState()
-    val ambienceState by LocalSanctuaryAmbienceEngine.current.state.collectAsState()
+    val ambienceState by ambienceEngine.state.collectAsState()
+    val openAmbience = LocalOpenAmbience.current
     val openMore = com.masum.fathom.ui.shell.LocalOpenMore.current
 
     val pagerState = rememberPagerState(
@@ -190,11 +195,6 @@ private fun FeedContent(
         snapAnimationSpec = tween(durationMillis = 460, easing = FathomMotion.Emphasized)
     )
 
-    val context = androidx.compose.ui.platform.LocalContext.current
-    val hints = remember { context.getSharedPreferences("fathom_hints", android.content.Context.MODE_PRIVATE) }
-    var showGaugeHint by remember { mutableStateOf(!hints.getBoolean("gauge_hint_seen", false)) }
-    var scrubJob by remember { mutableStateOf<kotlinx.coroutines.Job?>(null) }
-
     val currentPassage = state.passages.getOrNull(pagerState.currentPage)
     val tone = rememberTone(currentPassage?.traditionId)
     NavToneEffect(currentPassage?.traditionId)
@@ -211,8 +211,8 @@ private fun FeedContent(
                     phase = { (pagerState.currentPage + pagerState.currentPageOffsetFraction) * 0.85f }
                 ) {
                     val pagePadding = PaddingValues(
-                        top = 76.dp,
-                        bottom = 92.dp + shell.bottomInset
+                        top = 84.dp,
+                        bottom = 96.dp + shell.bottomInset
                     )
 
                     VerticalPager(
@@ -244,10 +244,9 @@ private fun FeedContent(
             Header(
                 state = state,
                 traditionId = currentPassage?.traditionId,
-                ambienceActive = ambienceState.isPlaying,
                 onOpenScriptures = onOpenScriptures,
                 onOpenBeta = onOpenBeta,
-                onOpenAmbience = {
+                onOpenMore = {
                     haptics.light()
                     openMore()
                 },
@@ -261,40 +260,48 @@ private fun FeedContent(
                 modifier = Modifier.align(Alignment.CenterEnd).padding(end = 4.dp, bottom = 40.dp)
             )
 
-            JogPill(
-                hue = tone.hue,
-                onStep = { delta ->
-                    val target = (pagerState.currentPage + delta).coerceIn(0, state.passages.lastIndex)
-                    scrubJob?.cancel()
-                    scrubJob = scope.launch { pagerState.animateScrollToPage(target) }
-                },
-                hint = showGaugeHint,
-                onHintShown = {
-                    showGaugeHint = false
-                    hints.edit().putBoolean("gauge_hint_seen", true).apply()
-                },
-                height = 112.dp,
-                modifier = Modifier.align(Alignment.BottomEnd).padding(end = 16.dp, bottom = shell.bottomInset + 14.dp)
-            )
-
             if (currentPassage != null) {
-                ActionPill(
-                    speaking = speaking,
-                    bookmarked = bookmarked,
-                    onListen = {
-                        haptics.medium()
-                        audioEngine.toggle(currentPassage)
-                    },
-                    onReflect = { onEvent(FeedUiEvent.OnOpenContext(currentPassage)) },
-                    onShare = { onEvent(FeedUiEvent.OnOpenShare(currentPassage)) },
-                    onSave = {
-                        if (!bookmarked) haptics.success() else haptics.light()
-                        onEvent(FeedUiEvent.OnToggleBookmark(currentPassage))
-                    },
+                Row(
                     modifier = Modifier
-                        .align(if (screenWidth < 400) Alignment.BottomStart else Alignment.BottomCenter)
-                        .padding(start = shell.startInset + if (screenWidth < 400) 14.dp else 0.dp, bottom = shell.bottomInset + 14.dp)
-                )
+                        .align(Alignment.BottomCenter)
+                        .padding(bottom = shell.bottomInset + 14.dp, start = shell.startInset + 8.dp, end = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    ActionPill(
+                        speaking = speaking,
+                        bookmarked = bookmarked,
+                        onListen = {
+                            haptics.medium()
+                            audioEngine.toggle(currentPassage)
+                        },
+                        onReflect = { onEvent(FeedUiEvent.OnOpenContext(currentPassage)) },
+                        onShare = { onEvent(FeedUiEvent.OnOpenShare(currentPassage)) },
+                        onSave = {
+                            if (!bookmarked) haptics.success() else haptics.light()
+                            onEvent(FeedUiEvent.OnToggleBookmark(currentPassage))
+                        }
+                    )
+                    if (ambienceState.currentTrack != null) {
+                        AmbienceTrackPill(
+                            track = ambienceState.currentTrack!!,
+                            playing = ambienceState.isPlaying,
+                            hue = tone.hue,
+                            onTogglePlay = {
+                                haptics.light()
+                                ambienceEngine.togglePlayPause()
+                            },
+                            onStop = {
+                                haptics.light()
+                                ambienceEngine.stop()
+                            },
+                            onClick = {
+                                haptics.light()
+                                openAmbience()
+                            }
+                        )
+                    }
+                }
             }
             }
         )
@@ -302,17 +309,82 @@ private fun FeedContent(
 }
 
 @Composable
-private fun Header(
-    state: FeedUiState.Success,
-    traditionId: TraditionId?,
-    ambienceActive: Boolean,
-    onOpenScriptures: () -> Unit,
-    onOpenBeta: () -> Unit,
-    onOpenAmbience: () -> Unit,
+private fun AmbienceTrackPill(
+    track: com.masum.fathom.core.audio.SoundscapeTrack,
+    playing: Boolean,
+    hue: Color,
+    onTogglePlay: () -> Unit,
+    onStop: () -> Unit,
+    onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val colors = FathomTheme.colors
-    val tone = FathomTheme.tone
+    val screenWidth = LocalConfiguration.current.screenWidthDp
+    val maxTextWidth = when {
+        screenWidth < 340 -> 46.dp
+        screenWidth < 380 -> 58.dp
+        else -> 72.dp
+    }
+    Row(
+        modifier = modifier
+            .height(42.dp)
+            .glass(RoundedCornerShape(50))
+            .tappable(scale = 0.96f, onClick = onClick)
+            .padding(start = if (screenWidth < 340) 8.dp else 10.dp, end = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(3.dp)
+    ) {
+        Equalizer(color = hue, size = 13.dp, active = playing)
+        Text(
+            text = track.title,
+            style = FathomTheme.typography.caption.copy(fontSize = 11.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.Medium),
+            color = if (playing) colors.textPrimary else colors.textSecondary,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.widthIn(max = maxTextWidth)
+        )
+        Box(
+            modifier = Modifier
+                .size(26.dp)
+                .clip(CircleShape)
+                .background(if (playing) hue else colors.surfaceElevated)
+                .tappable(scale = 0.90f, haptic = false, onClick = onTogglePlay),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = if (playing) PhosphorIcons.Fill.PauseFill else PhosphorIcons.Fill.PlayFill,
+                contentDescription = if (playing) "Pause soundscape" else "Play soundscape",
+                tint = if (playing) FathomTheme.tone.onHue else colors.textPrimary,
+                modifier = Modifier.size(11.dp)
+            )
+        }
+        Box(
+            modifier = Modifier
+                .size(22.dp)
+                .clip(CircleShape)
+                .tappable(scale = 0.88f, haptic = false, onClick = onStop),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = PhosphorIcons.Light.X,
+                contentDescription = "Stop soundscape",
+                tint = colors.textTertiary,
+                modifier = Modifier.size(11.dp)
+            )
+        }
+    }
+}
+
+@Composable
+private fun Header(
+    state: FeedUiState.Success,
+    traditionId: TraditionId?,
+    onOpenScriptures: () -> Unit,
+    onOpenBeta: () -> Unit,
+    onOpenMore: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val colors = FathomTheme.colors
 
     val activeBook = state.availableBooks.find { it.id == state.selectedBookId }
     val title = when {
@@ -333,12 +405,12 @@ private fun Header(
             modifier = Modifier
                 .weight(1f, fill = false)
                 .widthIn(max = 200.dp)
-                .height(44.dp)
+                .height(40.dp)
                 .glass(RoundedCornerShape(50))
                 .tappable(scale = 0.96f, onClick = onOpenScriptures)
-                .padding(horizontal = 18.dp),
+                .padding(horizontal = 14.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
         ) {
             Text(
                 text = title,
@@ -348,24 +420,14 @@ private fun Header(
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.weight(1f, fill = false)
             )
-            Icon(PhosphorIcons.Light.CaretDown, null, tint = colors.textSecondary, modifier = Modifier.size(13.dp))
+            Icon(PhosphorIcons.Light.CaretDown, null, tint = colors.textSecondary, modifier = Modifier.size(12.dp))
         }
         Box {
             GlassIconButton(
                 icon = PhosphorIcons.Light.DotsThree,
                 contentDescription = "More",
-                onClick = onOpenAmbience
+                onClick = onOpenMore
             )
-            if (ambienceActive) {
-                Box(
-                    Modifier
-                        .align(Alignment.TopEnd)
-                        .padding(top = 8.dp, end = 8.dp)
-                        .size(8.dp)
-                        .clip(CircleShape)
-                        .background(tone.hue)
-                )
-            }
         }
     }
 }
@@ -382,26 +444,36 @@ private fun ActionPill(
 ) {
     val colors = FathomTheme.colors
     val tone = FathomTheme.tone
-    val cell = if (LocalConfiguration.current.screenWidthDp < 340) 48.dp else 52.dp
+    val screenWidth = LocalConfiguration.current.screenWidthDp
+    val cell = when {
+        screenWidth < 340 -> 32.dp
+        screenWidth < 380 -> 34.dp
+        else -> 36.dp
+    }
+    val iconSize = when {
+        screenWidth < 340 -> 16.dp
+        screenWidth < 380 -> 17.dp
+        else -> 18.dp
+    }
     Row(
         modifier = modifier
-            .height(60.dp)
+            .height(42.dp)
             .glass(RoundedCornerShape(50))
-            .padding(horizontal = 8.dp),
+            .padding(horizontal = if (screenWidth < 340) 4.dp else 6.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(2.dp)
+        horizontalArrangement = Arrangement.spacedBy(if (screenWidth < 340) 1.dp else 2.dp)
     ) {
         PillAction(cell = cell, onClick = onListen, description = "Listen") {
-            if (speaking) Equalizer(color = tone.hue) else Icon(PhosphorIcons.Light.SpeakerHigh, null, tint = colors.textPrimary, modifier = Modifier.size(23.dp))
+            if (speaking) Equalizer(color = tone.hue, size = 15.dp) else Icon(PhosphorIcons.Light.SpeakerHigh, null, tint = colors.textPrimary, modifier = Modifier.size(iconSize))
         }
         PillAction(cell = cell, onClick = onReflect, description = "Context and commentary") {
-            Icon(PhosphorIcons.Light.ChatCenteredText, null, tint = colors.textPrimary, modifier = Modifier.size(23.dp))
+            Icon(PhosphorIcons.Light.ChatCenteredText, null, tint = colors.textPrimary, modifier = Modifier.size(iconSize))
         }
         PillAction(cell = cell, onClick = onShare, description = "Share as card") {
-            Icon(PhosphorIcons.Light.ShareFat, null, tint = colors.textPrimary, modifier = Modifier.size(23.dp))
+            Icon(PhosphorIcons.Light.ShareFat, null, tint = colors.textPrimary, modifier = Modifier.size(iconSize))
         }
         PillAction(cell = cell, onClick = onSave, description = "Save passage") {
-            SaveGlyph(saved = bookmarked, hue = tone.hue)
+            SaveGlyph(saved = bookmarked, hue = tone.hue, size = iconSize)
         }
     }
 }
@@ -418,7 +490,7 @@ private fun PillAction(cell: Dp, onClick: () -> Unit, description: String, conte
 }
 
 @Composable
-private fun SaveGlyph(saved: Boolean, hue: Color) {
+private fun SaveGlyph(saved: Boolean, hue: Color, size: Dp = 18.dp) {
     val colors = FathomTheme.colors
     val burst = remember { Animatable(1f) }
     val pop = remember { Animatable(1f) }
@@ -433,15 +505,15 @@ private fun SaveGlyph(saved: Boolean, hue: Color) {
         previous = saved
     }
     Box(contentAlignment = Alignment.Center) {
-        Canvas(Modifier.size(44.dp)) {
+        Canvas(Modifier.size(size * 2)) {
             val p = burst.value
             if (p < 1f) {
-                val radius = size.minDimension / 2f * (0.35f + 0.65f * p)
+                val radius = this.size.minDimension / 2f * (0.35f + 0.65f * p)
                 for (i in 0 until 8) {
                     val angle = (i / 8f) * 6.2831855f
                     val center = Offset(
-                        size.width / 2f + kotlin.math.cos(angle) * radius,
-                        size.height / 2f + kotlin.math.sin(angle) * radius
+                        this.size.width / 2f + kotlin.math.cos(angle) * radius,
+                        this.size.height / 2f + kotlin.math.sin(angle) * radius
                     )
                     drawCircle(hue.copy(alpha = 1f - p), radius = 2.2.dp.toPx() * (1f - p * 0.6f), center = center)
                 }
@@ -451,7 +523,7 @@ private fun SaveGlyph(saved: Boolean, hue: Color) {
             imageVector = if (saved) PhosphorIcons.Fill.BookmarkFilled else PhosphorIcons.Light.BookmarkSimple,
             contentDescription = null,
             tint = if (saved) hue else colors.textPrimary,
-            modifier = Modifier.size(23.dp).graphicsLayer {
+            modifier = Modifier.size(size).graphicsLayer {
                 scaleX = pop.value
                 scaleY = pop.value
             }

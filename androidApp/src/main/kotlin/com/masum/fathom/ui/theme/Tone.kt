@@ -20,42 +20,42 @@ data class Tone(
 
 private data class ToneSeed(val hue: Color, val shift: Color)
 
-private val NeutralSeed = ToneSeed(Color(0xFFD9BE92), Color(0xFF8C6A3F))
+private val NeutralSeed = ToneSeed(Color(0xFF9E845E), Color(0xFF5A4124))
 
 private fun seedFor(id: TraditionId?): ToneSeed = when (id) {
-    TraditionId.HINDUISM -> ToneSeed(Color(0xFFF07A45), Color(0xFFB3261E))
-    TraditionId.BUDDHISM -> ToneSeed(Color(0xFFE2AE48), Color(0xFF9C4A1D))
-    TraditionId.STOICISM -> ToneSeed(Color(0xFF9DB0CC), Color(0xFF4B5E7A))
-    TraditionId.TAOISM -> ToneSeed(Color(0xFF86C99A), Color(0xFF2F7A66))
-    TraditionId.ISLAM -> ToneSeed(Color(0xFF45BFB8), Color(0xFF1F4FA3))
-    TraditionId.CHRISTIANITY -> ToneSeed(Color(0xFFD9546B), Color(0xFF6E1B3A))
-    TraditionId.JUDAISM -> ToneSeed(Color(0xFF9585F0), Color(0xFF2F3E9E))
+    TraditionId.HINDUISM -> ToneSeed(Color(0xFFB5572B), Color(0xFF782318))
+    TraditionId.BUDDHISM -> ToneSeed(Color(0xFFA87A28), Color(0xFF6B3012))
+    TraditionId.STOICISM -> ToneSeed(Color(0xFF6B7E99), Color(0xFF2C394A))
+    TraditionId.TAOISM -> ToneSeed(Color(0xFF4E8760), Color(0xFF1B4734))
+    TraditionId.ISLAM -> ToneSeed(Color(0xFF247A6B), Color(0xFF103352))
+    TraditionId.CHRISTIANITY -> ToneSeed(Color(0xFF9E3748), Color(0xFF4A1020))
+    TraditionId.JUDAISM -> ToneSeed(Color(0xFF5D52A3), Color(0xFF1B2254))
     null -> NeutralSeed
 }
 
 fun toneFor(id: TraditionId?, colors: FathomColors): Tone {
     val seed = seedFor(id)
     val bg = colors.background
-    val mute = if (id == null) 0.42f else 1f
+    val mute = if (id == null) 0.35f else 0.85f
     return if (colors.isDark) {
         Tone(
             hue = seed.hue,
-            glowPrimary = lerp(bg, seed.hue, 0.34f * mute),
-            glowSecondary = lerp(bg, seed.shift, 0.46f * mute),
-            onHue = Color(0xFF0B0A09)
+            glowPrimary = lerp(bg, seed.hue, 0.18f * mute),
+            glowSecondary = lerp(bg, seed.shift, 0.24f * mute),
+            onHue = Color(0xFFF1EADD)
         )
     } else {
         Tone(
-            hue = lerp(seed.hue, Color(0xFF1A140C), 0.38f),
-            glowPrimary = lerp(bg, seed.hue, 0.22f * mute),
-            glowSecondary = lerp(bg, seed.shift, 0.14f * mute),
+            hue = lerp(seed.hue, Color(0xFF1A140C), 0.48f),
+            glowPrimary = lerp(bg, seed.hue, 0.12f * mute),
+            glowSecondary = lerp(bg, seed.shift, 0.08f * mute),
             onHue = Color(0xFFFBF6EA)
         )
     }
 }
 
 val LocalTone = compositionLocalOf {
-    Tone(NeutralSeed.hue, NocturneColors.background, NocturneColors.background, Color.Black)
+    Tone(NeutralSeed.hue, NocturneColors.background, NocturneColors.background, Color(0xFFF1EADD))
 }
 
 @Composable

@@ -69,7 +69,6 @@ import com.masum.fathom.core.notification.DailyNotificationScheduler
 import com.masum.fathom.core.update.AppUpdateEngine
 import com.masum.fathom.core.update.UpdateCheckScheduler
 import com.masum.fathom.core.update.LocalAppUpdateEngine
-import com.masum.fathom.ui.components.AmbienceFloatingPill
 import com.masum.fathom.ui.components.AmbienceSoundscapeSheet
 import com.masum.fathom.ui.components.AppUpdateBanner
 import com.masum.fathom.ui.components.DockBarHeight
@@ -480,14 +479,6 @@ private fun MainStage(
                     )
                 }
             }
-
-            AmbienceFloatingPill(
-                onClick = onOpenAmbience,
-                modifier = Modifier
-                    .align(Alignment.TopCenter)
-                    .statusBarsPadding()
-                    .padding(top = 64.dp)
-            )
 
             AppUpdateBanner(updateEngine = updateEngine, modifier = Modifier.align(Alignment.TopCenter))
 

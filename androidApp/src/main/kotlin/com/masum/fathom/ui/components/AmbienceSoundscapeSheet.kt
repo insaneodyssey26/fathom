@@ -58,6 +58,46 @@ fun AmbienceSoundscapeSheet(onDismiss: () -> Unit) {
             subtitle = "A quiet backdrop for reading and prayer.",
             onClose = onDismiss
         )
+        if (state.currentTrack != null) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(colors.surfaceElevated)
+                    .padding(horizontal = 16.dp, vertical = 10.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Equalizer(color = tone.hue, size = 13.dp, active = state.isPlaying)
+                    Column {
+                        Text(
+                            text = state.currentTrack?.title.orEmpty(),
+                            style = FathomTheme.typography.title,
+                            color = colors.textPrimary
+                        )
+                        MonoLabel(
+                            text = if (state.isPlaying) "Currently playing" else "Paused",
+                            color = tone.hue
+                        )
+                    }
+                }
+                FathomButton(
+                    text = "Turn off",
+                    onClick = {
+                        haptics.light()
+                        engine.stop()
+                        closeSheet()
+                    },
+                    style = ButtonStyle.Ghost
+                )
+            }
+            Spacer(Modifier.height(10.dp))
+        }
         Column(modifier = Modifier.fillMaxWidth().weight(1f, fill = false).verticalScroll(rememberScrollState())) {
             Hairline()
             SoundscapeTrack.entries.forEach { track ->
