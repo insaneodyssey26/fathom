@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/widget_card_background">
+
+    <ImageView
+        android:id="@+id/widget_background"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:importantForAccessibility="no"
+        android:scaleType="fitXY" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingHorizontal="16dp"
+        android:paddingVertical="10dp">
+
+        <ImageView
+            android:id="@+id/widget_emblem"
+            android:layout_width="26dp"
+            android:layout_height="26dp"
+            android:layout_marginEnd="12dp"
+            android:importantForAccessibility="no" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <TextView
+                    android:id="@+id/widget_tradition_badge"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/geist_mono"
+                    android:fontVariationSettings="'wght' 500"
+                    android:letterSpacing="0.10"
+                    android:text="STOICISM"
+                    android:textColor="#9DB0CC"
+                    android:textSize="9sp" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginHorizontal="6dp"
+                    android:text="·"
+                    android:textColor="#555555"
+                    android:textSize="9sp" />
+
+                <TextView
+                    android:id="@+id/widget_verse_reference"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/geist_mono"
+                    android:fontVariationSettings="'wght' 500"
+                    android:letterSpacing="0.08"
+                    android:text="MEDITATIONS 5.16"
+                    android:textColor="#A59C8D"
+                    android:textSize="9sp" />
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/widget_verse_text"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:ellipsize="end"
+                android:fontFamily="@font/newsreader"
+                android:fontVariationSettings="'wght' 400, 'opsz' 24"
+                android:maxLines="2"
+                android:text="The soul becomes dyed with the color of its thoughts."
+                android:textColor="#F1EADD"
+                android:textSize="13.5sp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:gravity="center_vertical|end"
+            android:layout_marginStart="10dp">
+
+            <ImageView
+                android:id="@+id/widget_btn_refresh"
+                android:layout_width="26dp"
+                android:layout_height="26dp"
+                android:background="?android:attr/selectableItemBackgroundBorderless"
+                android:contentDescription="Refresh verse"
+                android:padding="5dp"
+                android:src="@drawable/widget_icon_refresh" />
+
+            <ImageView
+                android:id="@+id/widget_wordmark"
+                android:layout_width="wrap_content"
+                android:layout_height="12dp"
+                android:layout_marginTop="4dp"
+                android:adjustViewBounds="true"
+                android:importantForAccessibility="no" />
+        </LinearLayout>
+    </LinearLayout>
+</FrameLayout>

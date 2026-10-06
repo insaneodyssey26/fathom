@@ -90,17 +90,14 @@
                 android:textColor="#A59C8D"
                 android:textSize="10sp" />
 
-            <TextView
+            <ImageView
                 android:id="@+id/widget_wordmark"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
+                android:layout_height="18dp"
                 android:layout_alignParentEnd="true"
                 android:layout_centerVertical="true"
-                android:fontFamily="@font/fraunces_italic"
-                android:fontVariationSettings="'wght' 400, 'opsz' 48, 'SOFT' 60"
-                android:text="fathom"
-                android:textColor="#F1EADD"
-                android:textSize="16sp" />
+                android:adjustViewBounds="true"
+                android:importantForAccessibility="no" />
         </RelativeLayout>
     </LinearLayout>
 </FrameLayout>
