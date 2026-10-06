@@ -139,8 +139,11 @@ fun FeedScreen(
                 availableBooks = state.availableBooks,
                 selectedBookId = state.selectedBookId,
                 selectedTraditions = state.selectedTraditions,
+                alignedTraditions = state.alignedTraditions,
                 onSelectBook = { onEvent(FeedUiEvent.OnSelectBook(it)) },
                 onSelectTradition = { onEvent(FeedUiEvent.OnSelectTradition(it)) },
+                onToggleAlignedTradition = { onEvent(FeedUiEvent.OnToggleAlignedTradition(it)) },
+                onClearAlignedTraditions = { onEvent(FeedUiEvent.OnClearAlignedTraditions) },
                 onDismiss = { showScriptureSheet = false }
             )
         }
@@ -390,6 +393,8 @@ private fun Header(
     val title = when {
         activeBook != null -> activeBook.title
         state.selectedTraditions.size == 1 -> state.selectedTraditions.first().displayName
+        state.alignedTraditions.size == 1 -> "Leaning · ${state.alignedTraditions.first().displayName}"
+        state.alignedTraditions.size > 1 -> "Leaning · ${state.alignedTraditions.size} traditions"
         state.selectedTraditions.size < TraditionId.entries.size -> "${state.selectedTraditions.size} traditions"
         else -> "All scriptures"
     }

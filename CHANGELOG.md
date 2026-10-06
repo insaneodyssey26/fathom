@@ -2,6 +2,21 @@
 
 All notable changes to the Fathom project are documented in this file.
 
+## [1.5.0] - 2026-10-07
+
+### Added
+- **Home screen widgets.** Put sacred wisdom and your reading streak directly on your home screen with scrollable reflections and compact banners.
+- **Tradition leaning in All Scriptures.** When reading All Scriptures, pick one or more traditions to lean your feed towards while maintaining discovery across all canonical texts.
+- **Per-tradition quota sampling.** Ensures balanced discovery across all traditions regardless of raw verse counts.
+- **Floating recitation bar & soundscape shortcuts.** Dedicated bottom audio control bar with scrubbing and immediate access to ambient soundscapes.
+
+### Changed
+- **Navigation & Explore.** Floating glass dock over dark blur and unified scrolling in Explore.
+- **Themes.** Deeper blacks, rich contrast, and refined ambient glows for low-light reading.
+- **Narration flow.** Multi-line Sanskrit and Arabic verses read continuously without raw citation numbers.
+
+---
+
 ## [1.4.0] - 2026-10-05
 
 ### Added

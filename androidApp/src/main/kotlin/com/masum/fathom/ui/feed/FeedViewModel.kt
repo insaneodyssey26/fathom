@@ -35,6 +35,7 @@ class FeedViewModel(
     private var currentConfig = FeedConfig(
         selectedTraditions = sanctuaryPreferences.settings.value.feedSelectedTraditions,
         selectedBookId = sanctuaryPreferences.settings.value.feedSelectedBookId,
+        alignedTraditions = sanctuaryPreferences.settings.value.feedAlignedTraditions,
         mode = sanctuaryPreferences.settings.value.feedMode
     )
     private var availableBooks: List<Book> = emptyList()
@@ -58,6 +59,8 @@ class FeedViewModel(
             is FeedUiEvent.OnChangeMode -> handleChangeMode(event.mode)
             is FeedUiEvent.OnSelectBook -> handleSelectBook(event.bookId)
             is FeedUiEvent.OnSelectTradition -> setTraditionFocus(event.traditionId)
+            is FeedUiEvent.OnToggleAlignedTradition -> handleToggleAlignedTradition(event.traditionId)
+            is FeedUiEvent.OnClearAlignedTraditions -> handleClearAlignedTraditions()
         }
     }
 
@@ -97,7 +100,8 @@ class FeedViewModel(
                             availableBooks = availableBooks,
                             selectedBookId = currentConfig.selectedBookId,
                             activeMode = currentConfig.mode,
-                            selectedTraditions = currentConfig.selectedTraditions
+                            selectedTraditions = currentConfig.selectedTraditions,
+                            alignedTraditions = currentConfig.alignedTraditions
                         )
                         recordCurrentReading(initial.first())
                     }
@@ -225,9 +229,10 @@ class FeedViewModel(
 
     private fun handleSelectBook(bookId: String?) {
         sanctuaryPreferences.updateFeedBook(bookId)
-        currentConfig = currentConfig.copy(selectedBookId = bookId)
+        sanctuaryPreferences.updateFeedAlignedTraditions(emptySet())
+        currentConfig = currentConfig.copy(selectedBookId = bookId, alignedTraditions = emptySet())
         _uiState.update { state ->
-            if (state is FeedUiState.Success) state.copy(selectedBookId = bookId) else state
+            if (state is FeedUiState.Success) state.copy(selectedBookId = bookId, alignedTraditions = emptySet()) else state
         }
         refreshFeedPreservingState()
     }
@@ -246,15 +251,18 @@ class FeedViewModel(
 
         sanctuaryPreferences.updateFeedTraditions(updatedTraditions)
         sanctuaryPreferences.updateFeedBook(null)
+        sanctuaryPreferences.updateFeedAlignedTraditions(emptySet())
         currentConfig = currentConfig.copy(
             selectedTraditions = updatedTraditions,
-            selectedBookId = null
+            selectedBookId = null,
+            alignedTraditions = emptySet()
         )
         _uiState.update { state ->
             if (state is FeedUiState.Success) {
                 state.copy(
                     selectedTraditions = updatedTraditions,
-                    selectedBookId = null
+                    selectedBookId = null,
+                    alignedTraditions = emptySet()
                 )
             } else state
         }
@@ -270,15 +278,65 @@ class FeedViewModel(
         }
         sanctuaryPreferences.updateFeedTraditions(traditions)
         sanctuaryPreferences.updateFeedBook(null)
+        sanctuaryPreferences.updateFeedAlignedTraditions(emptySet())
         currentConfig = currentConfig.copy(
             selectedTraditions = traditions,
-            selectedBookId = null
+            selectedBookId = null,
+            alignedTraditions = emptySet()
         )
         _uiState.update { state ->
             if (state is FeedUiState.Success) {
                 state.copy(
                     selectedTraditions = traditions,
-                    selectedBookId = null
+                    selectedBookId = null,
+                    alignedTraditions = emptySet()
+                )
+            } else state
+        }
+        refreshFeedPreservingState()
+    }
+
+    private fun handleToggleAlignedTradition(traditionId: TraditionId) {
+        val updated = if (traditionId in currentConfig.alignedTraditions) {
+            currentConfig.alignedTraditions - traditionId
+        } else {
+            currentConfig.alignedTraditions + traditionId
+        }
+        sanctuaryPreferences.updateFeedAlignedTraditions(updated)
+        sanctuaryPreferences.updateFeedTraditions(TraditionId.entries.toSet())
+        sanctuaryPreferences.updateFeedBook(null)
+        currentConfig = currentConfig.copy(
+            selectedTraditions = TraditionId.entries.toSet(),
+            selectedBookId = null,
+            alignedTraditions = updated
+        )
+        _uiState.update { state ->
+            if (state is FeedUiState.Success) {
+                state.copy(
+                    selectedTraditions = TraditionId.entries.toSet(),
+                    selectedBookId = null,
+                    alignedTraditions = updated
+                )
+            } else state
+        }
+        refreshFeedPreservingState()
+    }
+
+    private fun handleClearAlignedTraditions() {
+        sanctuaryPreferences.updateFeedAlignedTraditions(emptySet())
+        sanctuaryPreferences.updateFeedTraditions(TraditionId.entries.toSet())
+        sanctuaryPreferences.updateFeedBook(null)
+        currentConfig = currentConfig.copy(
+            selectedTraditions = TraditionId.entries.toSet(),
+            selectedBookId = null,
+            alignedTraditions = emptySet()
+        )
+        _uiState.update { state ->
+            if (state is FeedUiState.Success) {
+                state.copy(
+                    selectedTraditions = TraditionId.entries.toSet(),
+                    selectedBookId = null,
+                    alignedTraditions = emptySet()
                 )
             } else state
         }
@@ -304,7 +362,9 @@ class FeedViewModel(
                                 passages = if (result.data.isNotEmpty()) result.data else state.passages,
                                 currentIndex = 0,
                                 availableBooks = availableBooks,
-                                selectedBookId = currentConfig.selectedBookId
+                                selectedBookId = currentConfig.selectedBookId,
+                                selectedTraditions = currentConfig.selectedTraditions,
+                                alignedTraditions = currentConfig.alignedTraditions
                             )
                         } else state
                     }

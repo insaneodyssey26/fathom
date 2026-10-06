@@ -20,6 +20,7 @@ sealed interface FeedUiState {
         val activeTheme: ReadingTheme = ReadingTheme.OBSIDIAN,
         val activeMode: FeedMode = FeedMode.EXPLORATION_DISCOVERY,
         val selectedTraditions: Set<TraditionId> = TraditionId.entries.toSet(),
+        val alignedTraditions: Set<TraditionId> = emptySet(),
         val selectedPassageForContext: Passage? = null,
         val selectedPassageForShare: Passage? = null,
         val isLoadingMore: Boolean = false
@@ -42,5 +43,7 @@ sealed interface FeedUiEvent {
     data class OnChangeMode(val mode: FeedMode) : FeedUiEvent
     data class OnSelectBook(val bookId: String?) : FeedUiEvent
     data class OnSelectTradition(val traditionId: TraditionId?) : FeedUiEvent
+    data class OnToggleAlignedTradition(val traditionId: TraditionId) : FeedUiEvent
+    data object OnClearAlignedTraditions : FeedUiEvent
 }
 

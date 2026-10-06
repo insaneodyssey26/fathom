@@ -11,6 +11,7 @@ enum class FeedMode {
 data class FeedConfig(
     val mode: FeedMode = FeedMode.EXPLORATION_DISCOVERY,
     val selectedTraditions: Set<TraditionId> = TraditionId.entries.toSet(),
+    val alignedTraditions: Set<TraditionId> = emptySet(),
     val selectedThemeIds: Set<String> = emptySet(),
     val selectedBookId: String? = null,
     val enableSeenFilter: Boolean = true,

@@ -49,18 +49,18 @@ fun SplashScreen(
     var index by remember { mutableIntStateOf(0) }
     val tone = rememberTone(Sequence[index])
     val settled = index == Sequence.lastIndex
-    val wordAlpha by animateFloatAsState(if (index >= 4) 1f else 0f, tween(700, easing = FathomMotion.Emphasized), label = "word")
-    val tagAlpha by animateFloatAsState(if (settled) 1f else 0f, tween(600, 120, FathomMotion.Emphasized), label = "tag")
+    val wordAlpha by animateFloatAsState(if (index >= 2) 1f else 0f, tween(400, easing = FathomMotion.Emphasized), label = "word")
+    val tagAlpha by animateFloatAsState(if (settled) 1f else 0f, tween(320, 20, FathomMotion.Emphasized), label = "tag")
 
     LaunchedEffect(Unit) {
-        delay(240)
+        delay(80)
         for (i in Sequence.indices) {
             index = i
             if (i < Sequence.lastIndex) haptics.light()
-            delay(210)
+            delay(70)
         }
         haptics.medium()
-        delay(820)
+        delay(560)
         onSplashFinished()
     }
 

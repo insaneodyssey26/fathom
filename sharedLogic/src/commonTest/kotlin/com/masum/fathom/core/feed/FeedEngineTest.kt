@@ -96,4 +96,37 @@ class FeedEngineTest {
         assertEquals("gita_1", passages[0].id)
         assertEquals("gita_2", passages[1].id)
     }
+
+    @Test
+    fun givenAlignedTraditions_whenBatchFetched_thenAlternatesAnchorAndDiscovery() = runTest {
+        val config = FeedConfig(
+            mode = FeedMode.EXPLORATION_DISCOVERY,
+            selectedTraditions = setOf(TraditionId.HINDUISM, TraditionId.STOICISM, TraditionId.BUDDHISM),
+            alignedTraditions = setOf(TraditionId.HINDUISM)
+        )
+
+        val result = feedEngine.getFeedBatch(config, batchSize = 4)
+        assertTrue(result is FathomResult.Success)
+        val passages = result.data
+        assertTrue(passages.size >= 2)
+        assertEquals(TraditionId.HINDUISM, passages[0].traditionId)
+        assertNotEquals(TraditionId.HINDUISM, passages[1].traditionId)
+    }
+
+    @Test
+    fun givenAllTraditions_whenBatchFetched_thenDistributesAcrossAllTraditions() = runTest {
+        val config = FeedConfig(
+            mode = FeedMode.EXPLORATION_DISCOVERY,
+            selectedTraditions = setOf(TraditionId.HINDUISM, TraditionId.STOICISM, TraditionId.BUDDHISM)
+        )
+
+        val result = feedEngine.getFeedBatch(config, batchSize = 3)
+        assertTrue(result is FathomResult.Success)
+        val passages = result.data
+        val traditions = passages.map { it.traditionId }.toSet()
+        assertEquals(3, traditions.size)
+        assertTrue(traditions.contains(TraditionId.HINDUISM))
+        assertTrue(traditions.contains(TraditionId.STOICISM))
+        assertTrue(traditions.contains(TraditionId.BUDDHISM))
+    }
 }

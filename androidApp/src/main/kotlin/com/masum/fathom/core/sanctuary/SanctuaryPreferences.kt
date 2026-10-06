@@ -35,6 +35,7 @@ data class SanctuarySettings(
     val lastSeenWhatsNewVersion: Int = 0,
     val feedSelectedTraditions: Set<TraditionId> = TraditionId.entries.toSet(),
     val feedSelectedBookId: String? = null,
+    val feedAlignedTraditions: Set<TraditionId> = emptySet(),
     val feedMode: FeedMode = FeedMode.EXPLORATION_DISCOVERY
 )
 
@@ -90,6 +91,8 @@ class SanctuaryPreferences(context: Context) {
             TraditionId.entries.toSet()
         }
         val feedBookId = prefs.getString("feed_selected_book_id", null)
+        val savedAlignedKeys = prefs.getStringSet("feed_aligned_traditions", null)
+        val feedAlignedTraditions = savedAlignedKeys?.mapNotNull { TraditionId.fromKeyOrNull(it) }?.toSet().orEmpty()
         val feedModeName = prefs.getString("feed_mode", FeedMode.EXPLORATION_DISCOVERY.name) ?: FeedMode.EXPLORATION_DISCOVERY.name
         val feedMode = runCatching { FeedMode.valueOf(feedModeName) }.getOrDefault(FeedMode.EXPLORATION_DISCOVERY)
 
@@ -111,6 +114,7 @@ class SanctuaryPreferences(context: Context) {
             lastSeenWhatsNewVersion = lastSeenWhatsNew,
             feedSelectedTraditions = feedTraditions,
             feedSelectedBookId = feedBookId,
+            feedAlignedTraditions = feedAlignedTraditions,
             feedMode = feedMode
         )
     }
@@ -135,13 +139,15 @@ class SanctuaryPreferences(context: Context) {
             .putBoolean("has_completed_onboarding", true)
             .putInt("completed_onboarding_version", CURRENT_ONBOARDING_VERSION)
             .putStringSet("feed_selected_traditions", traditionKeys)
+            .remove("feed_aligned_traditions")
             .apply()
         _settings.value = _settings.value.copy(
             userName = cleanName,
             userTradition = cleanTradition,
             feedPersonalizedToTradition = personalizeFeed,
             hasCompletedOnboarding = true,
-            feedSelectedTraditions = traditions
+            feedSelectedTraditions = traditions,
+            feedAlignedTraditions = emptySet()
         )
     }
 
@@ -154,6 +160,12 @@ class SanctuaryPreferences(context: Context) {
     fun updateFeedBook(bookId: String?) {
         prefs.edit().putString("feed_selected_book_id", bookId).apply()
         _settings.value = _settings.value.copy(feedSelectedBookId = bookId)
+    }
+
+    fun updateFeedAlignedTraditions(traditions: Set<TraditionId>) {
+        val keys = traditions.map { it.key }.toSet()
+        prefs.edit().putStringSet("feed_aligned_traditions", keys).apply()
+        _settings.value = _settings.value.copy(feedAlignedTraditions = traditions)
     }
 
     fun updateFeedMode(mode: FeedMode) {

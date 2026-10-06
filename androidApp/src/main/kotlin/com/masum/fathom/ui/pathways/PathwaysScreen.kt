@@ -126,6 +126,8 @@ fun PathwaysScreen(
                 ScriptureSelectorSheet(
                     availableBooks = state.availableBooks,
                     selectedBookId = state.selectedBook.id,
+                    allowAllScriptures = false,
+                    showWholeTraditionOption = false,
                     onSelectBook = { bookId ->
                         haptics.light()
                         if (bookId != null) onEvent(PathwaysUiEvent.OnSelectBook(bookId))

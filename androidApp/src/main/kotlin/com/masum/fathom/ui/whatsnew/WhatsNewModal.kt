@@ -53,9 +53,22 @@ fun WhatsNewModal(
     val releases = remember {
         listOf(
             ReleaseNote(
+                version = "v1.5.0",
+                title = "Widgets on your home screen, deeper themes and audio controls",
+                isCurrent = true,
+                highlights = listOf(
+                    "Home screen widgets: Put sacred wisdom and your reading streak right on your home screen. There is a scrollable wisdom card that lets you read the reflection right from your launcher, plus compact jewel and horizon banners.",
+                    "Redesigned navigation & Explore: The bottom navigation bar is now a floating glass dock that rests over a soft dark blur. In Explore, searching and filtering now scroll naturally together with the rest of the page.",
+                    "Deeper themes: The reading themes were refined with deeper blacks, rich contrast, and subtle ambient glows that are gentler on your eyes in low light.",
+                    "Lean towards your traditions: When reading All Scriptures, you can now pick traditions to lean your feed towards while discovering wisdom across the entire library. Your choices stay saved when you reopen the app.",
+                    "Recitation bar & soundscapes: Recitations now play through a floating audio bar at the bottom with seeking and playback controls. You can also start or pause soundscapes right beside your verse actions.",
+                    "Cleaner listening: Multi-line Sanskrit and Arabic verses now flow naturally during narration without reading out raw reference numbers."
+                )
+            ),
+            ReleaseNote(
                 version = "v1.4.0",
                 title = "A full redesign, a daily verse and update alerts",
-                isCurrent = true,
+                isCurrent = false,
                 highlights = listOf(
                     "A new look everywhere: Every screen was redrawn. Scripture is set in a proper reading serif, and each tradition has its own colour that tints the page as you move between them. The four themes are now Nocturne, Vellum, Abyss and Moss.",
                     "Daily verse: One verse a day at the time you pick, from every tradition or just your own. Save or share it straight from the notification, and tapping it opens the verse. It stays hidden on the lock screen unless you choose otherwise.",

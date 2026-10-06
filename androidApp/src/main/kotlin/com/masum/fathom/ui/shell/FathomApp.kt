@@ -187,10 +187,12 @@ fun FathomApp(graph: AppGraph, launchPassageId: String?) {
     var showAmbience by remember { mutableStateOf(false) }
     var showMore by remember { mutableStateOf(false) }
     val navigator = rememberAppNavigator()
-    var splashDone by remember { mutableStateOf(false) }
+    var splashDone by remember { mutableStateOf(!launchPassageId.isNullOrEmpty()) }
 
     LaunchedEffect(settings.hasCompletedOnboarding, versionCode) {
-        if (settings.hasCompletedOnboarding && preferences.shouldShowWhatsNew(versionCode)) showWhatsNew = true
+        if (settings.hasCompletedOnboarding && preferences.shouldShowWhatsNew(versionCode)) {
+            showWhatsNew = true
+        }
     }
 
     LaunchedEffect(settings.dailyNotificationEnabled, settings.notificationHour, settings.notificationMinute, settings.updateAlertsEnabled) {

@@ -9,6 +9,9 @@ import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -17,6 +20,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -26,10 +30,12 @@ import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
-import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.adamglin.PhosphorIcons
 import com.adamglin.phosphoricons.Light
 import com.adamglin.phosphoricons.light.CaretDown
@@ -53,34 +59,103 @@ fun ScriptureSelectorSheet(
     availableBooks: List<Book>,
     selectedBookId: String?,
     selectedTraditions: Set<TraditionId> = emptySet(),
+    alignedTraditions: Set<TraditionId> = emptySet(),
+    allowAllScriptures: Boolean = true,
+    showWholeTraditionOption: Boolean = true,
     onSelectBook: (String?) -> Unit,
     onSelectTradition: (TraditionId?) -> Unit = {},
+    onToggleAlignedTradition: (TraditionId) -> Unit = {},
+    onClearAlignedTraditions: () -> Unit = {},
     onDismiss: () -> Unit
 ) {
     val haptics = LocalFathomHaptics.current
+    val colors = FathomTheme.colors
     val grouped = remember(availableBooks) { availableBooks.groupBy { it.traditionId } }
     val activeTradition = availableBooks.find { it.id == selectedBookId }?.traditionId
         ?: if (selectedTraditions.size == 1) selectedTraditions.first() else null
     val expanded = remember { mutableStateMapOf<TraditionId, Boolean>().apply { activeTradition?.let { put(it, true) } } }
-    val everything = selectedBookId == null && (selectedTraditions.isEmpty() || selectedTraditions.size == TraditionId.entries.size)
+    val isAllScriptures = selectedBookId == null && (selectedTraditions.isEmpty() || selectedTraditions.size == TraditionId.entries.size)
+
+    val allCaption = when {
+        !isAllScriptures -> "A blend across every tradition"
+        alignedTraditions.isEmpty() -> "Balanced blend across every tradition"
+        alignedTraditions.size == 1 -> "Prioritizing ${alignedTraditions.first().displayName} with universal discovery"
+        else -> "Prioritizing ${alignedTraditions.size} traditions with universal discovery"
+    }
 
     FathomSheet(onDismiss = onDismiss) {
         val closeSheet = rememberSheetCloser(onDismiss)
         SheetHeader(overline = "Library", title = "Choose a scripture", subtitle = "Read one text, one tradition, or everything.", onClose = onDismiss)
         Column(modifier = Modifier.fillMaxWidth().weight(1f, fill = false).verticalScroll(rememberScrollState())) {
-            Hairline()
-            SelectorRow(
-                title = "All scriptures",
-                caption = "A blend across every tradition",
-                traditionId = null,
-                selected = everything,
-                onClick = {
-                    haptics.light()
-                    onSelectTradition(null)
-                    onSelectBook(null)
-                    closeSheet()
+            if (allowAllScriptures) {
+                Hairline()
+
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    SelectorRow(
+                        title = "All scriptures",
+                        caption = allCaption,
+                        traditionId = null,
+                        selected = isAllScriptures,
+                        onClick = {
+                            haptics.light()
+                            onSelectTradition(null)
+                            onSelectBook(null)
+                            closeSheet()
+                        }
+                    )
+
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 2.dp, bottom = 14.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(horizontal = 2.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            MonoLabel(
+                                text = "Lean feed towards (optional)",
+                                color = colors.textTertiary
+                            )
+                            if (alignedTraditions.isNotEmpty()) {
+                                Text(
+                                    text = "Reset",
+                                    style = FathomTheme.typography.caption.copy(fontSize = 11.sp),
+                                    color = colors.textSecondary,
+                                    modifier = Modifier.tappable(scale = 0.95f, onClick = {
+                                        haptics.light()
+                                        onClearAlignedTraditions()
+                                    })
+                                )
+                            }
+                        }
+
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .horizontalScroll(rememberScrollState()),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            TraditionId.entries.forEach { tradition ->
+                                val isSelected = isAllScriptures && tradition in alignedTraditions
+                                AlignedTraditionChip(
+                                    tradition = tradition,
+                                    selected = isSelected,
+                                    onClick = {
+                                        haptics.light()
+                                        onToggleAlignedTradition(tradition)
+                                    }
+                                )
+                            }
+                        }
+                    }
                 }
-            )
+            }
+
+            Hairline()
+
             TraditionId.entries.forEach { tradition ->
                 val books = grouped[tradition].orEmpty()
                 if (books.isEmpty()) return@forEach
@@ -94,6 +169,7 @@ fun ScriptureSelectorSheet(
                     active = active,
                     wholeSelected = wholeSelected,
                     selectedBookId = selectedBookId,
+                    showWholeTraditionOption = showWholeTraditionOption,
                     onToggle = {
                         haptics.light()
                         expanded[tradition] = !open
@@ -110,6 +186,39 @@ fun ScriptureSelectorSheet(
                     }
                 )
             }
+        }
+    }
+}
+
+@Composable
+private fun AlignedTraditionChip(
+    tradition: TraditionId,
+    selected: Boolean,
+    onClick: () -> Unit
+) {
+    val colors = FathomTheme.colors
+    val tone = remember(tradition, colors.isDark, colors.background) { toneFor(tradition, colors) }
+    val bg = if (selected) tone.hue.copy(alpha = 0.18f) else colors.surfaceElevated
+    val border = if (selected) tone.hue.copy(alpha = 0.6f) else colors.hairline
+
+    Row(
+        modifier = Modifier
+            .clip(RoundedCornerShape(50))
+            .background(bg)
+            .border(1.dp, border, RoundedCornerShape(50))
+            .tappable(scale = 0.95f, onClick = onClick)
+            .padding(horizontal = 12.dp, vertical = 7.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp)
+    ) {
+        TraditionEmblem(traditionId = tradition, color = if (selected) tone.hue else colors.textSecondary, size = 16.dp, filled = selected)
+        Text(
+            text = tradition.displayName,
+            style = FathomTheme.typography.caption.copy(fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal),
+            color = if (selected) colors.textPrimary else colors.textSecondary
+        )
+        if (selected) {
+            Icon(PhosphorIcons.Light.Check, null, tint = tone.hue, modifier = Modifier.size(12.dp))
         }
     }
 }
@@ -157,16 +266,17 @@ private fun TraditionGroup(
     active: Boolean,
     wholeSelected: Boolean,
     selectedBookId: String?,
+    showWholeTraditionOption: Boolean,
     onToggle: () -> Unit,
     onSelectWhole: () -> Unit,
     onSelectBook: (String) -> Unit
 ) {
     val colors = FathomTheme.colors
     val tone = remember(tradition, colors.isDark, colors.background) { toneFor(tradition, colors) }
-    val turn by animateFloatAsState(if (open) 180f else 0f, FathomMotion.glide(), label = "group_turn")
-    val ink by animateColorAsState(if (active) colors.textPrimary else colors.textSecondary, tween(220), label = "group_ink")
+    val turn by animateFloatAsState(if (open) 180f else 0f, tween(320, easing = FathomMotion.Emphasized), label = "group_turn")
+    val ink by animateColorAsState(if (active) colors.textPrimary else colors.textSecondary, tween(240), label = "group_ink")
 
-    Column(modifier = Modifier.fillMaxWidth().animateContentSize(FathomMotion.glide())) {
+    Column(modifier = Modifier.fillMaxWidth()) {
         Row(
             modifier = Modifier.fillMaxWidth().tappable(scale = 0.985f, haptic = false, onClick = onToggle).padding(vertical = 16.dp),
             verticalAlignment = Alignment.CenterVertically,
@@ -181,18 +291,20 @@ private fun TraditionGroup(
         }
         AnimatedVisibility(
             visible = open,
-            enter = expandVertically(tween(380, easing = FathomMotion.Emphasized)) + fadeIn(tween(260, 60)),
-            exit = shrinkVertically(tween(240)) + fadeOut(tween(140))
+            enter = expandVertically(tween(340, easing = FathomMotion.Emphasized)) + fadeIn(tween(240, 60, easing = FathomMotion.Emphasized)),
+            exit = shrinkVertically(tween(300, easing = FathomMotion.Emphasized)) + fadeOut(tween(220, easing = FathomMotion.Emphasized))
         ) {
             Column {
-                SelectorRow(
-                    title = "Every text in ${tradition.displayName}",
-                    caption = "The whole tradition",
-                    traditionId = tradition,
-                    selected = wholeSelected,
-                    onClick = onSelectWhole,
-                    inset = true
-                )
+                if (showWholeTraditionOption) {
+                    SelectorRow(
+                        title = "Every text in ${tradition.displayName}",
+                        caption = "The whole tradition",
+                        traditionId = tradition,
+                        selected = wholeSelected,
+                        onClick = onSelectWhole,
+                        inset = true
+                    )
+                }
                 books.forEach { book ->
                     SelectorRow(
                         title = book.title,
