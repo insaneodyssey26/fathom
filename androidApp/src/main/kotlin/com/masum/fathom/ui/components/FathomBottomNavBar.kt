@@ -2,14 +2,16 @@ package com.masum.fathom.ui.components
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
-import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.displayCutout
@@ -25,27 +27,29 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.union
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -69,8 +73,6 @@ import com.masum.fathom.ui.design.tappable
 import com.masum.fathom.ui.theme.FathomMotion
 import com.masum.fathom.ui.theme.FathomTheme
 import com.masum.fathom.ui.theme.rememberTone
-import kotlin.math.abs
-import kotlin.math.exp
 
 private data class DockEntry(
     val item: NavigationItem,
@@ -86,7 +88,7 @@ private val entries = listOf(
     DockEntry(NavigationItem.LIBRARY, "Journal", PhosphorIcons.Light.Notebook, PhosphorIcons.Fill.NotebookFill)
 )
 
-val DockBarHeight = 66.dp
+val DockBarHeight = 72.dp
 val DockRailWidth = 84.dp
 
 @Composable
@@ -101,15 +103,19 @@ fun FathomBottomNavBar(
     val tone = rememberTone(traditionId)
     val selectedIndex = entries.indexOfFirst { it.item == selectedItem }.coerceAtLeast(0)
     val marker = remember { Animatable(selectedIndex.toFloat()) }
-    var extent by remember { mutableIntStateOf(0) }
-    var dragIndex by remember { mutableIntStateOf(-1) }
 
     LaunchedEffect(selectedIndex) {
-        marker.animateTo(selectedIndex.toFloat(), spring(dampingRatio = 0.68f, stiffness = 380f))
+        marker.animateTo(
+            targetValue = selectedIndex.toFloat(),
+            animationSpec = spring(dampingRatio = 0.82f, stiffness = 320f)
+        )
     }
 
     val select: (Int) -> Unit = { idx ->
-        if (entries[idx].item != selectedItem) onItemSelected(entries[idx].item)
+        if (entries[idx].item != selectedItem) {
+            haptics.light()
+            onItemSelected(entries[idx].item)
+        }
     }
 
     if (vertical) {
@@ -119,11 +125,6 @@ fun FathomBottomNavBar(
             hue = tone.hue,
             traditionId = traditionId,
             onSelect = select,
-            onExtent = { extent = it },
-            extent = extent,
-            dragIndex = dragIndex,
-            onDrag = { dragIndex = it },
-            haptics = { haptics.light() },
             modifier = modifier
         )
     } else {
@@ -132,10 +133,6 @@ fun FathomBottomNavBar(
             marker = { marker.value },
             hue = tone.hue,
             onSelect = select,
-            onExtent = { extent = it },
-            dragIndex = dragIndex,
-            onDrag = { dragIndex = it },
-            haptics = { haptics.light() },
             modifier = modifier
         )
     }
@@ -147,98 +144,110 @@ private fun DockBar(
     marker: () -> Float,
     hue: Color,
     onSelect: (Int) -> Unit,
-    onExtent: (Int) -> Unit,
-    dragIndex: Int,
-    onDrag: (Int) -> Unit,
-    haptics: () -> Unit,
-    modifier: Modifier
+    modifier: Modifier = Modifier
 ) {
     val colors = FathomTheme.colors
-    val shape = RoundedCornerShape(topStart = 26.dp, topEnd = 26.dp)
-    val edge = if (colors.isDark) Color.White.copy(alpha = 0.10f) else Color.Black.copy(alpha = 0.08f)
-    val ink = colors.textPrimary
+    val density = LocalDensity.current
+    val capsuleShape = RoundedCornerShape(32.dp)
+    val edgeColor = if (colors.isDark) Color.White.copy(alpha = 0.12f) else Color.Black.copy(alpha = 0.08f)
+    val innerGlow = if (colors.isDark) Color.White.copy(alpha = 0.04f) else Color.White.copy(alpha = 0.40f)
 
-    Column(
+    Box(
         modifier = modifier
             .fillMaxWidth()
-            .glass(
-                shape = shape,
-                tint = colors.background.copy(alpha = if (colors.isDark) 0.72f else 0.80f),
-                blur = 26.dp,
-                outline = false
-            )
-            .drawBehind {
-                val cell = size.width / entries.size
-                drawRect(
-                    brush = Brush.radialGradient(
-                        colors = listOf(hue.copy(alpha = 0.20f), Color.Transparent),
-                        center = Offset((marker() + 0.5f) * cell, 0f),
-                        radius = cell * 0.95f
-                    )
-                )
-            }
+            .navigationBarsPadding()
+            .padding(horizontal = 20.dp, vertical = 6.dp),
+        contentAlignment = Alignment.Center
     ) {
         Box(
             modifier = Modifier
+                .widthIn(max = 420.dp)
                 .fillMaxWidth()
-                .height(DockBarHeight)
-                .onSizeChanged { onExtent(it.width) }
-                .pointerInput(Unit) {
-                    detectDragGestures(
-                        onDragStart = { onDrag(-1) },
-                        onDragEnd = { onDrag(-1) },
-                        onDragCancel = { onDrag(-1) }
-                    ) { change, _ ->
-                        val idx = (change.position.x / size.width * entries.size).toInt().coerceIn(0, entries.lastIndex)
-                        if (idx != dragIndex) {
-                            onDrag(idx)
-                            if (idx != selectedIndex) {
-                                haptics()
-                                onSelect(idx)
-                            }
-                        }
-                    }
+                .height(60.dp)
+                .shadow(
+                    elevation = if (colors.isDark) 16.dp else 12.dp,
+                    shape = capsuleShape,
+                    ambientColor = if (colors.isDark) Color.Black.copy(alpha = 0.6f) else Color.Black.copy(alpha = 0.12f),
+                    spotColor = hue.copy(alpha = 0.20f)
+                )
+                .glass(
+                    shape = capsuleShape,
+                    tint = colors.background.copy(alpha = if (colors.isDark) 0.74f else 0.84f),
+                    blur = 28.dp,
+                    outline = false
+                )
+                .border(width = 0.75.dp, color = edgeColor, shape = capsuleShape)
+                .drawBehind {
+                    drawRoundRect(
+                        brush = Brush.verticalGradient(
+                            colors = listOf(innerGlow, Color.Transparent),
+                            startY = 0f,
+                            endY = size.height * 0.5f
+                        ),
+                        cornerRadius = CornerRadius(32.dp.toPx(), 32.dp.toPx())
+                    )
                 }
         ) {
-            Canvas(Modifier.fillMaxSize()) {
-                val cell = size.width / entries.size
-                val x = (marker() + 0.5f) * cell
-                drawLine(edge, Offset(26.dp.toPx(), 0.4f), Offset(size.width - 26.dp.toPx(), 0.4f), strokeWidth = 0.75.dp.toPx())
-                val pitch = 7.dp.toPx()
-                val reach = 46.dp.toPx()
-                var i = 0
-                var tx = pitch
-                while (tx < size.width - pitch) {
-                    val d = abs(tx - x) / reach
-                    val swell = exp(-(d * d).toDouble()).toFloat()
-                    val long = i % 5 == 0
-                    val base = if (long) 6.dp.toPx() else 3.dp.toPx()
-                    val length = base + swell * 11.dp.toPx()
-                    val color = Color(
-                        red = ink.red * 0.5f * (1f - swell) + hue.red * swell,
-                        green = ink.green * 0.5f * (1f - swell) + hue.green * swell,
-                        blue = ink.blue * 0.5f * (1f - swell) + hue.blue * swell,
-                        alpha = (0.10f + (if (long) 0.12f else 0f)) * (1f - swell) + swell * 0.95f
-                    )
-                    drawLine(color, Offset(tx, 1.dp.toPx()), Offset(tx, 1.dp.toPx() + length), strokeWidth = (1f + swell * 1.1f).dp.toPx(), cap = StrokeCap.Round)
-                    tx += pitch
-                    i++
-                }
-            }
+            BoxWithConstraints(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 6.dp)
+            ) {
+                val totalWidth = maxWidth
+                val cellWidth = totalWidth / entries.size
+                val pillWidth = (cellWidth - 6.dp).coerceAtMost(74.dp)
+                val pillHeight = 46.dp
+                val pillOffsetX = (cellWidth * marker()) + (cellWidth - pillWidth) / 2
+                val pillOffsetY = (maxHeight - pillHeight) / 2
 
-            Row(Modifier.fillMaxSize().padding(top = 8.dp)) {
-                entries.forEachIndexed { index, entry ->
-                    DockCell(
-                        entry = entry,
-                        active = index == selectedIndex,
-                        hue = hue,
-                        onClick = { onSelect(index) },
-                        modifier = Modifier.weight(1f).fillMaxHeight()
-                    )
+                val pillWidthPx = with(density) { pillWidth.toPx() }
+                val pillHeightPx = with(density) { pillHeight.toPx() }
+
+                Box(
+                    modifier = Modifier
+                        .offset(x = pillOffsetX, y = pillOffsetY)
+                        .size(width = pillWidth, height = pillHeight)
+                        .clip(RoundedCornerShape(23.dp))
+                        .background(
+                            brush = Brush.radialGradient(
+                                colors = listOf(
+                                    hue.copy(alpha = if (colors.isDark) 0.18f else 0.14f),
+                                    hue.copy(alpha = if (colors.isDark) 0.08f else 0.05f)
+                                ),
+                                center = Offset(pillWidthPx / 2f, pillHeightPx / 2f),
+                                radius = pillWidthPx * 0.8f
+                            )
+                        )
+                        .border(
+                            width = 0.75.dp,
+                            brush = Brush.verticalGradient(
+                                colors = listOf(
+                                    hue.copy(alpha = if (colors.isDark) 0.38f else 0.26f),
+                                    hue.copy(alpha = if (colors.isDark) 0.14f else 0.08f)
+                                )
+                            ),
+                            shape = RoundedCornerShape(23.dp)
+                        )
+                )
+
+                Row(
+                    modifier = Modifier.fillMaxSize(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    entries.forEachIndexed { index, entry ->
+                        DockCell(
+                            entry = entry,
+                            active = index == selectedIndex,
+                            hue = hue,
+                            onClick = { onSelect(index) },
+                            modifier = Modifier
+                                .weight(1f)
+                                .fillMaxHeight()
+                        )
+                    }
                 }
             }
         }
-        Box(Modifier.navigationBarsPadding())
     }
 }
 
@@ -249,113 +258,94 @@ private fun DockRail(
     hue: Color,
     traditionId: TraditionId?,
     onSelect: (Int) -> Unit,
-    onExtent: (Int) -> Unit,
-    extent: Int,
-    dragIndex: Int,
-    onDrag: (Int) -> Unit,
-    haptics: () -> Unit,
-    modifier: Modifier
+    modifier: Modifier = Modifier
 ) {
     val colors = FathomTheme.colors
     val density = LocalDensity.current
-    val leftInset = WindowInsets.systemBars.union(WindowInsets.displayCutout).asPaddingValues().calculateLeftPadding(LayoutDirection.Ltr)
-    val shape = RoundedCornerShape(topEnd = 26.dp, bottomEnd = 26.dp)
-    val edge = if (colors.isDark) Color.White.copy(alpha = 0.10f) else Color.Black.copy(alpha = 0.08f)
-    val ink = colors.textPrimary
-    val railHeight = with(density) { extent.toDp() }
-    val compact = railHeight in 1.dp..479.dp
-    val cellHeight = if (compact) 62.dp else 76.dp
+    val leftInset = WindowInsets.systemBars
+        .union(WindowInsets.displayCutout)
+        .asPaddingValues()
+        .calculateLeftPadding(LayoutDirection.Ltr)
+    val railShape = RoundedCornerShape(32.dp)
+    val edgeColor = if (colors.isDark) Color.White.copy(alpha = 0.12f) else Color.Black.copy(alpha = 0.08f)
+    val cellHeight = 64.dp
     val groupHeight = cellHeight * entries.size
 
     Box(
         modifier = modifier
             .fillMaxHeight()
             .width(DockRailWidth + leftInset)
+            .padding(start = leftInset + 12.dp, top = 20.dp, bottom = 20.dp, end = 12.dp)
+            .shadow(
+                elevation = 16.dp,
+                shape = railShape,
+                ambientColor = if (colors.isDark) Color.Black.copy(alpha = 0.6f) else Color.Black.copy(alpha = 0.12f),
+                spotColor = hue.copy(alpha = 0.20f)
+            )
             .glass(
-                shape = shape,
-                tint = colors.background.copy(alpha = if (colors.isDark) 0.72f else 0.80f),
-                blur = 26.dp,
+                shape = railShape,
+                tint = colors.background.copy(alpha = if (colors.isDark) 0.74f else 0.84f),
+                blur = 28.dp,
                 outline = false
             )
-            .onSizeChanged { onExtent(it.height) }
+            .border(width = 0.75.dp, color = edgeColor, shape = railShape)
     ) {
-        Canvas(Modifier.fillMaxSize()) {
-            val cell = with(density) { cellHeight.toPx() }
-            val top = (size.height - cell * entries.size) / 2f
-            val y = top + (marker() + 0.5f) * cell
-            drawRect(
-                brush = Brush.radialGradient(
-                    colors = listOf(hue.copy(alpha = 0.20f), Color.Transparent),
-                    center = Offset(size.width, y),
-                    radius = cell * 0.95f
-                ),
-                size = size
-            )
-            drawLine(edge, Offset(size.width - 0.4f, 26.dp.toPx()), Offset(size.width - 0.4f, size.height - 26.dp.toPx()), strokeWidth = 0.75.dp.toPx())
-            val pitch = 7.dp.toPx()
-            val reach = 46.dp.toPx()
-            var i = 0
-            var ty = pitch
-            while (ty < size.height - pitch) {
-                val d = abs(ty - y) / reach
-                val swell = exp(-(d * d).toDouble()).toFloat()
-                val long = i % 5 == 0
-                val base = if (long) 6.dp.toPx() else 3.dp.toPx()
-                val length = base + swell * 11.dp.toPx()
-                val color = Color(
-                    red = ink.red * 0.5f * (1f - swell) + hue.red * swell,
-                    green = ink.green * 0.5f * (1f - swell) + hue.green * swell,
-                    blue = ink.blue * 0.5f * (1f - swell) + hue.blue * swell,
-                    alpha = (0.10f + (if (long) 0.12f else 0f)) * (1f - swell) + swell * 0.95f
-                )
-                drawLine(color, Offset(size.width - 1.dp.toPx(), ty), Offset(size.width - 1.dp.toPx() - length, ty), strokeWidth = (1f + swell * 1.1f).dp.toPx(), cap = StrokeCap.Round)
-                ty += pitch
-                i++
-            }
+        Box(
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .statusBarsPadding()
+                .padding(top = 16.dp)
+        ) {
+            TraditionEmblem(traditionId = traditionId, color = hue, size = 26.dp)
         }
 
-        if (!compact) {
-            Box(
-                modifier = Modifier
-                    .align(Alignment.TopCenter)
-                    .statusBarsPadding()
-                    .padding(top = 22.dp, start = leftInset)
-            ) {
-                TraditionEmblem(traditionId = traditionId, color = hue, size = 28.dp)
-            }
-        }
-
-        Column(
+        BoxWithConstraints(
             modifier = Modifier
                 .align(Alignment.Center)
-                .padding(start = leftInset, end = 4.dp)
                 .height(groupHeight)
-                .pointerInput(Unit) {
-                    detectDragGestures(
-                        onDragStart = { onDrag(-1) },
-                        onDragEnd = { onDrag(-1) },
-                        onDragCancel = { onDrag(-1) }
-                    ) { change, _ ->
-                        val idx = (change.position.y / size.height * entries.size).toInt().coerceIn(0, entries.lastIndex)
-                        if (idx != dragIndex) {
-                            onDrag(idx)
-                            if (idx != selectedIndex) {
-                                haptics()
-                                onSelect(idx)
-                            }
-                        }
-                    }
-                },
-            verticalArrangement = Arrangement.Center
+                .fillMaxWidth()
+                .padding(vertical = 4.dp)
         ) {
-            entries.forEachIndexed { index, entry ->
-                DockCell(
-                    entry = entry,
-                    active = index == selectedIndex,
-                    hue = hue,
-                    onClick = { onSelect(index) },
-                    modifier = Modifier.fillMaxWidth().height(cellHeight)
-                )
+            val pillWidth = 52.dp
+            val pillHeight = 52.dp
+            val pillOffsetY = (cellHeight * marker()) + (cellHeight - pillHeight) / 2
+            val pillOffsetX = (maxWidth - pillWidth) / 2
+
+            Box(
+                modifier = Modifier
+                    .offset(x = pillOffsetX, y = pillOffsetY)
+                    .size(width = pillWidth, height = pillHeight)
+                    .clip(CircleShape)
+                    .background(
+                        brush = Brush.radialGradient(
+                            colors = listOf(
+                                hue.copy(alpha = if (colors.isDark) 0.18f else 0.14f),
+                                hue.copy(alpha = if (colors.isDark) 0.08f else 0.05f)
+                            )
+                        )
+                    )
+                    .border(
+                        width = 0.75.dp,
+                        color = hue.copy(alpha = if (colors.isDark) 0.38f else 0.26f),
+                        shape = CircleShape
+                    )
+            )
+
+            Column(
+                modifier = Modifier.fillMaxSize(),
+                verticalArrangement = Arrangement.Center
+            ) {
+                entries.forEachIndexed { index, entry ->
+                    DockCell(
+                        entry = entry,
+                        active = index == selectedIndex,
+                        hue = hue,
+                        onClick = { onSelect(index) },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(cellHeight)
+                    )
+                }
             }
         }
     }
@@ -367,36 +357,71 @@ private fun DockCell(
     active: Boolean,
     hue: Color,
     onClick: () -> Unit,
-    modifier: Modifier
+    modifier: Modifier = Modifier
 ) {
     val colors = FathomTheme.colors
-    val tint by animateColorAsState(
-        if (active) hue else colors.textSecondary,
-        spring(stiffness = 500f),
-        label = "dock_tint"
+    val iconTint by animateColorAsState(
+        targetValue = if (active) hue else colors.textTertiary.copy(alpha = 0.80f),
+        animationSpec = spring(stiffness = 500f),
+        label = "dock_icon_tint"
     )
-    val label by animateColorAsState(
-        if (active) colors.textPrimary else colors.textTertiary,
-        spring(stiffness = 500f),
-        label = "dock_label"
+    val labelColor by animateColorAsState(
+        targetValue = if (active) colors.textPrimary else colors.textTertiary.copy(alpha = 0.70f),
+        animationSpec = spring(stiffness = 500f),
+        label = "dock_label_color"
     )
-    val lift by animateDpAsState(if (active) (-2).dp else 0.dp, FathomMotion.bounce(), label = "dock_lift")
+    val iconScale by animateFloatAsState(
+        targetValue = if (active) 1.06f else 1.0f,
+        animationSpec = FathomMotion.bounce(),
+        label = "dock_icon_scale"
+    )
+    val pipAlpha by animateFloatAsState(
+        targetValue = if (active) 1.0f else 0f,
+        animationSpec = spring(stiffness = 450f),
+        label = "dock_pip_alpha"
+    )
 
     Column(
-        modifier = modifier.tappable(scale = 0.9f, haptic = !active, role = Role.Tab, onClick = { if (!active) onClick() }),
+        modifier = modifier.tappable(
+            scale = 0.93f,
+            haptic = !active,
+            role = Role.Tab,
+            onClick = { if (!active) onClick() }
+        ),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterVertically)
+        verticalArrangement = Arrangement.Center
     ) {
         Icon(
             imageVector = if (active) entry.iconActive else entry.icon,
             contentDescription = entry.label,
-            tint = tint,
-            modifier = Modifier.size(24.dp).offset(y = lift)
+            tint = iconTint,
+            modifier = Modifier
+                .size(20.dp)
+                .graphicsLayer {
+                    scaleX = iconScale
+                    scaleY = iconScale
+                }
         )
+
+        Spacer(Modifier.height(2.dp))
+
         Text(
             text = entry.label,
-            style = FathomTheme.typography.caption.copy(fontSize = 11.sp),
-            color = label
+            style = FathomTheme.typography.caption.copy(
+                fontSize = 10.5.sp,
+                fontWeight = if (active) FontWeight.Medium else FontWeight.Normal,
+                letterSpacing = 0.3.sp
+            ),
+            color = labelColor
+        )
+
+        Box(
+            modifier = Modifier
+                .padding(top = 2.dp)
+                .size(width = 8.dp, height = 2.dp)
+                .graphicsLayer { alpha = pipAlpha }
+                .clip(RoundedCornerShape(1.dp))
+                .background(hue)
         )
     }
 }
