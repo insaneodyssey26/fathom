@@ -19,4 +19,5 @@ captures
 node_modules/
 scripts/.cache/
 androidApp/release/
+.freebuff/
 
