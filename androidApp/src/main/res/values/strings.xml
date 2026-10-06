@@ -1,9 +1,7 @@
 <resources>
     <string name="app_name">Fathom</string>
     <string name="widget_daily_wisdom_title">Daily Sacred Wisdom</string>
-    <string name="widget_daily_wisdom_description">Contemplative wisdom passage on your home screen with one-tap refresh.</string>
-    <string name="widget_compact_wisdom_title">Wisdom Jewel (Compact)</string>
-    <string name="widget_compact_wisdom_description">Minimalist sacred passage card for compact home screen spaces.</string>
-    <string name="widget_horizon_wisdom_title">Wisdom Horizon (Banner)</string>
-    <string name="widget_horizon_wisdom_description">Quiet horizontal passage banner with tradition emblem.</string>
+    <string name="widget_daily_wisdom_description">Contemplative wisdom passage on your home screen with scrollable text, in-place exegesis, and one-tap bookmarking.</string>
+    <string name="widget_sanctuary_streak_title">Sanctuary Streak &amp; Rituals</string>
+    <string name="widget_sanctuary_streak_description">Track your daily reading streak, weekly contemplative practice, and sacred rituals directly on your home screen.</string>
 </resources>

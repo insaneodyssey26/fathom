@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_item_root"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingTop="3dp"
+    android:paddingBottom="5dp">
+
+    <TextView
+        android:id="@+id/widget_item_label"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:fontFamily="@font/geist_mono"
+        android:fontVariationSettings="'wght' 500"
+        android:letterSpacing="0.10"
+        android:textColor="#9DB0CC"
+        android:textSize="9sp"
+        android:visibility="gone" />
+
+    <TextView
+        android:id="@+id/widget_item_text"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:fontFamily="@font/newsreader"
+        android:fontVariationSettings="'wght' 400, 'opsz' 24"
+        android:lineSpacingMultiplier="1.18"
+        android:textColor="#F1EADD"
+        android:textSize="15.5sp" />
+</LinearLayout>
