@@ -41,6 +41,8 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -49,6 +51,7 @@ import com.adamglin.phosphoricons.Fill
 import com.adamglin.phosphoricons.Light
 import com.adamglin.phosphoricons.fill.Pause as PauseFill
 import com.adamglin.phosphoricons.fill.Play as PlayFill
+import com.adamglin.phosphoricons.light.SpeakerHigh
 import com.adamglin.phosphoricons.light.X
 import com.masum.fathom.core.audio.LocalSacredAudioEngine
 import com.masum.fathom.core.audio.RecitationMode
@@ -116,31 +119,32 @@ fun SacredAudioPlayerBar(
         modifier = modifier
     ) {
         if (current == null) return@AnimatedVisibility
-        val playerShape = RoundedCornerShape(28.dp)
+        val playerShape = RoundedCornerShape(26.dp)
         val edgeColor = if (colors.isDark) Color.White.copy(alpha = 0.12f) else Color.Black.copy(alpha = 0.08f)
-        val innerGlow = if (colors.isDark) Color.White.copy(alpha = 0.04f) else Color.White.copy(alpha = 0.35f)
+        val innerGlow = if (colors.isDark) Color.White.copy(alpha = 0.05f) else Color.White.copy(alpha = 0.40f)
+        val activeVerseSnippet = (if (original) current.originalText else current.translation) ?: current.translation
 
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .then(if (!isNavbarVisible) Modifier.navigationBarsPadding() else Modifier)
-                .padding(horizontal = 20.dp, vertical = 4.dp),
+                .padding(horizontal = 16.dp, vertical = 6.dp),
             contentAlignment = Alignment.Center
         ) {
             Column(
                 modifier = Modifier
-                    .widthIn(max = 420.dp)
+                    .widthIn(max = 440.dp)
                     .fillMaxWidth()
                     .shadow(
-                        elevation = if (colors.isDark) 16.dp else 12.dp,
+                        elevation = if (colors.isDark) 20.dp else 14.dp,
                         shape = playerShape,
-                        ambientColor = if (colors.isDark) Color.Black.copy(alpha = 0.6f) else Color.Black.copy(alpha = 0.12f),
-                        spotColor = tone.hue.copy(alpha = 0.20f)
+                        ambientColor = if (colors.isDark) Color.Black.copy(alpha = 0.65f) else Color.Black.copy(alpha = 0.12f),
+                        spotColor = tone.hue.copy(alpha = 0.28f)
                     )
                     .glass(
                         shape = playerShape,
-                        tint = colors.background.copy(alpha = if (colors.isDark) 0.76f else 0.86f),
-                        blur = 28.dp,
+                        tint = colors.surfaceElevated.copy(alpha = if (colors.isDark) 0.88f else 0.94f),
+                        blur = 32.dp,
                         outline = false
                     )
                     .border(width = 0.75.dp, color = edgeColor, shape = playerShape)
@@ -149,67 +153,130 @@ fun SacredAudioPlayerBar(
                             brush = Brush.verticalGradient(
                                 colors = listOf(innerGlow, Color.Transparent),
                                 startY = 0f,
-                                endY = size.height * 0.4f
+                                endY = size.height * 0.35f
                             ),
-                            cornerRadius = CornerRadius(28.dp.toPx(), 28.dp.toPx())
+                            cornerRadius = CornerRadius(26.dp.toPx(), 26.dp.toPx())
                         )
                     }
-                    .padding(start = 16.dp, end = 12.dp, top = 12.dp, bottom = 4.dp)
+                    .padding(horizontal = 16.dp, vertical = 14.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Equalizer(color = tone.hue, size = 18.dp, active = playing)
-
-                    Column(
-                        modifier = Modifier.weight(1f),
-                        verticalArrangement = Arrangement.spacedBy(1.dp)
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
+                        Equalizer(color = tone.hue, size = 15.dp, active = playing)
                         MonoLabel(
                             text = current.canonicalReference,
                             color = tone.hue
                         )
-                        Text(
-                            text = (if (original) current.originalText else current.translation) ?: current.translation,
-                            style = FathomTheme.typography.commentaryBody.copy(
-                                fontFamily = ScriptureFamily,
-                                fontSize = 14.5.sp,
-                                lineHeight = 19.sp
-                            ),
-                            color = colors.textPrimary,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(6.dp))
+                                .background(tone.hue.copy(alpha = 0.12f))
+                                .padding(horizontal = 6.dp, vertical = 2.dp)
+                        ) {
+                            Text(
+                                text = if (original) "ORIGINAL" else "TRANSLATION",
+                                style = FathomTheme.typography.caption.copy(
+                                    fontSize = 9.sp,
+                                    letterSpacing = 0.8.sp,
+                                    fontWeight = FontWeight.SemiBold
+                                ),
+                                color = tone.hue
+                            )
+                        }
                     }
 
-                    PlayerPillButton(text = if (original) "Orig" else "Eng") {
-                        haptics.light()
-                        audio.setMode(
-                            when (mode) {
-                                RecitationMode.TRANSLATION_ONLY -> RecitationMode.ORIGINAL_ONLY
-                                RecitationMode.ORIGINAL_ONLY -> RecitationMode.FULL
-                                RecitationMode.FULL -> RecitationMode.TRANSLATION_ONLY
-                            }
+                    Box(
+                        modifier = Modifier
+                            .size(28.dp)
+                            .clip(CircleShape)
+                            .background(colors.surfaceElevated.copy(alpha = 0.50f))
+                            .border(0.75.dp, colors.hairline, CircleShape)
+                            .tappable(scale = 0.88f, haptic = false) {
+                                haptics.light()
+                                audio.stop()
+                            },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = PhosphorIcons.Light.X,
+                            contentDescription = "Stop recitation",
+                            tint = colors.textSecondary,
+                            modifier = Modifier.size(14.dp)
                         )
                     }
+                }
 
-                    PlayerPillButton(text = "${String.format(Locale.US, "%.1f", speed)}×") {
-                        haptics.light()
-                        audio.setSpeed(
-                            when {
-                                speed <= 0.85f -> 1.0f
-                                speed <= 1.05f -> 1.2f
-                                speed <= 1.25f -> 1.5f
-                                else -> 0.8f
+                Text(
+                    text = activeVerseSnippet,
+                    style = FathomTheme.typography.commentaryBody.copy(
+                        fontFamily = ScriptureFamily,
+                        fontSize = 14.5.sp,
+                        lineHeight = 20.sp,
+                        fontStyle = if (original) FontStyle.Italic else FontStyle.Normal
+                    ),
+                    color = colors.textPrimary,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+
+                Seekline(
+                    progress = progress,
+                    onSeek = audio::seekTo,
+                    color = tone.hue,
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        PlayerPillButton(
+                            text = when (mode) {
+                                RecitationMode.TRANSLATION_ONLY -> "English"
+                                RecitationMode.ORIGINAL_ONLY -> "Original"
+                                RecitationMode.FULL -> "Dual"
                             }
-                        )
+                        ) {
+                            haptics.light()
+                            audio.setMode(
+                                when (mode) {
+                                    RecitationMode.TRANSLATION_ONLY -> RecitationMode.ORIGINAL_ONLY
+                                    RecitationMode.ORIGINAL_ONLY -> RecitationMode.FULL
+                                    RecitationMode.FULL -> RecitationMode.TRANSLATION_ONLY
+                                }
+                            )
+                        }
+
+                        PlayerPillButton(text = "${String.format(Locale.US, "%.1f", speed)}×") {
+                            haptics.light()
+                            audio.setSpeed(
+                                when {
+                                    speed <= 0.85f -> 1.0f
+                                    speed <= 1.05f -> 1.2f
+                                    speed <= 1.25f -> 1.5f
+                                    else -> 0.8f
+                                }
+                            )
+                        }
                     }
 
                     Box(
                         modifier = Modifier
                             .size(38.dp)
+                            .shadow(elevation = 6.dp, shape = CircleShape, spotColor = tone.hue.copy(alpha = 0.40f))
                             .clip(CircleShape)
                             .background(tone.hue)
                             .tappable(scale = 0.90f, haptic = false) {
@@ -222,35 +289,10 @@ fun SacredAudioPlayerBar(
                             imageVector = if (playing) PhosphorIcons.Fill.PauseFill else PhosphorIcons.Fill.PlayFill,
                             contentDescription = if (playing) "Pause recitation" else "Play recitation",
                             tint = tone.onHue,
-                            modifier = Modifier.size(16.dp)
-                        )
-                    }
-
-                    Box(
-                        modifier = Modifier
-                            .size(32.dp)
-                            .clip(CircleShape)
-                            .tappable(scale = 0.88f, haptic = false) {
-                                haptics.light()
-                                audio.stop()
-                            },
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = PhosphorIcons.Light.X,
-                            contentDescription = "Stop",
-                            tint = colors.textSecondary,
-                            modifier = Modifier.size(16.dp)
+                            modifier = Modifier.size(17.dp)
                         )
                     }
                 }
-
-                Seekline(
-                    progress = progress,
-                    onSeek = audio::seekTo,
-                    color = tone.hue,
-                    modifier = Modifier.padding(horizontal = 4.dp)
-                )
             }
         }
     }
@@ -265,16 +307,20 @@ private fun PlayerPillButton(
     Box(
         modifier = Modifier
             .clip(RoundedCornerShape(50))
-            .background(colors.surfaceElevated.copy(alpha = 0.40f))
+            .background(colors.surfaceElevated.copy(alpha = 0.50f))
             .border(0.75.dp, colors.hairline, RoundedCornerShape(50))
             .tappable(scale = 0.92f, haptic = false, onClick = onClick)
-            .padding(horizontal = 9.dp, vertical = 5.dp),
+            .padding(horizontal = 11.dp, vertical = 5.dp),
         contentAlignment = Alignment.Center
     ) {
         Text(
             text = text,
-            style = FathomTheme.typography.caption.copy(fontSize = 11.sp),
-            color = colors.textSecondary
+            style = FathomTheme.typography.caption.copy(
+                fontSize = 11.5.sp,
+                fontWeight = FontWeight.Medium
+            ),
+            color = colors.textPrimary
         )
     }
 }
+

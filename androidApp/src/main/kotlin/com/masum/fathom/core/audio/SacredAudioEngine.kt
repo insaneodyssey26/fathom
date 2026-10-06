@@ -266,9 +266,14 @@ class SacredAudioEngine(private val context: Context) {
     }
 
     private fun sanitizeText(text: String): String {
-        return text.replace(Regex("\\[\\d+\\]"), "")
-            .replace(Regex("\\(\\d+\\)"), "")
+        return text
+            .replace(Regex("(।।|॥|\\|\\||[।|])\\s*[0-9०-९]+([.:-][0-9०-९]+)?\\s*(।।|॥|\\|\\||[।|])?"), "")
+            .replace(Regex("\\[\\s*[0-9०-९]+([.:-][0-9०-९]+)?\\s*\\]"), "")
+            .replace(Regex("\\(\\s*[0-9०-९]+([.:-][0-9०-९]+)?\\s*\\)"), "")
+            .replace(Regex("\\b[0-9०-९]+[:.-][0-9०-९]+\\b"), "")
+            .replace(Regex("(।।|॥|\\|\\||[।|]|\\s)+[0-9०-९]+$"), "")
             .replace(Regex("—.*"), "")
+            .replace(Regex("\\s+"), " ")
             .trim()
     }
 
