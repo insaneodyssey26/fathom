@@ -31,6 +31,7 @@ class ScheduleRestoreReceiver : BroadcastReceiver() {
             DailyNotificationScheduler.scheduleDailyReminder(context, settings.notificationHour, settings.notificationMinute)
         }
         UpdateCheckScheduler.sync(context, settings.updateAlertsEnabled)
+        com.masum.fathom.core.widget.DailyWisdomWidgetProvider.updateAllWidgets(context)
     }
 }
 
