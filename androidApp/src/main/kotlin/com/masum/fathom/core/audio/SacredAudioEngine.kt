@@ -246,9 +246,23 @@ class SacredAudioEngine(private val context: Context) {
     }
 
     private fun cleanPhonetics(raw: String): String {
-        val parts = raw.split("\n\n")
-        val clean = parts.firstOrNull { it.isNotBlank() } ?: raw
-        return sanitizeText(clean)
+        val blocks = raw.split(Regex("\n{2,}"))
+        val nonLatinBlocks = blocks.filter { block ->
+            block.isNotBlank() && block.any { char ->
+                val unicodeBlock = Character.UnicodeBlock.of(char)
+                unicodeBlock != Character.UnicodeBlock.BASIC_LATIN &&
+                unicodeBlock != Character.UnicodeBlock.LATIN_1_SUPPLEMENT &&
+                unicodeBlock != Character.UnicodeBlock.LATIN_EXTENDED_A &&
+                unicodeBlock != Character.UnicodeBlock.LATIN_EXTENDED_B &&
+                unicodeBlock != Character.UnicodeBlock.LATIN_EXTENDED_ADDITIONAL
+            }
+        }
+        val content = if (nonLatinBlocks.isNotEmpty()) {
+            nonLatinBlocks.joinToString("\n\n")
+        } else {
+            blocks.firstOrNull { it.isNotBlank() } ?: raw
+        }
+        return sanitizeText(content)
     }
 
     private fun sanitizeText(text: String): String {

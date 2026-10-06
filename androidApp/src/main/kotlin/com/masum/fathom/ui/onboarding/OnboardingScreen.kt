@@ -1,5 +1,6 @@
 package com.masum.fathom.ui.onboarding
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
@@ -71,12 +72,12 @@ import androidx.compose.runtime.CompositionLocalProvider
 private data class Lineage(val id: String, val title: String, val canon: String, val tradition: TraditionId?)
 
 private val Lineages = listOf(
+    Lineage("All Traditions", "All traditions", "Wander freely", null),
     Lineage("Sanatana Dharma", "Sanatana Dharma", "Bhagavad Gita · Upanishads", TraditionId.HINDUISM),
     Lineage("Islam", "Islam", "The Holy Quran", TraditionId.ISLAM),
     Lineage("Christianity", "Christianity", "The Holy Bible", TraditionId.CHRISTIANITY),
     Lineage("Buddhism", "Buddhism", "Dhammapada · Zen", TraditionId.BUDDHISM),
-    Lineage("Taoism", "Taoism", "Tao Te Ching", TraditionId.TAOISM),
-    Lineage("All Traditions", "All traditions", "Wander freely", null)
+    Lineage("Taoism", "Taoism", "Tao Te Ching", TraditionId.TAOISM)
 )
 
 private val Headlines = listOf(
@@ -100,6 +101,10 @@ fun OnboardingScreen(
     val chosen = Lineages.first { it.id == selected }
     val tone = rememberTone(if (step >= 1) chosen.tradition else null)
     val lastStep = Headlines.lastIndex
+
+    BackHandler(enabled = step > 0) {
+        step -= 1
+    }
 
     fun advance() {
         if (step < lastStep) {
@@ -166,7 +171,7 @@ fun OnboardingScreen(
                                     onSelect = {
                                         haptics.light()
                                         selected = it
-                                        personalize = it != "All Traditions"
+                                        personalize = false
                                     },
                                     personalize = personalize,
                                     onPersonalize = { haptics.light(); personalize = it },
@@ -197,7 +202,7 @@ fun OnboardingScreen(
                                 onSelect = {
                                     haptics.light()
                                     selected = it
-                                    personalize = it != "All Traditions"
+                                    personalize = false
                                 },
                                 personalize = personalize,
                                 onPersonalize = { haptics.light(); personalize = it },
@@ -373,16 +378,6 @@ private fun FeedChoice(chosen: Lineage, personalize: Boolean, onPersonalize: (Bo
     val colors = FathomTheme.colors
     val specific = chosen.tradition != null
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        if (specific) {
-            ChoiceRow(
-                tradition = chosen.tradition,
-                title = "Mainly ${chosen.title}",
-                body = "Most verses from your tradition, with the occasional voice from elsewhere.",
-                selected = personalize,
-                onClick = { onPersonalize(true) }
-            )
-            Hairline()
-        }
         ChoiceRow(
             tradition = null,
             title = "Every scripture",
@@ -390,6 +385,16 @@ private fun FeedChoice(chosen: Lineage, personalize: Boolean, onPersonalize: (Bo
             selected = !personalize || !specific,
             onClick = { onPersonalize(false) }
         )
+        if (specific) {
+            Hairline()
+            ChoiceRow(
+                tradition = chosen.tradition,
+                title = "Mainly ${chosen.title}",
+                body = "Most verses from your tradition, with the occasional voice from elsewhere.",
+                selected = personalize,
+                onClick = { onPersonalize(true) }
+            )
+        }
         Spacer(Modifier.height(18.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.Top) {
             Icon(PhosphorIcons.Light.LockSimple, null, tint = colors.textTertiary, modifier = Modifier.size(18.dp).padding(top = 2.dp))
