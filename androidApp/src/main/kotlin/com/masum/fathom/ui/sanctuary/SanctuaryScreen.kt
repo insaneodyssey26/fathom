@@ -405,12 +405,11 @@ fun SanctuaryScreen(
                                     else -> Unit
                                 }
                                 AboutRow(
-                                    title = if (subscription.isPro) "Patron Status: Consecrated (Pro)" else "Patron Status: Free Tier",
-                                    caption = "Tap to toggle Patron mode for instant testing"
+                                    title = if (subscription.isPro) "Patron Status: Consecrated (${subscription.tier.title})" else "Patron Status: Free Tier",
+                                    caption = if (subscription.isPro) "Active Sanctuary license · Tap to manage" else "Unlock all sacred themes, audio & pathways"
                                 ) {
-                                    val isNowPro = subManager.togglePro()
-                                    haptics.success()
-                                    Toast.makeText(context, if (isNowPro) "Patron Mode Unlocked (Lifetime)" else "Reset to Free Tier", Toast.LENGTH_SHORT).show()
+                                    haptics.light()
+                                    openPaywall()
                                 }
                                 AboutRow("Privacy Policy", "How your data is handled") { openLegal(LegalDoc.PRIVACY) }
                                 AboutRow("Terms of Use", "The ground rules") { openLegal(LegalDoc.TERMS) }

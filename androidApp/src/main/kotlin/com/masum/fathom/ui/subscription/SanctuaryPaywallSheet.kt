@@ -44,6 +44,8 @@ import com.masum.fathom.ui.design.SheetHeader
 import com.masum.fathom.ui.design.rememberSheetCloser
 import com.masum.fathom.ui.design.tappable
 import com.masum.fathom.ui.theme.FathomTheme
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
 
 private data class PatronPerk(val number: String, val title: String, val body: String)
 
@@ -62,6 +64,7 @@ fun SanctuaryPaywallSheet(onDismiss: () -> Unit) {
     val haptics = LocalFathomHaptics.current
     val manager = LocalSubscriptionManager.current
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     val colors = FathomTheme.colors
     val tone = FathomTheme.tone
     val typography = FathomTheme.typography
@@ -71,16 +74,18 @@ fun SanctuaryPaywallSheet(onDismiss: () -> Unit) {
     if (showRestoreSheet) {
         RestorePurchaseSheet(
             onDismiss = { showRestoreSheet = false },
-            onRestore = { email ->
-                val result = manager.restorePurchasesWithEmail(email)
-                result.onSuccess {
-                    haptics.success()
-                    Toast.makeText(context, "Patron status restored successfully.", Toast.LENGTH_LONG).show()
-                    showRestoreSheet = false
-                    onDismiss()
-                }.onFailure { err ->
-                    haptics.error()
-                    Toast.makeText(context, err.message ?: "Failed to restore", Toast.LENGTH_SHORT).show()
+            onRestore = { input ->
+                scope.launch {
+                    val result = manager.activateWithKey(input, if (input.contains("@")) input else null)
+                    if (result.isValid) {
+                        haptics.success()
+                        Toast.makeText(context, "Welcome, Fathom Patron. Sanctuary unlocked.", Toast.LENGTH_LONG).show()
+                        showRestoreSheet = false
+                        onDismiss()
+                    } else {
+                        haptics.error()
+                        Toast.makeText(context, result.errorMessage ?: "License key not found or expired.", Toast.LENGTH_SHORT).show()
+                    }
                 }
             }
         )
@@ -240,15 +245,8 @@ private fun RestorePurchaseSheet(onDismiss: () -> Unit, onRestore: (String) -> U
             style = ButtonStyle.Tone,
             modifier = Modifier.fillMaxWidth()
         )
-        Spacer(Modifier.height(10.dp))
-        FathomButton(
-            text = "Instant Test Mode Unlock (Lifetime)",
-            onClick = { onRestore("patron_tester@fathom.app") },
-            style = ButtonStyle.Ghost,
-            modifier = Modifier.fillMaxWidth()
-        )
         if (manager.subscriptionState.value.isPro) {
-            Spacer(Modifier.height(6.dp))
+            Spacer(Modifier.height(10.dp))
             FathomButton(
                 text = "Reset to Free Tier",
                 onClick = {

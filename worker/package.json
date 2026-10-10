@@ -1,0 +1,13 @@
+{
+  "name": "fathom-license-worker",
+  "version": "1.0.0",
+  "description": "Fathom Dodo Payments & Sanctuary+ Multi-Device License Engine",
+  "main": "fathom_license_worker.js",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy"
+  },
+  "devDependencies": {
+    "wrangler": "^3.80.0"
+  }
+}

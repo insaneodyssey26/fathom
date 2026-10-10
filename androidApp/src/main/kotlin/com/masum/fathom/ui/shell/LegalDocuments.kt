@@ -61,9 +61,9 @@ object LegalDocuments {
             )
         ),
         LegalSection(
-            "Purchases",
+            "Purchases & Subscriptions",
             listOf(
-                "During closed testing nothing is charged. If paid features are introduced, payment will be handled by Google Play or the named payment provider, and Fathom will not receive your card details."
+                "Payments for Fathom Patron subscriptions and lifetime licenses are processed securely by Dodo Payments as the Merchant of Record. Fathom does not store or process your credit card numbers or banking credentials."
             )
         ),
         LegalSection(
@@ -113,9 +113,9 @@ object LegalDocuments {
             )
         ),
         LegalSection(
-            "Closed testing and availability",
+            "Subscriptions & Licensing",
             listOf(
-                "Fathom is currently in closed testing. Features may change, break or be removed, and subscription screens show preview pricing that does not charge you. The app is provided as is, without warranties of any kind, and to the extent the law allows the developer is not liable for losses arising from its use."
+                "Patron access provides access to premium themes, soundscapes, complete pathways curriculum, and studio narration. Subscriptions renew automatically unless cancelled prior to the end of the billing period. Digital licenses allow activation on up to two personal devices."
             )
         ),
         LegalSection(

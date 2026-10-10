@@ -1,0 +1,10 @@
+name = "fathom-license-api"
+main = "fathom_license_worker.js"
+compatibility_date = "2024-09-23"
+
+kv_namespaces = [
+  { binding = "FATHOM_LICENSES", id = "FATHOM_LICENSES_KV_ID", preview_id = "FATHOM_LICENSES_PREVIEW_ID" }
+]
+
+[vars]
+LICENSE_SIGNING_SECRET = "fathom_sanctuary_master_secret_2026"

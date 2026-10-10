@@ -18,22 +18,22 @@ enum class SubscriptionTier(
     MONTHLY(
         id = "fathom_monthly",
         title = "Monthly Seeker",
-        priceDisplay = "$3.99 / ₹99",
+        priceDisplay = "$4.99",
         billingPeriod = "Billed monthly",
-        equivalentMonthlyPrice = "$3.99 / mo"
+        equivalentMonthlyPrice = "$4.99 / mo"
     ),
     ANNUAL(
         id = "fathom_annual",
         title = "Annual Sanctuary",
-        priceDisplay = "$19.99 / ₹499",
-        billingPeriod = "Billed annually ($19.99/yr)",
-        equivalentMonthlyPrice = "$1.66 / mo",
-        badgeLabel = "BEST VALUE · 60% OFF"
+        priceDisplay = "$48.99",
+        billingPeriod = "Billed annually ($48.99/yr)",
+        equivalentMonthlyPrice = "$4.08 / mo",
+        badgeLabel = "BEST VALUE · 18% OFF"
     ),
     LIFETIME(
         id = "fathom_lifetime",
         title = "Patron Consecration",
-        priceDisplay = "$39.99 / ₹999",
+        priceDisplay = "$79.99",
         billingPeriod = "One-time purchase",
         equivalentMonthlyPrice = "Forever Access",
         badgeLabel = "PATRON'S CHOICE · NO SUBSCRIPTION"
