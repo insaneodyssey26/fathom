@@ -131,8 +131,13 @@ fun traditionIdForLabel(label: String?): TraditionId? = when (label) {
 }
 
 @Composable
-fun FathomApp(graph: AppGraph, launchPassageId: String?) {
+fun FathomApp(
+    graph: AppGraph,
+    launchPassageId: String?,
+    subscriptionManager: SubscriptionManager? = null
+) {
     val context = LocalContext.current
+    val subManager = subscriptionManager ?: remember { SubscriptionManager(context) }
 
     val preferences = remember { SanctuaryPreferences(context) }
     val dataEngine = remember { SanctuaryDataEngine(context, graph.userRepository, graph.passageRepository) }
@@ -166,8 +171,7 @@ fun FathomApp(graph: AppGraph, launchPassageId: String?) {
     val searchState by searchViewModel.uiState.collectAsStateWithLifecycle()
     val libraryState by libraryViewModel.uiState.collectAsStateWithLifecycle()
 
-    val subscriptionManager = remember { SubscriptionManager(context) }
-    val subscriptionState by subscriptionManager.subscriptionState.collectAsState()
+    val subscriptionState by subManager.subscriptionState.collectAsState()
     val updateEngine = remember { AppUpdateEngine(context) }
     DisposableEffect(updateEngine) {
         updateEngine.checkForUpdates(manual = false)
@@ -221,7 +225,7 @@ fun FathomApp(graph: AppGraph, launchPassageId: String?) {
         LocalOpenSanctuary provides { navigator.push(AppRoute.Settings) },
         LocalOpenMore provides { showMore = true },
         LocalOpenLegal provides { navigator.push(AppRoute.Legal(it)) },
-        LocalSubscriptionManager provides subscriptionManager,
+        LocalSubscriptionManager provides subManager,
         LocalSubscriptionState provides subscriptionState,
         LocalOpenPaywall provides { showPaywall = true },
         LocalAppUpdateEngine provides updateEngine

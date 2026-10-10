@@ -21,55 +21,107 @@ data class FathomColors(
 }
 
 val NocturneColors = FathomColors(
-    background = Color(0xFF0D0B0A),
-    surface = Color(0xFF171412),
-    surfaceElevated = Color(0xFF231F1C),
-    textPrimary = Color(0xFFF3EEE6),
-    textSecondary = Color(0xFFA79E90),
-    textTertiary = Color(0xFF6E6558),
-    accent = Color(0xFFD8B97E),
+    background = Color(0xFF050505),
+    surface = Color(0xFF141210),
+    surfaceElevated = Color(0xFF1F1B16),
+    textPrimary = Color(0xFFF5EFE6),
+    textSecondary = Color(0xFFA99E90),
+    textTertiary = Color(0xFF6F6558),
+    accent = Color(0xFFDFB86C),
     onAccent = Color(0xFF161109),
-    hairline = Color(0xFF2C2620),
+    hairline = Color(0xFF2A241C),
     isDark = true
 )
 
 val VellumColors = FathomColors(
     background = Color(0xFFF5EFE3),
-    surface = Color(0xFFECE3D2),
-    surfaceElevated = Color(0xFFE2D7C2),
-    textPrimary = Color(0xFF1E1914),
-    textSecondary = Color(0xFF5C5245),
-    textTertiary = Color(0xFF8C7F6E),
-    accent = Color(0xFF8B5628),
-    onAccent = Color(0xFFFBF6EA),
-    hairline = Color(0xFFD6C9B0),
+    surface = Color(0xFFE9DEC9),
+    surfaceElevated = Color(0xFFDDCFB5),
+    textPrimary = Color(0xFF2B2015),
+    textSecondary = Color(0xFF665440),
+    textTertiary = Color(0xFF968168),
+    accent = Color(0xFF9E5722),
+    onAccent = Color(0xFFFFF8EC),
+    hairline = Color(0xFFD1C2A3),
     isDark = false
 )
 
 val AbyssColors = FathomColors(
-    background = Color(0xFF0B131E),
-    surface = Color(0xFF121D2C),
-    surfaceElevated = Color(0xFF1B293C),
-    textPrimary = Color(0xFFEAF1F9),
-    textSecondary = Color(0xFF94A7BF),
-    textTertiary = Color(0xFF576E8A),
-    accent = Color(0xFF7EB0DE),
-    onAccent = Color(0xFF08111B),
-    hairline = Color(0xFF22354E),
+    background = Color(0xFF0A1526),
+    surface = Color(0xFF132238),
+    surfaceElevated = Color(0xFF1D324F),
+    textPrimary = Color(0xFFEDF5FD),
+    textSecondary = Color(0xFF98B3D3),
+    textTertiary = Color(0xFF5B789C),
+    accent = Color(0xFF5EA8F0),
+    onAccent = Color(0xFF05111E),
+    hairline = Color(0xFF233B5C),
     isDark = true
 )
 
 val MossColors = FathomColors(
-    background = Color(0xFF0C1610),
-    surface = Color(0xFF14221A),
-    surfaceElevated = Color(0xFF1D3025),
-    textPrimary = Color(0xFFEBF3EA),
-    textSecondary = Color(0xFF9CB6A0),
-    textTertiary = Color(0xFF5D7B64),
-    accent = Color(0xFF8ECA92),
-    onAccent = Color(0xFF0B1209),
-    hairline = Color(0xFF253E30),
+    background = Color(0xFF0B1F14),
+    surface = Color(0xFF142F20),
+    surfaceElevated = Color(0xFF1E432E),
+    textPrimary = Color(0xFFEDF8EE),
+    textSecondary = Color(0xFFA2CEAA),
+    textTertiary = Color(0xFF5F8B68),
+    accent = Color(0xFF52C478),
+    onAccent = Color(0xFF06140A),
+    hairline = Color(0xFF244F35),
     isDark = true
+)
+
+val SaharaColors = FathomColors(
+    background = Color(0xFF22140D),
+    surface = Color(0xFF331E14),
+    surfaceElevated = Color(0xFF462A1D),
+    textPrimary = Color(0xFFFDF1E8),
+    textSecondary = Color(0xFFCEAA97),
+    textTertiary = Color(0xFF8E6B58),
+    accent = Color(0xFFF0783A),
+    onAccent = Color(0xFF1A0A04),
+    hairline = Color(0xFF523324),
+    isDark = true
+)
+
+val TwilightColors = FathomColors(
+    background = Color(0xFF170E2B),
+    surface = Color(0xFF251744),
+    surfaceElevated = Color(0xFF35225E),
+    textPrimary = Color(0xFFF6F0FE),
+    textSecondary = Color(0xFFBEA8E7),
+    textTertiary = Color(0xFF7D65A8),
+    accent = Color(0xFFB878FB),
+    onAccent = Color(0xFF120422),
+    hairline = Color(0xFF3E286D),
+    isDark = true
+)
+
+val CinnabarColors = FathomColors(
+    background = Color(0xFF240C0E),
+    surface = Color(0xFF361317),
+    surfaceElevated = Color(0xFF4C1B20),
+    textPrimary = Color(0xFFFDECEE),
+    textSecondary = Color(0xFFDCA1A7),
+    textTertiary = Color(0xFF965C62),
+    accent = Color(0xFFF44360),
+    onAccent = Color(0xFF1E0306),
+    hairline = Color(0xFF582329),
+    isDark = true
+)
+
+val DawnColors = FathomColors(
+    background = Color(0xFFF8FAFC),
+    surface = Color(0xFFEDF2F7),
+    surfaceElevated = Color(0xFFE0E7EF),
+    textPrimary = Color(0xFF0F172A),
+    textSecondary = Color(0xFF475569),
+    textTertiary = Color(0xFF7F92A8),
+    accent = Color(0xFF1D6FDC),
+    onAccent = Color(0xFFF8FAFC),
+    hairline = Color(0xFFCBD5E1),
+    isDark = false
 )
 
 val LocalFathomColors = staticCompositionLocalOf { NocturneColors }

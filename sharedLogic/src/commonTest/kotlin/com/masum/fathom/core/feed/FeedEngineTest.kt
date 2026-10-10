@@ -1,7 +1,8 @@
 package com.masum.fathom.core.feed
 
-import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
 import com.masum.fathom.core.common.result.FathomResult
+import com.masum.fathom.core.database.createTestContentDriver
+import com.masum.fathom.core.database.createTestUserDriver
 import com.masum.fathom.core.database.content.FathomContentDatabase
 import com.masum.fathom.core.database.user.FathomUserDatabase
 import com.masum.fathom.core.model.TraditionId
@@ -22,12 +23,10 @@ class FeedEngineTest {
 
     @BeforeTest
     fun setUp() {
-        val contentDriver = JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY)
-        FathomContentDatabase.Schema.create(contentDriver)
+        val contentDriver = createTestContentDriver()
         contentDatabase = FathomContentDatabase(contentDriver)
 
-        val userDriver = JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY)
-        FathomUserDatabase.Schema.create(userDriver)
+        val userDriver = createTestUserDriver()
         userDatabase = FathomUserDatabase(userDriver)
 
         feedEngine = FeedEngine(contentDatabase, userDatabase)

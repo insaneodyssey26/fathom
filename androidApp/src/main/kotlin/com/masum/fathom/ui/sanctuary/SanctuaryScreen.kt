@@ -83,6 +83,7 @@ import com.masum.fathom.core.sanctuary.SanctuaryDataEngine
 import com.masum.fathom.core.sanctuary.SanctuaryPreferences
 import com.masum.fathom.core.sanctuary.SanctuaryStorageStats
 import com.masum.fathom.core.subscription.LocalOpenPaywall
+import com.masum.fathom.core.subscription.LocalSubscriptionManager
 import com.masum.fathom.core.subscription.LocalSubscriptionState
 import com.masum.fathom.core.update.AppUpdateStatus
 import com.masum.fathom.core.update.LocalAppUpdateEngine
@@ -123,6 +124,7 @@ fun SanctuaryScreen(
     val tone = rememberTone(null)
     val settings by preferences.settings.collectAsState()
     val subscription = LocalSubscriptionState.current
+    val subManager = LocalSubscriptionManager.current
     val openPaywall = LocalOpenPaywall.current
     val updateEngine = LocalAppUpdateEngine.current
     val updateStatus by updateEngine.updateStatus.collectAsState()
@@ -205,7 +207,7 @@ fun SanctuaryScreen(
                                 ReadingTheme.entries.chunked(2).forEach { pair ->
                                     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                                         pair.forEach { theme ->
-                                            val locked = theme != ReadingTheme.OBSIDIAN && !subscription.isPro
+                                            val locked = theme != ReadingTheme.OBSIDIAN && theme != ReadingTheme.SEPIA && !subscription.isPro
                                             ThemeTile(
                                                 theme = theme,
                                                 selected = settings.theme == theme,
@@ -402,6 +404,14 @@ fun SanctuaryScreen(
                                     is AppUpdateStatus.Error -> Text(text = status.message, style = typography.caption, color = colors.textSecondary, modifier = Modifier.padding(bottom = 16.dp))
                                     else -> Unit
                                 }
+                                AboutRow(
+                                    title = if (subscription.isPro) "Patron Status: Consecrated (Pro)" else "Patron Status: Free Tier",
+                                    caption = "Tap to toggle Patron mode for instant testing"
+                                ) {
+                                    val isNowPro = subManager.togglePro()
+                                    haptics.success()
+                                    Toast.makeText(context, if (isNowPro) "Patron Mode Unlocked (Lifetime)" else "Reset to Free Tier", Toast.LENGTH_SHORT).show()
+                                }
                                 AboutRow("Privacy Policy", "How your data is handled") { openLegal(LegalDoc.PRIVACY) }
                                 AboutRow("Terms of Use", "The ground rules") { openLegal(LegalDoc.TERMS) }
                                 AboutRow("Send feedback", LegalDocuments.CONTACT_EMAIL) {
@@ -489,30 +499,76 @@ private fun ThemeTile(
     modifier: Modifier = Modifier
 ) {
     val palette = theme.palette()
-    val tone = FathomTheme.tone
     val shape = RoundedCornerShape(24.dp)
+    val subtitle = when (theme) {
+        ReadingTheme.OBSIDIAN -> "OLED Gold"
+        ReadingTheme.SEPIA -> "Warm Parchment"
+        ReadingTheme.SLATE -> "Midnight Indigo"
+        ReadingTheme.FOREST -> "Forest Emerald"
+        ReadingTheme.SAHARA -> "Terracotta Clay"
+        ReadingTheme.TWILIGHT -> "Mystic Amethyst"
+        ReadingTheme.CINNABAR -> "Imperial Lacquer"
+        ReadingTheme.DAWN -> "Crisp Alabaster"
+    }
+
     Box(
         modifier = modifier
-            .aspectRatio(1.3f)
+            .aspectRatio(1.22f)
             .clip(shape)
             .background(palette.background)
-            .border(if (selected) 2.dp else 0.75.dp, if (selected) tone.hue else palette.hairline, shape)
+            .border(if (selected) 2.5.dp else 0.75.dp, if (selected) palette.accent else palette.hairline, shape)
             .tappable(scale = 0.97f, haptic = false, onClick = onClick)
-            .padding(18.dp)
+            .padding(14.dp)
     ) {
-        Text(
-            text = "Aa",
-            style = FathomTheme.typography.headline.copy(fontSize = 34.sp, lineHeight = 36.sp),
-            color = palette.textPrimary,
-            modifier = Modifier.align(Alignment.TopStart)
-        )
-        Box(Modifier.align(Alignment.TopEnd).size(14.dp).clip(CircleShape).background(palette.accent))
-        Column(Modifier.align(Alignment.BottomStart), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Text(text = theme.displayName, style = FathomTheme.typography.label, color = palette.textSecondary)
-            if (locked) {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Icon(PhosphorIcons.Light.LockSimple, null, tint = palette.textTertiary, modifier = Modifier.size(12.dp))
-                    Text(text = "Plus", style = FathomTheme.typography.mono, color = palette.textTertiary)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(14.dp))
+                .background(palette.surface)
+                .border(0.75.dp, palette.hairline, RoundedCornerShape(14.dp))
+                .padding(horizontal = 12.dp, vertical = 8.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "Aa",
+                style = FathomTheme.typography.headline.copy(fontSize = 26.sp, lineHeight = 28.sp),
+                color = palette.textPrimary
+            )
+            Box(
+                Modifier
+                    .size(16.dp)
+                    .clip(CircleShape)
+                    .background(palette.accent)
+                    .border(1.dp, palette.surface, CircleShape)
+            )
+        }
+
+        Column(
+            Modifier.align(Alignment.BottomStart),
+            verticalArrangement = Arrangement.spacedBy(2.dp)
+        ) {
+            Text(
+                text = theme.displayName,
+                style = FathomTheme.typography.title.copy(fontSize = 15.sp),
+                color = palette.textPrimary
+            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Text(
+                    text = subtitle,
+                    style = FathomTheme.typography.caption.copy(fontSize = 11.sp),
+                    color = palette.textSecondary
+                )
+                if (locked) {
+                    Icon(
+                        PhosphorIcons.Light.LockSimple,
+                        null,
+                        tint = palette.accent,
+                        modifier = Modifier.size(11.dp)
+                    )
                 }
             }
         }

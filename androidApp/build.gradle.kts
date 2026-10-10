@@ -30,6 +30,7 @@ dependencies {
     implementation(libs.androidx.navigation3.ui)
     implementation(libs.androidx.work.runtime)
     implementation(libs.androidx.graphics.shapes)
+    implementation(libs.androidx.browser)
 
     implementation(libs.compose.uiToolingPreview)
     debugImplementation(libs.compose.uiTooling)

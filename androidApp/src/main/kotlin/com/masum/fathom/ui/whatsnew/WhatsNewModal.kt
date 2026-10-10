@@ -59,7 +59,7 @@ fun WhatsNewModal(
                 highlights = listOf(
                     "Home screen widgets: Put sacred wisdom and your reading streak right on your home screen. There is a scrollable wisdom card that lets you read the reflection right from your launcher, plus compact jewel and horizon banners.",
                     "Redesigned navigation & Explore: The bottom navigation bar is now a floating glass dock that rests over a soft dark blur. In Explore, searching and filtering now scroll naturally together with the rest of the page.",
-                    "Deeper themes: The reading themes were refined with deeper blacks, rich contrast, and subtle ambient glows that are gentler on your eyes in low light.",
+                    "8 Sacred Reading Themes: Immerse yourself in handcrafted palettes: Nocturne (OLED gold), Vellum (manuscript parchment), Abyss (midnight sapphire), Moss (forest hermitage), Sahara (terracotta ember), Twilight (mystic lavender), Cinnabar (temple rose), and Dawn (crisp morning sunbeam).",
                     "Lean towards your traditions: When reading All Scriptures, you can now pick traditions to lean your feed towards while discovering wisdom across the entire library. Your choices stay saved when you reopen the app.",
                     "Recitation bar & soundscapes: Recitations now play through a floating audio bar at the bottom with seeking and playback controls. You can also start or pause soundscapes right beside your verse actions.",
                     "Cleaner listening: Multi-line Sanskrit and Arabic verses now flow naturally during narration without reading out raw reference numbers."

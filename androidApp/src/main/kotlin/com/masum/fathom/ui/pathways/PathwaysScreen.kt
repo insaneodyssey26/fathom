@@ -68,9 +68,12 @@ import com.adamglin.phosphoricons.light.ArrowDown
 import com.adamglin.phosphoricons.light.ArrowRight
 import com.adamglin.phosphoricons.light.CaretDown
 import com.adamglin.phosphoricons.light.Check
+import com.adamglin.phosphoricons.light.LockSimple
 import com.adamglin.phosphoricons.light.Sliders
 import com.masum.fathom.core.haptics.LocalFathomHaptics
 import com.masum.fathom.core.sanctuary.LocalOpenSanctuary
+import com.masum.fathom.core.subscription.LocalOpenPaywall
+import com.masum.fathom.core.subscription.LocalSubscriptionState
 import com.masum.fathom.ui.design.Atmosphere
 import com.masum.fathom.ui.design.BreathingMark
 import com.masum.fathom.ui.design.DockedTopPanel
@@ -356,6 +359,10 @@ private fun ChapterList(
     modifier: Modifier = Modifier
 ) {
     val shell = LocalShell.current
+    val subscription = LocalSubscriptionState.current
+    val openPaywall = LocalOpenPaywall.current
+    val haptics = LocalFathomHaptics.current
+
     LazyColumn(
         state = listState,
         modifier = modifier,
@@ -365,19 +372,40 @@ private fun ChapterList(
             item(key = "hero") {
                 Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.TopCenter) {
                     Column(Modifier.widthIn(max = shell.contentMaxWidth).padding(horizontal = 28.dp).padding(bottom = 36.dp)) {
-                        BookHero(pathway = pathway, onContinue = { openCurrent(pathway, onOpenChapter) })
+                        BookHero(
+                            pathway = pathway,
+                            onContinue = {
+                                openCurrent(pathway) { chNum ->
+                                    if (chNum > 3 && !subscription.isPro) {
+                                        haptics.medium()
+                                        openPaywall()
+                                    } else {
+                                        onOpenChapter(chNum)
+                                    }
+                                }
+                            }
+                        )
                     }
                 }
             }
         }
         itemsIndexed(pathway.chapters, key = { _, c -> c.chapterNumber }) { index, chapter ->
+            val locked = chapter.chapterNumber > 3 && !subscription.isPro
             Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.TopCenter) {
                 ChapterRow(
                     chapter = chapter,
                     previous = pathway.chapters.getOrNull(index - 1),
                     isFirst = index == 0,
                     isLast = index == pathway.chapters.lastIndex,
-                    onClick = { onOpenChapter(chapter.chapterNumber) },
+                    locked = locked,
+                    onClick = {
+                        if (locked) {
+                            haptics.medium()
+                            openPaywall()
+                        } else {
+                            onOpenChapter(chapter.chapterNumber)
+                        }
+                    },
                     modifier = Modifier.widthIn(max = shell.contentMaxWidth).padding(horizontal = 16.dp)
                 )
             }
@@ -493,6 +521,7 @@ private fun ChapterRow(
     previous: ChapterProgress?,
     isFirst: Boolean,
     isLast: Boolean,
+    locked: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -526,23 +555,27 @@ private fun ChapterRow(
     ) {
         Box(Modifier.width(railWidth).height(nodeY * 2), contentAlignment = Alignment.TopCenter) {
             Box(Modifier.padding(top = nodeY - 14.dp).size(28.dp), contentAlignment = Alignment.Center) {
-                Glyph(
-                    kind = when (chapter.nodeType) {
-                        MilestoneNodeType.GATEWAY -> GlyphKind.Square
-                        MilestoneNodeType.DISCIPLE -> GlyphKind.Circle
-                        MilestoneNodeType.SANCTUARY -> GlyphKind.Hexagon
-                        MilestoneNodeType.TEMPLE -> GlyphKind.Star
-                    },
-                    color = when {
-                        done -> tone.hue
-                        current -> tone.hue
-                        else -> colors.textTertiary
-                    },
-                    size = if (current) 24.dp else 20.dp,
-                    filled = done || current
-                )
-                if (done) {
-                    Icon(PhosphorIcons.Light.Check, null, tint = tone.onHue, modifier = Modifier.size(11.dp))
+                if (locked) {
+                    Icon(PhosphorIcons.Light.LockSimple, null, tint = tone.hue, modifier = Modifier.size(18.dp))
+                } else {
+                    Glyph(
+                        kind = when (chapter.nodeType) {
+                            MilestoneNodeType.GATEWAY -> GlyphKind.Square
+                            MilestoneNodeType.DISCIPLE -> GlyphKind.Circle
+                            MilestoneNodeType.SANCTUARY -> GlyphKind.Hexagon
+                            MilestoneNodeType.TEMPLE -> GlyphKind.Star
+                        },
+                        color = when {
+                            done -> tone.hue
+                            current -> tone.hue
+                            else -> colors.textTertiary
+                        },
+                        size = if (current) 24.dp else 20.dp,
+                        filled = done || current
+                    )
+                    if (done) {
+                        Icon(PhosphorIcons.Light.Check, null, tint = tone.onHue, modifier = Modifier.size(11.dp))
+                    }
                 }
             }
         }
@@ -553,9 +586,16 @@ private fun ChapterRow(
         ) {
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
                 MonoLabel(text = "Chapter ${chapter.chapterNumber.toString().padStart(2, '0')}", color = if (current) tone.hue else colors.textTertiary)
-                when {
-                    done -> MonoLabel(text = "Complete", color = tone.hue.copy(alpha = 0.8f))
-                    current -> MonoLabel(text = "In progress", color = colors.textSecondary)
+                if (locked) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Icon(PhosphorIcons.Light.LockSimple, null, tint = tone.hue, modifier = Modifier.size(11.dp))
+                        MonoLabel(text = "Patron", color = tone.hue)
+                    }
+                } else {
+                    when {
+                        done -> MonoLabel(text = "Complete", color = tone.hue.copy(alpha = 0.8f))
+                        current -> MonoLabel(text = "In progress", color = colors.textSecondary)
+                    }
                 }
             }
             Text(

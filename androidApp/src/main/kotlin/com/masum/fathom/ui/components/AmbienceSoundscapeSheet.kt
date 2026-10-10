@@ -26,9 +26,16 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.Icon
+import com.adamglin.PhosphorIcons
+import com.adamglin.phosphoricons.Light
+import com.adamglin.phosphoricons.light.LockSimple
 import com.masum.fathom.core.audio.LocalSanctuaryAmbienceEngine
 import com.masum.fathom.core.audio.SoundscapeTrack
 import com.masum.fathom.core.haptics.LocalFathomHaptics
+import com.masum.fathom.core.subscription.LocalOpenPaywall
+import com.masum.fathom.core.subscription.LocalSubscriptionState
 import com.masum.fathom.ui.design.ButtonStyle
 import com.masum.fathom.ui.design.Equalizer
 import com.masum.fathom.ui.design.FathomButton
@@ -46,6 +53,8 @@ import java.util.Locale
 fun AmbienceSoundscapeSheet(onDismiss: () -> Unit) {
     val engine = LocalSanctuaryAmbienceEngine.current
     val haptics = LocalFathomHaptics.current
+    val subscription = LocalSubscriptionState.current
+    val openPaywall = LocalOpenPaywall.current
     val state by engine.state.collectAsState()
     val colors = FathomTheme.colors
     val tone = FathomTheme.tone
@@ -102,24 +111,39 @@ fun AmbienceSoundscapeSheet(onDismiss: () -> Unit) {
             Hairline()
             SoundscapeTrack.entries.forEach { track ->
                 val selected = state.currentTrack == track
+                val locked = track != SoundscapeTrack.TEMPLE_RAIN && track != SoundscapeTrack.DISTANT_STORM && !subscription.isPro
                 val ink by animateColorAsState(if (selected) colors.textPrimary else colors.textSecondary, tween(220), label = "track_ink")
                 Column {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
                             .tappable(scale = 0.985f, haptic = false) {
-                                haptics.light()
-                                if (selected) engine.togglePlayPause() else engine.selectTrack(track)
+                                if (locked) {
+                                    haptics.medium()
+                                    openPaywall()
+                                } else {
+                                    haptics.light()
+                                    if (selected) engine.togglePlayPause() else engine.selectTrack(track)
+                                }
                             }
                             .padding(vertical = 16.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
                         Box(Modifier.padding(horizontal = 2.dp)) {
-                            Equalizer(color = if (selected) tone.hue else colors.textTertiary, active = selected && state.isPlaying)
+                            if (locked) {
+                                Icon(PhosphorIcons.Light.LockSimple, null, tint = tone.hue, modifier = Modifier.size(16.dp))
+                            } else {
+                                Equalizer(color = if (selected) tone.hue else colors.textTertiary, active = selected && state.isPlaying)
+                            }
                         }
                         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                            Text(text = track.title, style = FathomTheme.typography.title, color = ink)
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                Text(text = track.title, style = FathomTheme.typography.title, color = ink)
+                                if (locked) {
+                                    MonoLabel(text = "Patron", color = tone.hue)
+                                }
+                            }
                             MonoLabel(text = track.subtitle, color = colors.textTertiary, maxLines = 2)
                         }
                         if (selected) MonoLabel(text = if (state.isPlaying) "Playing" else "Paused", color = tone.hue)
@@ -145,6 +169,7 @@ fun AmbienceSoundscapeSheet(onDismiss: () -> Unit) {
             Spacer(Modifier.height(12.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 listOf(15, 30, 45, 60).forEach { minutes ->
+                    val locked = minutes > 30 && !subscription.isPro
                     val active = state.sleepTimerMinutes == minutes && state.sleepTimerSecondsRemaining != null
                     val container by animateColorAsState(if (active) tone.hue else Color.Transparent, tween(220), label = "timer_bg")
                     val content by animateColorAsState(if (active) tone.onHue else colors.textSecondary, tween(220), label = "timer_fg")
@@ -154,12 +179,22 @@ fun AmbienceSoundscapeSheet(onDismiss: () -> Unit) {
                             .background(container)
                             .border(0.75.dp, if (active) Color.Transparent else colors.hairline, RoundedCornerShape(50))
                             .tappable(scale = 0.93f) {
-                                if (active) engine.cancelSleepTimer() else engine.setSleepTimer(minutes)
+                                if (locked) {
+                                    haptics.medium()
+                                    openPaywall()
+                                } else {
+                                    if (active) engine.cancelSleepTimer() else engine.setSleepTimer(minutes)
+                                }
                             }
                             .padding(horizontal = 18.dp, vertical = 11.dp),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text(text = "${minutes}m", style = FathomTheme.typography.label, color = content)
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Text(text = "${minutes}m", style = FathomTheme.typography.label, color = content)
+                            if (locked) {
+                                Icon(PhosphorIcons.Light.LockSimple, null, tint = colors.textTertiary, modifier = Modifier.size(10.dp))
+                            }
+                        }
                     }
                 }
             }

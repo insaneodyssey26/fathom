@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -158,7 +159,10 @@ fun QuoteCardModal(
 
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 MonoLabel(text = "Palette")
-                Row(horizontalArrangement = Arrangement.spacedBy(18.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(18.dp)
+                ) {
                     CardTheme.entries.forEach { option ->
                         val palette = option.reading.palette()
                         val selected = theme == option

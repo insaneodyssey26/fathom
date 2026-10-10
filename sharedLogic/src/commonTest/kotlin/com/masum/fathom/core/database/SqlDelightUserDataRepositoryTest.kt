@@ -1,6 +1,5 @@
 package com.masum.fathom.core.database
 
-import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
 import com.masum.fathom.core.common.result.FathomResult
 import com.masum.fathom.core.database.user.FathomUserDatabase
 import com.masum.fathom.core.model.user.Bookmark
@@ -19,8 +18,7 @@ class SqlDelightUserDataRepositoryTest {
 
     @BeforeTest
     fun setUp() {
-        val driver = JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY)
-        FathomUserDatabase.Schema.create(driver)
+        val driver = createTestUserDriver()
         database = FathomUserDatabase(driver)
         repository = SqlDelightUserDataRepository(database)
     }

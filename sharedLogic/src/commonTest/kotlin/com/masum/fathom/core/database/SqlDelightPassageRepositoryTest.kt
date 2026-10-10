@@ -1,6 +1,5 @@
 package com.masum.fathom.core.database
 
-import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
 import com.masum.fathom.core.common.result.FathomResult
 import com.masum.fathom.core.database.content.FathomContentDatabase
 import com.masum.fathom.core.model.TraditionId
@@ -18,8 +17,7 @@ class SqlDelightPassageRepositoryTest {
 
     @BeforeTest
     fun setUp() {
-        val driver = JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY)
-        FathomContentDatabase.Schema.create(driver)
+        val driver = createTestContentDriver()
         database = FathomContentDatabase(driver)
         repository = SqlDelightPassageRepository(database)
 
