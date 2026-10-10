@@ -175,7 +175,7 @@ fun FathomApp(graph: AppGraph, launchPassageId: String?) {
     }
 
     val haptics = remember { FathomHaptics(context) }
-    val audioEngine = remember { SacredAudioEngine(context) }
+    val audioEngine = remember { SacredAudioEngine(context, preferences) }
     DisposableEffect(audioEngine) { onDispose { audioEngine.release() } }
     val ambienceEngine = remember { SanctuaryAmbienceEngine(context) }
     DisposableEffect(ambienceEngine) { onDispose { ambienceEngine.release() } }

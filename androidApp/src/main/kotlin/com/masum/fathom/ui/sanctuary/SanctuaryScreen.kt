@@ -75,6 +75,7 @@ import com.adamglin.phosphoricons.light.LockSimple
 import com.adamglin.phosphoricons.light.Minus
 import com.adamglin.phosphoricons.light.Plus
 import com.adamglin.phosphoricons.light.X
+import com.masum.fathom.core.audio.LocalSacredAudioEngine
 import com.masum.fathom.core.haptics.LocalFathomHaptics
 import com.masum.fathom.core.notification.DailyNotificationScheduler
 import com.masum.fathom.core.sanctuary.ByokProvider
@@ -127,11 +128,13 @@ fun SanctuaryScreen(
     val updateStatus by updateEngine.updateStatus.collectAsState()
     val scope = rememberCoroutineScope()
     val openLegal = LocalOpenLegal.current
+    val audioEngine = LocalSacredAudioEngine.current
 
     var stats by remember { mutableStateOf(SanctuaryStorageStats()) }
     var showRestore by remember { mutableStateOf(false) }
     var keyInput by remember { mutableStateOf(settings.byokApiKey) }
     var maskKey by remember { mutableStateOf(true) }
+    var isTestingKey by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) { stats = dataEngine.getStorageStats() }
 
@@ -260,7 +263,27 @@ fun SanctuaryScreen(
                                         value = keyInput,
                                         onValueChange = { keyInput = it },
                                         masked = maskKey,
+                                        isTesting = isTestingKey,
                                         onToggleMask = { maskKey = !maskKey },
+                                        onTest = {
+                                            haptics.light()
+                                            isTestingKey = true
+                                            scope.launch {
+                                                val res = audioEngine.neuralSynthesizer.testConnection(
+                                                    settings.byokProvider,
+                                                    keyInput.trim(),
+                                                    settings.byokVoiceId
+                                                )
+                                                isTestingKey = false
+                                                res.onSuccess { msg ->
+                                                    haptics.success()
+                                                    Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+                                                }.onFailure { err ->
+                                                    haptics.error()
+                                                    Toast.makeText(context, err.message ?: "Connection failed", Toast.LENGTH_LONG).show()
+                                                }
+                                            }
+                                        },
                                         onSave = {
                                             haptics.success()
                                             preferences.updateByokSettings(settings.byokProvider, keyInput.trim(), settings.byokVoiceId)
@@ -515,7 +538,9 @@ private fun KeyField(
     value: String,
     onValueChange: (String) -> Unit,
     masked: Boolean,
+    isTesting: Boolean,
     onToggleMask: () -> Unit,
+    onTest: () -> Unit,
     onSave: () -> Unit
 ) {
     val colors = FathomTheme.colors
@@ -548,7 +573,12 @@ private fun KeyField(
                     modifier = Modifier.size(20.dp)
                 )
             }
-            Box(Modifier.tappable(scale = 0.94f, onClick = onSave).padding(8.dp)) { MonoLabel(text = "Save", color = tone.hue) }
+            Box(Modifier.tappable(scale = 0.94f, onClick = onTest).padding(8.dp)) {
+                MonoLabel(text = if (isTesting) "Testing..." else "Test", color = colors.textSecondary)
+            }
+            Box(Modifier.tappable(scale = 0.94f, onClick = onSave).padding(8.dp)) {
+                MonoLabel(text = "Save", color = tone.hue)
+            }
         }
         Box(Modifier.fillMaxWidth().height(1.dp).background(rule))
     }
