@@ -6,6 +6,8 @@ public struct FeedView: View {
     public let colors: ThemeColors
     public let onOpenScriptureSelector: () -> Void
 
+    @State private var reflectingPassage: Passage? = nil
+
     public var body: some View {
         ZStack {
             AtmosphereBackground(
@@ -51,8 +53,8 @@ public struct FeedView: View {
                             colors: colors,
                             isBookmarked: viewModel.bookmarkedIds.contains(passage.id),
                             onBookmark: { viewModel.toggleBookmark(passage: passage) },
-                            onShare: { sharePassage(passage) },
-                            onOpenAudio: {}
+                            onReflect: { reflectingPassage = passage },
+                            onShare: { sharePassage(passage) }
                         )
                         .tag(index)
                     }
@@ -90,6 +92,17 @@ public struct FeedView: View {
 
                 Spacer()
             }
+        }
+        .sheet(item: $reflectingPassage) { passage in
+            ReflectionSheet(
+                passage: passage,
+                colors: colors,
+                onSave: { content in
+                    viewModel.saveReflection(passage: passage, content: content)
+                }
+            )
+            .presentationDetents([.fraction(0.7), .large])
+            .presentationDragIndicator(.visible)
         }
     }
 

@@ -6,10 +6,9 @@ public final class JournalViewModel: ObservableObject {
     private let graph: IosAppGraph
 
     @Published public var streakDays: Int = 0
-    @Published public var totalVersesRead: Int = 0
     @Published public var savedBookmarks: [Passage] = []
-    @Published public var reflections: [Reflection] = []
-    @Published public var selectedTab: Int = 0
+    @Published public var savedNotes: [UserNote] = []
+    @Published public var selectedSegment: Int = 0
 
     public init(graph: IosAppGraph) {
         self.graph = graph
@@ -18,20 +17,9 @@ public final class JournalViewModel: ObservableObject {
 
     public func loadJournalData() {
         Task {
-            let streakResult = try? await graph.userRepository.getReadingStreak()
-            if let result = streakResult as? FathomResultSuccess<ReadingStreak>, let streak = result.data {
-                self.streakDays = Int(streak.currentStreakDays)
-            }
-
-            let bookmarksResult = try? await graph.userRepository.getBookmarkedPassages()
-            if let result = bookmarksResult as? FathomResultSuccess<NSArray>, let list = result.data as? [Passage] {
-                self.savedBookmarks = list
-            }
-
-            let reflectionsResult = try? await graph.userRepository.getAllReflections()
-            if let result = reflectionsResult as? FathomResultSuccess<NSArray>, let list = result.data as? [Reflection] {
-                self.reflections = list
-            }
+            self.streakDays = Int(await graph.getReadingStreakDays())
+            self.savedBookmarks = await graph.getBookmarkedPassages()
+            self.savedNotes = await graph.getAllNotes()
         }
     }
 }
@@ -42,6 +30,8 @@ public struct JournalView: View {
     public let onOpenSettings: () -> Void
 
     public var body: some View {
+        let tone = TraditionTones.hue(for: nil)
+
         ZStack {
             colors.background.ignoresSafeArea()
 
@@ -70,7 +60,7 @@ public struct JournalView: View {
                             VStack(alignment: .leading, spacing: 4) {
                                 Text("\(viewModel.streakDays)")
                                     .font(.system(size: 38, weight: .bold, design: .serif))
-                                    .foregroundColor(TraditionTones.hue(for: nil))
+                                    .foregroundColor(tone)
                                 Text("Day reading streak")
                                     .font(.system(size: 13, weight: .medium))
                                     .foregroundColor(colors.textSecondary)
@@ -92,14 +82,14 @@ public struct JournalView: View {
                             .liquidGlass(cornerRadius: 22)
                         }
 
-                        VStack(alignment: .leading, spacing: 14) {
-                            Text("SAVED PASSAGES")
-                                .font(.system(size: 11, weight: .bold, design: .monospaced))
-                                .foregroundColor(colors.textTertiary)
-                                .tracking(1.2)
+                        HStack(spacing: 10) {
+                            segmentTab(title: "Passages (\(viewModel.savedBookmarks.count))", index: 0)
+                            segmentTab(title: "Reflections (\(viewModel.savedNotes.count))", index: 1)
+                        }
 
+                        if viewModel.selectedSegment == 0 {
                             if viewModel.savedBookmarks.isEmpty {
-                                Text("No saved passages yet. Tap the bookmark button on any verse to keep it here.")
+                                Text("No saved passages yet. Tap the bookmark icon on any verse to keep it in your sanctuary.")
                                     .font(.system(size: 14))
                                     .foregroundColor(colors.textSecondary)
                                     .padding(.vertical, 12)
@@ -125,6 +115,31 @@ public struct JournalView: View {
                                     .liquidGlass(cornerRadius: 18)
                                 }
                             }
+                        } else {
+                            if viewModel.savedNotes.isEmpty {
+                                Text("No written reflections yet. Tap 'Reflect' on any passage card to record your thoughts.")
+                                    .font(.system(size: 14))
+                                    .foregroundColor(colors.textSecondary)
+                                    .padding(.vertical, 12)
+                            } else {
+                                ForEach(viewModel.savedNotes, id: \.id) { note in
+                                    VStack(alignment: .leading, spacing: 8) {
+                                        HStack {
+                                            Text("CONTEMPLATION NOTE")
+                                                .font(.system(size: 10, weight: .bold, design: .monospaced))
+                                                .foregroundColor(tone)
+                                            Spacer()
+                                        }
+
+                                        Text(note.content)
+                                            .font(.system(size: 15, weight: .regular))
+                                            .foregroundColor(colors.textPrimary)
+                                            .lineSpacing(4)
+                                    }
+                                    .padding(16)
+                                    .liquidGlass(cornerRadius: 18)
+                                }
+                            }
                         }
                     }
                     .padding(.horizontal, 22)
@@ -134,6 +149,24 @@ public struct JournalView: View {
         }
         .onAppear {
             viewModel.loadJournalData()
+        }
+    }
+
+    private func segmentTab(title: String, index: Int) -> some View {
+        let isSelected = viewModel.selectedSegment == index
+        let tone = TraditionTones.hue(for: nil)
+
+        return Button(action: {
+            FathomHaptics.light()
+            viewModel.selectedSegment = index
+        }) {
+            Text(title)
+                .font(.system(size: 13, weight: isSelected ? .semibold : .medium))
+                .foregroundColor(isSelected ? colors.textPrimary : colors.textSecondary)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 8)
+                .background(isSelected ? tone.opacity(0.15) : colors.surfaceElevated, in: Capsule())
+                .overlay(Capsule().strokeBorder(isSelected ? tone.opacity(0.6) : colors.hairline, lineWidth: 1))
         }
     }
 }

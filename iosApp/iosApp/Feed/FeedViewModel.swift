@@ -55,6 +55,9 @@ public final class FeedViewModel: ObservableObject {
                 self.passages = list
                 self.currentIndex = 0
                 self.isLoading = false
+                if let first = list.first {
+                    await graph.recordReading(passageId: first.id, bookId: first.bookId)
+                }
             } else {
                 self.isLoading = false
                 self.errorMessage = "Unable to load sacred passages."
@@ -64,6 +67,12 @@ public final class FeedViewModel: ObservableObject {
 
     public func loadMoreIfNeeded(currentIndex: Int) {
         self.currentIndex = currentIndex
+        if currentIndex >= 0 && currentIndex < passages.count {
+            let p = passages[currentIndex]
+            Task {
+                await graph.recordReading(passageId: p.id, bookId: p.bookId)
+            }
+        }
         guard currentIndex >= passages.count - 4, !isLoading else { return }
 
         Task {
@@ -90,21 +99,26 @@ public final class FeedViewModel: ObservableObject {
         let id = passage.id
         Task {
             if bookmarkedIds.contains(id) {
-                _ = try? await graph.userRepository.removeBookmark(passageId: id)
+                await graph.removeBookmark(passageId: id)
                 bookmarkedIds.remove(id)
             } else {
-                _ = try? await graph.userRepository.addBookmark(passageId: id, note: nil)
+                await graph.saveBookmark(passageId: id)
                 bookmarkedIds.insert(id)
             }
         }
     }
 
+    public func saveReflection(passage: Passage, content: String) {
+        FathomHaptics.medium()
+        Task {
+            await graph.saveNote(passageId: passage.id, content: content)
+        }
+    }
+
     public func loadBookmarks() {
         Task {
-            let result = try? await graph.userRepository.getBookmarkedPassages()
-            if let result = result as? FathomResultSuccess<NSArray>, let list = result.data as? [Passage] {
-                self.bookmarkedIds = Set(list.map { $0.id })
-            }
+            let list = await graph.getBookmarkedPassages()
+            self.bookmarkedIds = Set(list.map { $0.id })
         }
     }
 

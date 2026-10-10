@@ -10,6 +10,7 @@ public final class PathwaysViewModel: ObservableObject {
     @Published public var chapters: [Int32] = []
     @Published public var activeChapterPassages: [Passage] = []
     @Published public var activeChapterNumber: Int32? = nil
+    @Published public var completedChapters: Set<Int32> = []
     @Published public var isLoading: Bool = false
 
     public init(graph: IosAppGraph) {
@@ -50,6 +51,10 @@ public final class PathwaysViewModel: ObservableObject {
             if let result = result as? FathomResultSuccess<NSArray>, let list = result.data as? [Passage] {
                 self.activeChapterPassages = list
                 self.isLoading = false
+                self.completedChapters.insert(chapter)
+                if let first = list.first {
+                    await graph.recordReading(passageId: first.id, bookId: book.id)
+                }
             }
         }
     }
@@ -60,6 +65,72 @@ public final class PathwaysViewModel: ObservableObject {
     }
 }
 
+public struct DepthDialView: View {
+    public let progress: Double
+    public let completedCount: Int
+    public let totalCount: Int
+    public let tone: Color
+    public let colors: ThemeColors
+
+    public var body: some View {
+        HStack(spacing: 20) {
+            ZStack {
+                Circle()
+                    .stroke(colors.hairline, lineWidth: 6)
+                    .frame(width: 84, height: 84)
+
+                Circle()
+                    .trim(from: 0, to: CGFloat(max(0.04, min(1.0, progress))))
+                    .stroke(
+                        AngularGradient(
+                            gradient: Gradient(colors: [tone.opacity(0.6), tone]),
+                            center: .center,
+                            startAngle: .degrees(-90),
+                            endAngle: .degrees(270)
+                        ),
+                        style: StrokeStyle(lineWidth: 6, lineCap: .round)
+                    )
+                    .rotationEffect(.degrees(-90))
+                    .frame(width: 84, height: 84)
+                    .animation(.spring(response: 0.5, dampingFraction: 0.7), value: progress)
+
+                Circle()
+                    .strokeBorder(tone.opacity(0.2), lineWidth: 1)
+                    .frame(width: 66, height: 66)
+
+                VStack(spacing: 0) {
+                    Text("\(Int(progress * 100))%")
+                        .font(.system(size: 14, weight: .bold, design: .monospaced))
+                        .foregroundColor(colors.textPrimary)
+                    Text("READ")
+                        .font(.system(size: 8, weight: .bold, design: .monospaced))
+                        .foregroundColor(colors.textTertiary)
+                }
+            }
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text("CANONICAL PROGRESS")
+                    .font(.system(size: 10, weight: .bold, design: .monospaced))
+                    .foregroundColor(tone)
+                    .tracking(1.2)
+
+                Text("\(completedCount) of \(totalCount) Chapters")
+                    .font(.system(size: 17, weight: .semibold, design: .serif))
+                    .foregroundColor(colors.textPrimary)
+
+                Text("Immerse sequentially through the sacred text.")
+                    .font(.system(size: 12))
+                    .foregroundColor(colors.textSecondary)
+                    .lineLimit(2)
+            }
+
+            Spacer()
+        }
+        .padding(18)
+        .liquidGlass(cornerRadius: 22)
+    }
+}
+
 public struct PathwaysView: View {
     @ObservedObject public var viewModel: PathwaysViewModel
     public let colors: ThemeColors
@@ -67,6 +138,9 @@ public struct PathwaysView: View {
 
     public var body: some View {
         let tone = TraditionTones.hue(for: viewModel.selectedBook?.traditionId)
+        let total = viewModel.chapters.count
+        let completed = viewModel.completedChapters.count
+        let progress = total > 0 ? Double(completed) / Double(total) : 0.0
 
         ZStack {
             AtmosphereBackground(
@@ -133,6 +207,14 @@ public struct PathwaysView: View {
                                     }
                                 }
                                 .padding(.top, 12)
+
+                                DepthDialView(
+                                    progress: progress,
+                                    completedCount: completed,
+                                    totalCount: total,
+                                    tone: tone,
+                                    colors: colors
+                                )
                             }
 
                             VStack(alignment: .leading, spacing: 14) {
@@ -142,18 +224,21 @@ public struct PathwaysView: View {
                                     .tracking(1.2)
 
                                 ForEach(viewModel.chapters, id: \.self) { chapter in
+                                    let isDone = viewModel.completedChapters.contains(chapter)
+
                                     Button(action: {
                                         FathomHaptics.light()
                                         viewModel.openChapter(chapter)
                                     }) {
                                         HStack(spacing: 16) {
                                             Circle()
-                                                .strokeBorder(tone, lineWidth: 1.5)
+                                                .strokeBorder(isDone ? tone : colors.hairline, lineWidth: 1.5)
+                                                .background(isDone ? Circle().fill(tone.opacity(0.15)) : nil)
                                                 .frame(width: 32, height: 32)
                                                 .overlay(
                                                     Text("\(chapter)")
                                                         .font(.system(size: 12, weight: .bold, design: .monospaced))
-                                                        .foregroundColor(colors.textPrimary)
+                                                        .foregroundColor(isDone ? tone : colors.textPrimary)
                                                 )
 
                                             VStack(alignment: .leading, spacing: 2) {
@@ -164,9 +249,15 @@ public struct PathwaysView: View {
 
                                             Spacer()
 
-                                            Image(systemName: "chevron.right")
-                                                .font(.system(size: 12, weight: .semibold))
-                                                .foregroundColor(colors.textTertiary)
+                                            if isDone {
+                                                Image(systemName: "checkmark.circle.fill")
+                                                    .font(.system(size: 14))
+                                                    .foregroundColor(tone)
+                                            } else {
+                                                Image(systemName: "chevron.right")
+                                                    .font(.system(size: 12, weight: .semibold))
+                                                    .foregroundColor(colors.textTertiary)
+                                            }
                                         }
                                         .padding(.horizontal, 18)
                                         .padding(.vertical, 14)
