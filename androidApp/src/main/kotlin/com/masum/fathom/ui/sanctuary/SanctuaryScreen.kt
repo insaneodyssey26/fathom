@@ -362,7 +362,7 @@ fun SanctuaryScreen(
                                 ) {
                                     Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                                         Text(text = "Version $versionName", style = typography.title, color = colors.textPrimary)
-                                        MonoLabel(text = "Build $buildNumber · closed testing")
+                                        MonoLabel(text = "Build $buildNumber · production release")
                                     }
                                     when (val status = updateStatus) {
                                         is AppUpdateStatus.Checking -> MonoLabel(text = "Checking", color = tone.hue)

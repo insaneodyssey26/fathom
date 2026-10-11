@@ -53,14 +53,14 @@ fun SplashScreen(
     val tagAlpha by animateFloatAsState(if (settled) 1f else 0f, tween(320, 20, FathomMotion.Emphasized), label = "tag")
 
     LaunchedEffect(Unit) {
-        delay(80)
+        delay(120)
         for (i in Sequence.indices) {
             index = i
             if (i < Sequence.lastIndex) haptics.light()
-            delay(70)
+            delay(140)
         }
         haptics.medium()
-        delay(560)
+        delay(850)
         onSplashFinished()
     }
 

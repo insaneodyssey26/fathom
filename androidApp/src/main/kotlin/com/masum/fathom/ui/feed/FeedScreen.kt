@@ -122,8 +122,7 @@ fun FeedScreen(
             state = state,
             onEvent = onEvent,
             modifier = modifier,
-            onOpenScriptures = { showScriptureSheet = true },
-            onOpenBeta = { showBetaNote = true }
+            onOpenScriptures = { showScriptureSheet = true }
         )
     }
 
@@ -148,7 +147,6 @@ fun FeedScreen(
             )
         }
     }
-    if (showBetaNote) BetaNote(onDismiss = { showBetaNote = false })
 }
 
 @Composable
@@ -156,7 +154,6 @@ private fun FeedContent(
     state: FeedUiState.Success,
     onEvent: (FeedUiEvent) -> Unit,
     onOpenScriptures: () -> Unit,
-    onOpenBeta: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val scope = androidx.compose.runtime.rememberCoroutineScope()
@@ -248,7 +245,6 @@ private fun FeedContent(
                 state = state,
                 traditionId = currentPassage?.traditionId,
                 onOpenScriptures = onOpenScriptures,
-                onOpenBeta = onOpenBeta,
                 onOpenMore = {
                     haptics.light()
                     openMore()
@@ -383,7 +379,6 @@ private fun Header(
     state: FeedUiState.Success,
     traditionId: TraditionId?,
     onOpenScriptures: () -> Unit,
-    onOpenBeta: () -> Unit,
     onOpenMore: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -402,9 +397,7 @@ private fun Header(
     ScreenHeader(
         title = "fathom",
         traditionId = traditionId,
-        modifier = modifier,
-        onTitleClick = onOpenBeta,
-        badge = "Beta"
+        modifier = modifier
     ) {
         Row(
             modifier = Modifier
@@ -533,30 +526,5 @@ private fun SaveGlyph(saved: Boolean, hue: Color, size: Dp = 18.dp) {
                 scaleY = pop.value
             }
         )
-    }
-}
-
-@Composable
-private fun BetaNote(onDismiss: () -> Unit) {
-    val colors = FathomTheme.colors
-    Dialog(onDismissRequest = onDismiss) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(28.dp))
-                .background(colors.surfaceElevated)
-                .padding(28.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp)
-        ) {
-            MonoLabel(text = "Closed beta", color = FathomTheme.tone.hue)
-            Text(text = "You are early.", style = FathomTheme.typography.headline, color = colors.textPrimary)
-            Text(
-                text = "Fathom is in closed testing. Expect rough edges while the experience is refined. Every feature is open for you to try, and your feedback shapes what ships.",
-                style = FathomTheme.typography.body,
-                color = colors.textSecondary
-            )
-            Spacer(Modifier.height(6.dp))
-            FathomButton(text = "Understood", onClick = onDismiss, modifier = Modifier.fillMaxWidth())
-        }
     }
 }

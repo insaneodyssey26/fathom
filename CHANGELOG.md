@@ -2,6 +2,20 @@
 
 All notable changes to the Fathom project are documented in this file.
 
+## [1.6.0] - 2026-10-11
+
+### Added
+- **Sanctuary Patron Consecration:** Introduced optional patron membership (monthly, annual, and lifetime) to support independent development, unlocking all 8 themes, soundscapes, and full pathway progressions.
+- **Studio Neural Voice Narration (BYOK):** High-fidelity AI recitation powered by your own ElevenLabs or OpenAI API keys with automatic local disk caching for zero-bandwidth offline replay.
+- **Eight Sacred Reading Themes:** Expanded high-contrast color palettes: Nocturne (OLED), Vellum (manuscript parchment), Abyss (midnight sapphire), Moss (forest hermitage), Sahara (terracotta ember), Twilight (mystic lavender), Cinnabar (temple rose), and Dawn (crisp morning sunbeam).
+- **Multi-Device License Sync:** Encrypted license verification with Cloudflare Workers Edge API, supporting up to 2 personal devices with cryptographic HMAC-SHA256 signature validation.
+
+### Changed
+- **Contemplative App Launch:** Re-paced splash emblem cycle and dwell timing for a serene, unhurried opening experience with gentle tactile haptics.
+- **Paywall & Licensing UI:** Clean, calm patron sheet with instant activation and license restoration.
+
+---
+
 ## [1.5.0] - 2026-10-07
 
 ### Added

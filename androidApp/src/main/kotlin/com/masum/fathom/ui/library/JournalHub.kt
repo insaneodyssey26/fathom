@@ -243,7 +243,7 @@ fun JournalHub(
             item(key = "footer") {
                 val openLegal = com.masum.fathom.ui.shell.LocalOpenLegal.current
                 Column(Modifier.padding(top = 56.dp)) {
-                    FooterRow(title = "What's new", caption = "fathom $versionName · closed beta", onClick = onOpenWhatsNew)
+                    FooterRow(title = "What's new", caption = "fathom v$versionName", onClick = onOpenWhatsNew)
                     FooterRow(title = "Privacy Policy", caption = "How your data is handled") { openLegal(com.masum.fathom.ui.shell.LegalDoc.PRIVACY) }
                     FooterRow(title = "Terms of Use", caption = "The ground rules") { openLegal(com.masum.fathom.ui.shell.LegalDoc.TERMS) }
                     Hairline()

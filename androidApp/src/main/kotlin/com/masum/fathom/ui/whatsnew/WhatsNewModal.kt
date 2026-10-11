@@ -53,9 +53,21 @@ fun WhatsNewModal(
     val releases = remember {
         listOf(
             ReleaseNote(
+                version = "v1.6.0",
+                title = "Sanctuary Patron, Neural Studio Voices & 8 Sacred Themes",
+                isCurrent = true,
+                highlights = listOf(
+                    "Sanctuary Patron Consecration: Support independent sacred wisdom with flexible monthly, annual, and lifetime patron plans. Unlocks all 8 themes, full pathway journeys, and all soundscapes.",
+                    "Studio Neural Voice Narration (BYOK): High-fidelity recitation powered by your own ElevenLabs or OpenAI keys with automatic on-device caching for offline listening.",
+                    "Eight Sacred Reading Themes: Completely distinct luminance palettes tuned for deep reading—Nocturne (OLED), Vellum (parchment), Abyss (navy), Moss (pine), Sahara (terracotta), Twilight (plum), Cinnabar (burgundy), and Dawn (warm morning).",
+                    "Multi-Device License Sync: Activate and manage your Patron license seamlessly on up to 2 personal devices with cryptographic tamper protection.",
+                    "Contemplative App Launch: Re-paced tradition emblem animation on launch with serene haptic pacing."
+                )
+            ),
+            ReleaseNote(
                 version = "v1.5.0",
                 title = "Widgets on your home screen, deeper themes and audio controls",
-                isCurrent = true,
+                isCurrent = false,
                 highlights = listOf(
                     "Home screen widgets: Put sacred wisdom and your reading streak right on your home screen. There is a scrollable wisdom card that lets you read the reflection right from your launcher, plus compact jewel and horizon banners.",
                     "Redesigned navigation & Explore: The bottom navigation bar is now a floating glass dock that rests over a soft dark blur. In Explore, searching and filtering now scroll naturally together with the rest of the page.",
