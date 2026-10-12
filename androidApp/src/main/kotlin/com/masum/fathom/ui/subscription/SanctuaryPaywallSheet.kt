@@ -20,6 +20,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -379,24 +380,36 @@ private fun DeviceManagementSheet(
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.spacedBy(12.dp)
                             ) {
-                                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                                Column(
+                                    modifier = Modifier.weight(1f),
+                                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                                ) {
+                                    Text(
+                                        text = dev.deviceName,
+                                        style = typography.title,
+                                        color = colors.textPrimary,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
                                     Row(
                                         verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                        horizontalArrangement = Arrangement.spacedBy(6.dp)
                                     ) {
-                                        Text(
-                                            text = dev.deviceName,
-                                            style = typography.title,
-                                            color = colors.textPrimary
-                                        )
                                         if (dev.isCurrentDevice) {
-                                            MonoLabel(text = "This device", color = tone.hue)
+                                            Box(
+                                                modifier = Modifier
+                                                    .clip(RoundedCornerShape(6.dp))
+                                                    .background(tone.hue.copy(alpha = 0.14f))
+                                                    .padding(horizontal = 6.dp, vertical = 2.dp)
+                                            ) {
+                                                MonoLabel(text = "This device", color = tone.hue)
+                                            }
                                         }
+                                        MonoLabel(
+                                            text = "ID: ${dev.deviceId.take(8)}…",
+                                            color = colors.textTertiary
+                                        )
                                     }
-                                    MonoLabel(
-                                        text = "ID: ${dev.deviceId.take(8)}…",
-                                        color = colors.textTertiary
-                                    )
                                 }
 
                                 FathomButton(
@@ -424,7 +437,9 @@ private fun DeviceManagementSheet(
                                         }
                                     },
                                     style = ButtonStyle.Ghost,
-                                    modifier = Modifier.height(38.dp)
+                                    modifier = Modifier
+                                        .height(38.dp)
+                                        .padding(horizontal = 0.dp)
                                 )
                             }
                         }

@@ -3,6 +3,7 @@ package com.masum.fathom.core.sanctuary
 import android.content.Context
 import com.masum.fathom.core.common.result.asSuccessOrNull
 import com.masum.fathom.core.model.user.Bookmark
+import com.masum.fathom.core.model.user.ReadingRecord
 import com.masum.fathom.core.model.user.UserNote
 import com.masum.fathom.core.repository.PassageRepository
 import com.masum.fathom.core.repository.UserDataRepository
@@ -64,10 +65,11 @@ class SanctuaryDataEngine(
     suspend fun exportBackupJson(): String {
         val bookmarks: List<Bookmark> = userDataRepository.observeBookmarks().first()
         val notes: List<UserNote> = userDataRepository.observeAllNotes().first()
+        val readingRecords: List<ReadingRecord> = userDataRepository.observeReadingHistory().first()
 
         val root = JSONObject()
         root.put("app", "Fathom Sacred Wisdom")
-        root.put("version", 1)
+        root.put("version", 2)
         root.put("exported_at_epoch_ms", System.currentTimeMillis())
 
         val bookmarksArray = JSONArray()
@@ -94,6 +96,19 @@ class SanctuaryDataEngine(
             notesArray.put(obj)
         }
         root.put("reflections", notesArray)
+
+        val readingArray = JSONArray()
+        readingRecords.forEach { r ->
+            val obj = JSONObject()
+            obj.put("passage_id", r.passageId)
+            obj.put("book_id", r.bookId)
+            obj.put("first_seen_at_epoch_ms", r.firstSeenAtEpochMs)
+            obj.put("last_seen_at_epoch_ms", r.lastSeenAtEpochMs)
+            obj.put("read_count", r.readCount)
+            obj.put("is_completed", r.isCompleted)
+            readingArray.put(obj)
+        }
+        root.put("reading_records", readingArray)
 
         return root.toString(2)
     }
@@ -145,6 +160,30 @@ class SanctuaryDataEngine(
                             content = content,
                             createdAtEpochMs = created,
                             updatedAtEpochMs = updated
+                        )
+                    )
+                    count++
+                }
+            }
+
+            if (root.has("reading_records")) {
+                val rArr = root.getJSONArray("reading_records")
+                for (i in 0 until rArr.length()) {
+                    val item = rArr.getJSONObject(i)
+                    val passageId = item.getString("passage_id")
+                    val bookId = item.optString("book_id", "")
+                    val firstSeen = item.optLong("first_seen_at_epoch_ms", System.currentTimeMillis())
+                    val lastSeen = item.optLong("last_seen_at_epoch_ms", firstSeen)
+                    val readCount = item.optInt("read_count", 1)
+                    val isCompleted = item.optBoolean("is_completed", false)
+                    userDataRepository.restoreReadingRecord(
+                        ReadingRecord(
+                            passageId = passageId,
+                            bookId = bookId,
+                            firstSeenAtEpochMs = firstSeen,
+                            lastSeenAtEpochMs = lastSeen,
+                            readCount = readCount,
+                            isCompleted = isCompleted
                         )
                     )
                     count++

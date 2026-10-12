@@ -64,6 +64,7 @@ import com.masum.fathom.core.audio.LocalSanctuaryAmbienceEngine
 import com.masum.fathom.core.audio.SacredAudioState
 import com.masum.fathom.core.haptics.LocalFathomHaptics
 import com.masum.fathom.core.model.TraditionId
+import com.masum.fathom.core.subscription.LocalSubscriptionState
 import com.masum.fathom.ui.components.QuoteCardModal
 import com.masum.fathom.ui.design.Atmosphere
 import com.masum.fathom.ui.design.BreathingMark

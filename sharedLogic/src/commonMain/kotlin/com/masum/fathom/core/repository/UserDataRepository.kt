@@ -18,5 +18,7 @@ interface UserDataRepository {
     fun observeAllNotes(): Flow<List<UserNote>>
 
     suspend fun recordReading(passageId: String, bookId: String): FathomResult<Unit, DataError.Local>
+    suspend fun restoreReadingRecord(record: ReadingRecord): FathomResult<Unit, DataError.Local>
     fun observeReadingHistory(): Flow<List<ReadingRecord>>
 }
+

@@ -60,5 +60,11 @@ class FakeUserDataRepository : UserDataRepository {
         return FathomResult.Success(Unit)
     }
 
+    override suspend fun restoreReadingRecord(record: ReadingRecord): FathomResult<Unit, DataError.Local> {
+        readingFlow.value += (record.passageId to record)
+        return FathomResult.Success(Unit)
+    }
+
     override fun observeReadingHistory() = readingFlow.asStateFlow().map { it.values.toList() }
+
 }

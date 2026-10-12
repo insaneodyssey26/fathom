@@ -28,6 +28,7 @@ import com.adamglin.phosphoricons.light.Lock
 import com.adamglin.phosphoricons.light.Scroll
 import com.adamglin.phosphoricons.light.Sparkle
 import com.masum.fathom.core.haptics.LocalFathomHaptics
+import com.masum.fathom.core.subscription.LocalSubscriptionState
 import com.masum.fathom.ui.design.FathomSheet
 import com.masum.fathom.ui.design.Hairline
 import com.masum.fathom.ui.design.LocalSheetCloser
@@ -58,9 +59,11 @@ fun MoreSheet(
         }.getOrNull().orEmpty()
     }
 
+    val subscription = LocalSubscriptionState.current
     FathomSheet(onDismiss = onDismiss) {
         val closeSheet = LocalSheetCloser.current ?: SheetCloser { after -> onDismiss(); after() }
-        SheetHeader(overline = "fathom $versionName", title = "More", onClose = onDismiss)
+        val overline = if (subscription.isPro) "fathom $versionName · sanctuary+ patron" else "fathom $versionName"
+        SheetHeader(overline = overline, title = "More", onClose = onDismiss)
         Hairline()
         MoreRow(PhosphorIcons.Light.Waves, "Soundscapes", "Rain, bowls and a sleep timer") { closeSheet { onSoundscapes() } }
         MoreRow(PhosphorIcons.Light.GearSix, "Settings", "Themes, reminders, backup and updates") { closeSheet { onSettings() } }

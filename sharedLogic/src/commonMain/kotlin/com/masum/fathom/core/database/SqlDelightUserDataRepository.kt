@@ -142,6 +142,24 @@ class SqlDelightUserDataRepository(
             }
         }
 
+    override suspend fun restoreReadingRecord(record: ReadingRecord): FathomResult<Unit, DataError.Local> =
+        withContext(ioDispatcher) {
+            try {
+                queries.restoreReadingRecord(
+                    passage_id = record.passageId,
+                    book_id = record.bookId,
+                    first_seen_at_epoch_ms = record.firstSeenAtEpochMs,
+                    last_seen_at_epoch_ms = record.lastSeenAtEpochMs,
+                    read_count = record.readCount.toLong(),
+                    is_completed = if (record.isCompleted) 1L else 0L
+                )
+                FathomResult.Success(Unit)
+            } catch (_: Throwable) {
+                FathomResult.Failure(DataError.Local.CORRUPTED_DATABASE)
+            }
+        }
+
+
     override fun observeReadingHistory(): Flow<List<ReadingRecord>> {
         return queries.selectAllReadingRecords()
             .asFlow()

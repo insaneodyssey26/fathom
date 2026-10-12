@@ -28,8 +28,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.platform.LocalContext
@@ -135,6 +137,7 @@ fun JournalHub(
             }
 
             item(key = "streak") {
+                val hasAnimatedChart = rememberSaveable { androidx.compose.runtime.mutableStateOf(false) }
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(top = 44.dp),
                     horizontalArrangement = Arrangement.spacedBy(28.dp),
@@ -144,7 +147,7 @@ fun JournalHub(
                         Text(text = state.currentStreakDays.toString(), style = typography.displayLarge.copy(fontSize = 84.sp, lineHeight = 84.sp), color = colors.textPrimary)
                         MonoLabel(text = if (state.currentStreakDays == 1) "Day streak" else "Days streak", color = tone.hue)
                     }
-                    TideChart(days = state.weeklyHeatmap, modifier = Modifier.weight(1f))
+                    TideChart(days = state.weeklyHeatmap, hasAnimatedState = hasAnimatedChart, modifier = Modifier.weight(1f))
                 }
             }
 
@@ -207,12 +210,28 @@ fun JournalHub(
                     )
                 }
                 item(key = "badges") {
-                    LazyRow(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp),
-                        contentPadding = PaddingValues(end = 24.dp)
-                    ) {
-                        items(state.milestoneBadges, key = { it.id }) { badge -> BadgeCard(badge) }
+                    Box(modifier = Modifier.fillMaxWidth()) {
+                        LazyRow(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .layout { measurable, constraints ->
+                                    val horizontalPaddingPx = 24.dp.roundToPx()
+                                    val expandedWidth = constraints.maxWidth + (horizontalPaddingPx * 2)
+                                    val placeable = measurable.measure(
+                                        constraints.copy(
+                                            minWidth = expandedWidth,
+                                            maxWidth = expandedWidth
+                                        )
+                                    )
+                                    layout(constraints.maxWidth, placeable.height) {
+                                        placeable.placeRelative(-horizontalPaddingPx, 0)
+                                    }
+                                },
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            contentPadding = PaddingValues(start = 24.dp, end = 24.dp)
+                        ) {
+                            items(state.milestoneBadges, key = { it.id }) { badge -> BadgeCard(badge) }
+                        }
                     }
                 }
             }
@@ -273,16 +292,30 @@ private fun FooterRow(title: String, caption: String, onClick: () -> Unit) {
 }
 
 @Composable
-private fun TideChart(days: List<HeatmapDay>, modifier: Modifier = Modifier) {
+private fun TideChart(
+    days: List<HeatmapDay>,
+    hasAnimatedState: androidx.compose.runtime.MutableState<Boolean>,
+    modifier: Modifier = Modifier
+) {
     val colors = FathomTheme.colors
     val tone = FathomTheme.tone
     val peak = (days.maxOfOrNull { it.readCount } ?: 0).coerceAtLeast(1)
     val trackHeight = 92.dp
+    val alreadyAnimated = hasAnimatedState.value
+
     Row(modifier = modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.Bottom) {
         days.forEachIndexed { index, day ->
-            val fill = remember(days) { Animatable(0f) }
+            val targetFraction = day.readCount.toFloat() / peak
+            val fill = remember(day.readCount, peak) { Animatable(if (alreadyAnimated) targetFraction else 0f) }
             LaunchedEffect(day.readCount, days.size) {
-                fill.animateTo(day.readCount.toFloat() / peak, tween(900, index * 70, FathomMotion.Emphasized))
+                if (!alreadyAnimated) {
+                    fill.animateTo(targetFraction, tween(900, index * 70, FathomMotion.Emphasized))
+                    if (index == days.lastIndex) {
+                        hasAnimatedState.value = true
+                    }
+                } else {
+                    fill.snapTo(targetFraction)
+                }
             }
             Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Box(

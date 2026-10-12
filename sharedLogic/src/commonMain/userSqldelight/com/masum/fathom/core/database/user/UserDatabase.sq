@@ -65,6 +65,16 @@ ON CONFLICT(passage_id) DO UPDATE SET
     read_count = read_count + 1,
     is_completed = excluded.is_completed;
 
+restoreReadingRecord:
+INSERT INTO reading_record_entity(passage_id, book_id, first_seen_at_epoch_ms, last_seen_at_epoch_ms, read_count, is_completed)
+VALUES (?, ?, ?, ?, ?, ?)
+ON CONFLICT(passage_id) DO UPDATE SET
+    first_seen_at_epoch_ms = excluded.first_seen_at_epoch_ms,
+    last_seen_at_epoch_ms = excluded.last_seen_at_epoch_ms,
+    read_count = excluded.read_count,
+    is_completed = excluded.is_completed;
+
+
 selectReadingRecordByPassageId:
 SELECT * FROM reading_record_entity WHERE passage_id = ?;
 
