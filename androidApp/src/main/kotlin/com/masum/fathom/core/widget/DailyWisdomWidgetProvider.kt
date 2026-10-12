@@ -300,6 +300,18 @@ object WidgetRepository {
         }
     }
 
+    fun isPatron(context: Context): Boolean {
+        return try {
+            val prefs = context.getSharedPreferences("fathom_subscription_prefs", Context.MODE_PRIVATE)
+            val isPatron = prefs.getBoolean("is_patron", false)
+            val expiresAt = prefs.getLong("subscription_expires_at", 0L)
+            val isExpired = expiresAt > 0 && System.currentTimeMillis() > expiresAt
+            isPatron && !isExpired
+        } catch (_: Exception) {
+            false
+        }
+    }
+
     fun updateAll(context: Context) {
         val providers = listOf(
             DailyWisdomWidgetProvider::class.java,
@@ -601,6 +613,56 @@ class SanctuaryStreakWidgetProvider : AppWidgetProvider() {
         val scale = minOf(1f, kotlin.math.sqrt(1_200_000f / (widthDp * density * heightDp * density)))
         val widthPx = (widthDp * density * scale).toInt()
         val heightPx = (heightDp * density * scale).toInt()
+
+        val isPatron = WidgetRepository.isPatron(context)
+        if (!isPatron) {
+            views.setImageViewBitmap(
+                R.id.widget_streak_background,
+                WidgetArt.background(widthPx, heightPx, colors, tone, 28f * density * scale, 108108108L)
+            )
+            views.setImageViewBitmap(R.id.widget_streak_emblem, WidgetArt.emblem(context, TraditionId.STOICISM, tone.hue.toArgb(), (20 * density).toInt()))
+            views.setTextViewText(R.id.widget_streak_header_title, "SANCTUARY PATRON")
+            views.setTextColor(R.id.widget_streak_header_title, tone.hue.toArgb())
+            views.setImageViewBitmap(R.id.widget_streak_wordmark, WidgetArt.wordmark(context, colors.textPrimary.toArgb(), (16 * density).toInt()))
+
+            views.setTextViewText(R.id.widget_streak_count, "✦")
+            views.setTextColor(R.id.widget_streak_count, tone.hue.toArgb())
+
+            views.setTextViewText(R.id.widget_streak_count_label, "CONSECRATED RITUALS")
+            views.setTextColor(R.id.widget_streak_count_label, tone.hue.toArgb())
+
+            views.setTextViewText(R.id.widget_streak_status_text, "Streak counter reserved for Sanctuary Patrons")
+            views.setTextColor(R.id.widget_streak_status_text, colors.textSecondary.toArgb())
+
+            val dotIds = listOf(
+                R.id.widget_dot_0,
+                R.id.widget_dot_1,
+                R.id.widget_dot_2,
+                R.id.widget_dot_3,
+                R.id.widget_dot_4,
+                R.id.widget_dot_5,
+                R.id.widget_dot_6
+            )
+            for (i in 0..6) {
+                views.setTextColor(dotIds[i], colors.hairline.toArgb())
+            }
+
+            views.setTextViewText(R.id.widget_streak_footer, "TAP TO UNLOCK SANCTUARY PATRON →")
+            views.setTextColor(R.id.widget_streak_footer, tone.hue.toArgb())
+
+            val openAppIntent = Intent(context, MainActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            }
+            val openAppPendingIntent = PendingIntent.getActivity(
+                context,
+                widgetId,
+                openAppIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+            views.setOnClickPendingIntent(R.id.widget_streak_root, openAppPendingIntent)
+            appWidgetManager.updateAppWidget(widgetId, views)
+            return
+        }
 
         views.setImageViewBitmap(
             R.id.widget_streak_background,

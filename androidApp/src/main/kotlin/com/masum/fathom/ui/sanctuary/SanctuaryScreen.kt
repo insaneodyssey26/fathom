@@ -316,15 +316,20 @@ fun SanctuaryScreen(
                                     FathomButton(
                                         text = "Export backup",
                                         onClick = {
-                                            haptics.light()
-                                            scope.launch {
-                                                val json = dataEngine.exportBackupJson()
-                                                val send = Intent(Intent.ACTION_SEND).apply {
-                                                    type = "text/plain"
-                                                    putExtra(Intent.EXTRA_SUBJECT, "Fathom backup")
-                                                    putExtra(Intent.EXTRA_TEXT, json)
+                                            if (!subscription.isPro) {
+                                                haptics.medium()
+                                                openPaywall()
+                                            } else {
+                                                haptics.light()
+                                                scope.launch {
+                                                    val json = dataEngine.exportBackupJson()
+                                                    val send = Intent(Intent.ACTION_SEND).apply {
+                                                        type = "text/plain"
+                                                        putExtra(Intent.EXTRA_SUBJECT, "Fathom backup")
+                                                        putExtra(Intent.EXTRA_TEXT, json)
+                                                    }
+                                                    context.startActivity(Intent.createChooser(send, "Export backup"))
                                                 }
-                                                context.startActivity(Intent.createChooser(send, "Export backup"))
                                             }
                                         },
                                         style = ButtonStyle.Tone,

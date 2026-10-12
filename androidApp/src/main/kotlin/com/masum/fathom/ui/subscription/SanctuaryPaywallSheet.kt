@@ -55,10 +55,10 @@ private data class PatronPerk(val number: String, val title: String, val body: S
 private val PatronPerks = listOf(
     PatronPerk("01", "Eight sacred reading themes", "Nocturne, Vellum, Abyss, Moss, Sahara, Twilight, Cinnabar, and Dawn."),
     PatronPerk("02", "Full sacred pathways immersion", "Sequential chapter progression across all 15 canonical texts with DepthDial radial progress tracking."),
-    PatronPerk("03", "Unlimited reflections & vault", "Write personal meditation notes on any verse without limits and export your private data archive."),
-    PatronPerk("04", "Studio neural narration (BYOK)", "High-fidelity ElevenLabs and OpenAI voice recitation with automatic local disk audio caching."),
+    PatronPerk("03", "Unlimited reflections & vault", "Write unlimited personal verse reflections and export your private encrypted data archive."),
+    PatronPerk("04", "Sanctuary streak ritual widget", "Live ritual counter and consecrated contemplation tracker on your home screen."),
     PatronPerk("05", "Sacred tradition morning alarms", "Tailored daily morning contemplation notifications delivering wisdom from your chosen path."),
-    PatronPerk("06", "Home screen sanctuary widgets", "Full access to the Daily Wisdom Jewel, Horizon Banner, and Sanctuary Streak Counter widgets."),
+    PatronPerk("06", "All ambient soundscapes & timers", "Continuous sacred audio soundscapes with unlimited extended contemplation timers."),
     PatronPerk("07", "Patron seal & zero ads forever", "Golden consecrated Patron emblem in your Sanctuary profile with guaranteed zero tracking.")
 )
 
