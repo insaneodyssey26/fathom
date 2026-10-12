@@ -10,6 +10,9 @@ import com.masum.fathom.core.model.user.SubscriptionTier
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 
 import java.util.UUID
 import kotlinx.coroutines.CoroutineScope
@@ -24,6 +27,9 @@ class SubscriptionManager(private val context: Context) {
 
     private val _subscriptionState = MutableStateFlow(loadState())
     val subscriptionState: StateFlow<SubscriptionState> = _subscriptionState.asStateFlow()
+
+    private val _consecrationEvents = MutableSharedFlow<SubscriptionTier>(extraBufferCapacity = 1)
+    val consecrationEvents: SharedFlow<SubscriptionTier> = _consecrationEvents.asSharedFlow()
 
     private fun loadState(): SubscriptionState {
         val isPatron = prefs.getBoolean("is_patron", false)
@@ -130,6 +136,7 @@ class SubscriptionManager(private val context: Context) {
                 tier = result.tier,
                 isPro = true
             )
+            _consecrationEvents.tryEmit(result.tier)
         }
         return result
     }
@@ -167,6 +174,7 @@ class SubscriptionManager(private val context: Context) {
             tier = tier,
             isPro = true
         )
+        _consecrationEvents.tryEmit(tier)
     }
 
     fun restorePurchases(): Boolean {

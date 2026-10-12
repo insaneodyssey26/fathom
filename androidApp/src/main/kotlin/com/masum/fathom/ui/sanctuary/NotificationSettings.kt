@@ -188,24 +188,33 @@ fun NotificationSettings(
 
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     MonoLabel(text = "Verses from")
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Pill(
-                            text = "Every tradition",
-                            selected = settings.verseSource == VerseSource.ALL_TRADITIONS,
-                            onClick = { haptics.light(); preferences.updateVerseSource(VerseSource.ALL_TRADITIONS) }
-                        )
-                        Pill(
-                            text = settings.userTradition?.let { "Mostly $it" } ?: "My tradition",
-                            selected = settings.verseSource == VerseSource.MY_TRADITION && settings.userTradition != null,
-                            onClick = {
-                                haptics.light()
-                                if (settings.userTradition != null) preferences.updateVerseSource(VerseSource.MY_TRADITION)
-                            }
-                        )
-                    }
-                    if (settings.userTradition == null) {
+                    val tradition = settings.userTradition
+                    if (tradition != null) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Pill(
+                                text = "Every tradition",
+                                selected = settings.verseSource == VerseSource.ALL_TRADITIONS,
+                                onClick = { haptics.light(); preferences.updateVerseSource(VerseSource.ALL_TRADITIONS) }
+                            )
+                            Pill(
+                                text = "Mostly $tradition",
+                                selected = settings.verseSource == VerseSource.MY_TRADITION,
+                                onClick = {
+                                    haptics.light()
+                                    preferences.updateVerseSource(VerseSource.MY_TRADITION)
+                                }
+                            )
+                        }
+                    } else {
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Pill(
+                                text = "Every tradition",
+                                selected = true,
+                                onClick = { haptics.light() }
+                            )
+                        }
                         Text(
-                            text = "Choose a spiritual path in your Journal profile to read from one tradition.",
+                            text = "Universal path selected in your Journal profile. Verses will cycle across all sacred traditions.",
                             style = typography.caption,
                             color = colors.textTertiary
                         )

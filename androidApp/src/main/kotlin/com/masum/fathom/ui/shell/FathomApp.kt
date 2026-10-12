@@ -112,7 +112,9 @@ import com.masum.fathom.ui.sanctuary.SanctuaryScreen
 import com.masum.fathom.ui.search.SearchScreen
 import com.masum.fathom.ui.search.SearchViewModel
 import com.masum.fathom.ui.splash.SplashScreen
+import com.masum.fathom.core.model.user.SubscriptionTier
 import com.masum.fathom.ui.subscription.SanctuaryPaywallSheet
+import com.masum.fathom.ui.subscription.PatronConsecratedModal
 import com.masum.fathom.ui.theme.FathomMotion
 import com.masum.fathom.ui.theme.FathomTheme
 import com.masum.fathom.ui.whatsnew.WhatsNewModal
@@ -187,11 +189,19 @@ fun FathomApp(
     val versionCode = remember(context) { currentVersionCode(context) }
 
     var showPaywall by remember { mutableStateOf(false) }
+    var consecratedTier by remember { mutableStateOf<SubscriptionTier?>(null) }
     var showWhatsNew by remember { mutableStateOf(false) }
     var showAmbience by remember { mutableStateOf(false) }
     var showMore by remember { mutableStateOf(false) }
     val navigator = rememberAppNavigator()
     var splashDone by remember { mutableStateOf(!launchPassageId.isNullOrEmpty()) }
+
+    LaunchedEffect(subManager) {
+        subManager.consecrationEvents.collect { tier ->
+            showPaywall = false
+            consecratedTier = tier
+        }
+    }
 
     LaunchedEffect(settings.hasCompletedOnboarding, versionCode) {
         if (settings.hasCompletedOnboarding && preferences.shouldShowWhatsNew(versionCode)) {
@@ -267,6 +277,8 @@ fun FathomApp(
                         updateEngine = updateEngine,
                         showPaywall = showPaywall,
                         onDismissPaywall = { showPaywall = false },
+                        consecratedTier = consecratedTier,
+                        onDismissConsecrated = { consecratedTier = null },
                         showWhatsNew = showWhatsNew,
                         onDismissWhatsNew = {
                             preferences.markWhatsNewSeen(versionCode)
@@ -305,6 +317,8 @@ private fun MainStage(
     onDismissMore: () -> Unit,
     showPaywall: Boolean,
     onDismissPaywall: () -> Unit,
+    consecratedTier: SubscriptionTier?,
+    onDismissConsecrated: () -> Unit,
     showWhatsNew: Boolean,
     onDismissWhatsNew: () -> Unit,
     showAmbience: Boolean,
@@ -530,6 +544,7 @@ private fun MainStage(
             SearchOverlays(state = searchState, onEvent = onSearchEvent)
             LibraryOverlays(state = libraryState, onEvent = onLibraryEvent)
             if (showPaywall) SanctuaryPaywallSheet(onDismiss = onDismissPaywall)
+            if (consecratedTier != null) PatronConsecratedModal(tier = consecratedTier, onDismiss = onDismissConsecrated)
             if (showWhatsNew) WhatsNewModal(onDismiss = onDismissWhatsNew)
             if (showAmbience) AmbienceSoundscapeSheet(onDismiss = onDismissAmbience)
             if (showMore) {
