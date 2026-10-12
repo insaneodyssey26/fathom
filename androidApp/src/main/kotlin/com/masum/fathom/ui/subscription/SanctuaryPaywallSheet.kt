@@ -47,6 +47,9 @@ import com.masum.fathom.ui.theme.FathomTheme
 import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.launch
 
+import androidx.compose.material3.CircularProgressIndicator
+import com.masum.fathom.core.subscription.ActiveDeviceInfo
+
 private data class PatronPerk(val number: String, val title: String, val body: String)
 
 private val PatronPerks = listOf(
@@ -68,15 +71,17 @@ fun SanctuaryPaywallSheet(onDismiss: () -> Unit) {
     val colors = FathomTheme.colors
     val tone = FathomTheme.tone
     val typography = FathomTheme.typography
+    val isPro = manager.subscriptionState.value.isPro
     var selected by remember { mutableStateOf(SubscriptionTier.ANNUAL) }
     var showRestoreSheet by remember { mutableStateOf(false) }
+    var showDeviceSheet by remember { mutableStateOf(false) }
 
     if (showRestoreSheet) {
         RestorePurchaseSheet(
             onDismiss = { showRestoreSheet = false },
             onRestore = { input ->
                 scope.launch {
-                    val result = manager.activateWithKey(input, if (input.contains("@")) input else null)
+                    val result = manager.activateWithKey(input.trim().uppercase(), null)
                     if (result.isValid) {
                         haptics.success()
                         Toast.makeText(context, "Welcome, Fathom Patron. Sanctuary unlocked.", Toast.LENGTH_LONG).show()
@@ -92,17 +97,64 @@ fun SanctuaryPaywallSheet(onDismiss: () -> Unit) {
         return
     }
 
+    if (showDeviceSheet) {
+        DeviceManagementSheet(
+            onDismiss = { showDeviceSheet = false },
+            onDeactivatedCurrent = {
+                showDeviceSheet = false
+                onDismiss()
+            }
+        )
+        return
+    }
+
     FathomSheet(onDismiss = onDismiss) {
         Column(
             modifier = Modifier.fillMaxWidth().weight(1f, fill = false).verticalScroll(rememberScrollState())
         ) {
             Column(Modifier.padding(top = 6.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                MonoLabel(text = "FATHOM PATRON", color = tone.hue)
-                Text(text = "Consecrate Your Sanctuary.", style = typography.display, color = colors.textPrimary)
+                MonoLabel(text = if (isPro) "PATRON CONSECRATED" else "FATHOM PATRON", color = tone.hue)
                 Text(
-                    text = "Support independent sacred wisdom. Unlock all themes, pathways, reflections, and neural studio audio.",
+                    text = if (isPro) "Sanctuary Is Active." else "Consecrate Your Sanctuary.",
+                    style = typography.display,
+                    color = colors.textPrimary
+                )
+                Text(
+                    text = if (isPro) {
+                        "Your Patron license is active on this device. You can manage connected devices or deactivate this phone anytime."
+                    } else {
+                        "Support independent sacred wisdom. Unlock all themes, pathways, reflections, and neural studio audio."
+                    },
                     style = typography.commentaryBody,
                     color = colors.textSecondary
+                )
+            }
+
+            if (isPro) {
+                Spacer(Modifier.height(28.dp))
+                FathomButton(
+                    text = "Manage Connected Devices",
+                    onClick = {
+                        haptics.light()
+                        showDeviceSheet = true
+                    },
+                    style = ButtonStyle.Tone,
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                Spacer(Modifier.height(12.dp))
+                FathomButton(
+                    text = "Deactivate this Device",
+                    onClick = {
+                        haptics.medium()
+                        scope.launch {
+                            manager.deactivateCurrentDevice()
+                            Toast.makeText(context, "License deactivated on this device.", Toast.LENGTH_SHORT).show()
+                            onDismiss()
+                        }
+                    },
+                    style = ButtonStyle.Ghost,
+                    modifier = Modifier.fillMaxWidth()
                 )
             }
 
@@ -123,40 +175,42 @@ fun SanctuaryPaywallSheet(onDismiss: () -> Unit) {
                 }
             }
 
-            Column(Modifier.padding(top = 30.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                listOf(SubscriptionTier.LIFETIME, SubscriptionTier.ANNUAL, SubscriptionTier.MONTHLY).forEach { tier ->
-                    PatronTierRow(
-                        tier = tier,
-                        selected = selected == tier,
-                        onClick = {
-                            haptics.light()
-                            selected = tier
-                        }
-                    )
-                }
-            }
-
-            Spacer(Modifier.height(28.dp))
-            FathomButton(
-                text = "Become a Patron (${selected.title})",
-                onClick = {
-                    haptics.heavy()
-                    manager.launchDodoCheckout(selected)
-                },
-                style = ButtonStyle.Tone,
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            Box(
-                modifier = Modifier
-                    .align(Alignment.CenterHorizontally)
-                    .tappable(scale = 0.95f) {
-                        haptics.light()
-                        showRestoreSheet = true
+            if (!isPro) {
+                Column(Modifier.padding(top = 30.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    listOf(SubscriptionTier.LIFETIME, SubscriptionTier.ANNUAL, SubscriptionTier.MONTHLY).forEach { tier ->
+                        PatronTierRow(
+                            tier = tier,
+                            selected = selected == tier,
+                            onClick = {
+                                haptics.light()
+                                selected = tier
+                            }
+                        )
                     }
-                    .padding(vertical = 16.dp, horizontal = 24.dp)
-            ) {
-                MonoLabel(text = "Already a Patron? Restore purchase", color = colors.textTertiary)
+                }
+
+                Spacer(Modifier.height(28.dp))
+                FathomButton(
+                    text = "Become a Patron (${selected.title})",
+                    onClick = {
+                        haptics.heavy()
+                        manager.launchDodoCheckout(selected)
+                    },
+                    style = ButtonStyle.Tone,
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.CenterHorizontally)
+                        .tappable(scale = 0.95f) {
+                            haptics.light()
+                            showRestoreSheet = true
+                        }
+                        .padding(vertical = 16.dp, horizontal = 24.dp)
+                ) {
+                    MonoLabel(text = "Already a Patron? Enter license key", color = colors.textTertiary)
+                }
             }
         }
     }
@@ -213,8 +267,8 @@ private fun RestorePurchaseSheet(onDismiss: () -> Unit, onRestore: (String) -> U
     FathomSheet(onDismiss = onDismiss) {
         SheetHeader(
             overline = "PATRON RESTORE",
-            title = "Restore Patron Status",
-            subtitle = "Enter the email address you used during checkout to restore your Patron access.",
+            title = "Enter License Key",
+            subtitle = "Paste the license key sent to your email after checkout to unlock Patron access.",
             onClose = onDismiss
         )
         Box(
@@ -226,7 +280,7 @@ private fun RestorePurchaseSheet(onDismiss: () -> Unit, onRestore: (String) -> U
                 .padding(16.dp)
         ) {
             if (emailOrKey.isEmpty()) {
-                Text(text = "patron@example.com", style = FathomTheme.typography.body, color = colors.textTertiary)
+                Text(text = "XXXX-XXXX-XXXX-XXXX", style = FathomTheme.typography.body, color = colors.textTertiary)
             }
             BasicTextField(
                 value = emailOrKey,
@@ -239,7 +293,7 @@ private fun RestorePurchaseSheet(onDismiss: () -> Unit, onRestore: (String) -> U
         }
         Spacer(Modifier.height(16.dp))
         FathomButton(
-            text = "Restore Patron Access",
+            text = "Activate License",
             onClick = { onRestore(emailOrKey) },
             enabled = emailOrKey.isNotBlank(),
             style = ButtonStyle.Tone,
@@ -260,3 +314,142 @@ private fun RestorePurchaseSheet(onDismiss: () -> Unit, onRestore: (String) -> U
         }
     }
 }
+
+@Composable
+private fun DeviceManagementSheet(
+    onDismiss: () -> Unit,
+    onDeactivatedCurrent: () -> Unit
+) {
+    val colors = FathomTheme.colors
+    val tone = FathomTheme.tone
+    val typography = FathomTheme.typography
+    val manager = LocalSubscriptionManager.current
+    val haptics = LocalFathomHaptics.current
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+
+    var devices by remember { mutableStateOf<List<ActiveDeviceInfo>?>(null) }
+    var isLoading by remember { mutableStateOf(true) }
+    var actionInProgress by remember { mutableStateOf(false) }
+
+    androidx.compose.runtime.LaunchedEffect(Unit) {
+        devices = manager.fetchActiveDevices()
+        isLoading = false
+    }
+
+    FathomSheet(onDismiss = onDismiss) {
+        Column(
+            modifier = Modifier.fillMaxWidth().weight(1f, fill = false).verticalScroll(rememberScrollState())
+        ) {
+            SheetHeader(
+                overline = "PATRON LICENSING",
+                title = "Connected Devices",
+                subtitle = "Your Patron license supports up to 2 active devices simultaneously. Revoking frees up that device slot instantly.",
+                onClose = onDismiss
+            )
+
+            Spacer(Modifier.height(12.dp))
+
+            when {
+                isLoading -> {
+                    Box(Modifier.fillMaxWidth().padding(vertical = 40.dp), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(color = tone.hue, modifier = Modifier.size(28.dp))
+                    }
+                }
+                devices.isNullOrEmpty() -> {
+                    Box(Modifier.fillMaxWidth().padding(vertical = 32.dp), contentAlignment = Alignment.Center) {
+                        Text(
+                            text = "No active devices found.",
+                            style = typography.body,
+                            color = colors.textSecondary
+                        )
+                    }
+                }
+                else -> {
+                    val list = devices!!
+                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        list.forEach { dev ->
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(18.dp))
+                                    .background(colors.surfaceElevated)
+                                    .border(1.dp, colors.hairline, RoundedCornerShape(18.dp))
+                                    .padding(horizontal = 16.dp, vertical = 14.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        Text(
+                                            text = dev.deviceName,
+                                            style = typography.title,
+                                            color = colors.textPrimary
+                                        )
+                                        if (dev.isCurrentDevice) {
+                                            MonoLabel(text = "This device", color = tone.hue)
+                                        }
+                                    }
+                                    MonoLabel(
+                                        text = "ID: ${dev.deviceId.take(8)}…",
+                                        color = colors.textTertiary
+                                    )
+                                }
+
+                                FathomButton(
+                                    text = if (dev.isCurrentDevice) "Deactivate" else "Revoke",
+                                    onClick = {
+                                        if (actionInProgress) return@FathomButton
+                                        actionInProgress = true
+                                        haptics.medium()
+                                        scope.launch {
+                                            val ok = manager.revokeDevice(dev.deviceId)
+                                            if (ok) {
+                                                haptics.success()
+                                                if (dev.isCurrentDevice) {
+                                                    Toast.makeText(context, "Deactivated this device.", Toast.LENGTH_SHORT).show()
+                                                    onDeactivatedCurrent()
+                                                } else {
+                                                    Toast.makeText(context, "Device revoked. Slot freed.", Toast.LENGTH_SHORT).show()
+                                                    devices = manager.fetchActiveDevices()
+                                                }
+                                            } else {
+                                                haptics.error()
+                                                Toast.makeText(context, "Failed to revoke device.", Toast.LENGTH_SHORT).show()
+                                            }
+                                            actionInProgress = false
+                                        }
+                                    },
+                                    style = ButtonStyle.Ghost,
+                                    modifier = Modifier.height(38.dp)
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+            Spacer(Modifier.height(24.dp))
+            FathomButton(
+                text = "Deactivate Current Phone",
+                onClick = {
+                    if (actionInProgress) return@FathomButton
+                    actionInProgress = true
+                    haptics.medium()
+                    scope.launch {
+                        manager.deactivateCurrentDevice()
+                        haptics.success()
+                        Toast.makeText(context, "License removed from this phone.", Toast.LENGTH_SHORT).show()
+                        onDeactivatedCurrent()
+                    }
+                },
+                style = ButtonStyle.Ghost,
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
+    }
+}
+

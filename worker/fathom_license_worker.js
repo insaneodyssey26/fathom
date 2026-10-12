@@ -311,18 +311,17 @@ export default {
           });
         }
 
-        let actualKey = licenseKey;
-        let kvData = await env.FATHOM_LICENSES.get(actualKey, { type: "json" });
-        if (!kvData) {
-          const emailLookup = (email || (licenseKey.includes("@") ? licenseKey : "")).toLowerCase();
-          if (emailLookup) {
-            const mappedKey = await env.FATHOM_LICENSES.get(`EMAIL:${emailLookup}`);
-            if (mappedKey) {
-              actualKey = mappedKey;
-              kvData = await env.FATHOM_LICENSES.get(actualKey, { type: "json" });
-            }
-          }
+        if (licenseKey.includes("@")) {
+          return new Response(JSON.stringify({
+            success: false,
+            error: "Please enter your License Key, not your email address. You can find it in your purchase receipt."
+          }), {
+            status: 400,
+            headers: { "Content-Type": "application/json" }
+          });
         }
+
+        const kvData = await env.FATHOM_LICENSES.get(licenseKey, { type: "json" });
         if (!kvData) {
           return new Response(JSON.stringify({ success: false, error: "License key not found. Please verify your purchase." }), {
             status: 404,
@@ -408,7 +407,7 @@ export default {
           kvData.email = email;
         }
 
-        await env.FATHOM_LICENSES.put(actualKey, JSON.stringify(kvData));
+        await env.FATHOM_LICENSES.put(licenseKey, JSON.stringify(kvData));
 
         const devices = kvData.activatedDevices.map(d => ({
           deviceId: d.deviceId,
@@ -418,7 +417,7 @@ export default {
         }));
 
         const tokenData = JSON.stringify({
-          licenseKey: actualKey,
+          licenseKey,
           tier: kvData.tier,
           deviceId,
           expiresAt: kvData.expiresAt || 0,
@@ -549,7 +548,7 @@ export default {
         ]);
 
         const paymentId = payload.payment_id || payload.id || `TXN_${Date.now()}`;
-        const customerEmail = (
+        const rawCustomerEmail = (
           payload.customer?.email ||
           payload.billing?.email ||
           payload.email ||
@@ -557,6 +556,27 @@ export default {
           eventData.customer?.email ||
           ""
         ).trim().toLowerCase();
+
+        const customerId = payload.customer_id || payload.customer?.id || payload.customer?.customer_id || "";
+
+        if (rawCustomerEmail) {
+          if (paymentId) {
+            await env.FATHOM_LICENSES.put(`PAYMENT_EMAIL:${paymentId}`, rawCustomerEmail, { expirationTtl: 86400 * 7 });
+          }
+          if (customerId) {
+            await env.FATHOM_LICENSES.put(`CUST_EMAIL:${customerId}`, rawCustomerEmail, { expirationTtl: 86400 * 30 });
+          }
+        }
+
+        let resolvedEmail = rawCustomerEmail;
+        if (!resolvedEmail && paymentId) {
+          resolvedEmail = (await env.FATHOM_LICENSES.get(`PAYMENT_EMAIL:${paymentId}`)) || "";
+        }
+        if (!resolvedEmail && customerId) {
+          resolvedEmail = (await env.FATHOM_LICENSES.get(`CUST_EMAIL:${customerId}`)) || "";
+        }
+
+        const customerEmail = resolvedEmail;
 
         const productId = (payload.product_id || payload.items?.[0]?.product_id || "").toLowerCase();
         const productName = (payload.product_name || payload.items?.[0]?.product_name || "").toUpperCase();
@@ -605,20 +625,12 @@ export default {
         }
 
         if (!dodoKey) {
-          console.error(`[DODO WEBHOOK ALERT] Payment received without license_key. OrderId: ${paymentId}, Customer: ${customerEmail}, Product: ${productId}`);
-          if (env.FATHOM_LICENSES && paymentId) {
-            await env.FATHOM_LICENSES.put(`MISSING_KEY:${paymentId}`, JSON.stringify({
-              orderId: paymentId,
-              email: customerEmail,
-              productId: productId,
-              productName: productName,
-              receivedAt: Date.now(),
-              error: "Dodo license key feature was not triggered on this product"
-            }), { expirationTtl: MISSING_KEY_TTL_SECONDS });
+          if (customerEmail && paymentId) {
+            await env.FATHOM_LICENSES.put(`PENDING_KEY_ORDER:${paymentId}`, customerEmail, { expirationTtl: 86400 * 7 });
           }
           return new Response(JSON.stringify({
-            success: false,
-            error: "Webhook payload missing license_key. Flagged for manual review."
+            success: true,
+            message: "Payment captured. Waiting for license key generation event."
           }), {
             status: 200,
             headers: { "Content-Type": "application/json" }
@@ -631,13 +643,18 @@ export default {
 
         const existingRecord = await env.FATHOM_LICENSES.get(licenseKey, { type: "json" });
         if (existingRecord) {
-          existingRecord.email = existingRecord.email || customerEmail || null;
+          if (!existingRecord.email && customerEmail) {
+            existingRecord.email = customerEmail;
+          }
           existingRecord.orderId = existingRecord.orderId || paymentId;
           existingRecord.tier = existingRecord.tier || mapped.tier;
           existingRecord.status = existingRecord.status || "ACTIVE";
           existingRecord.subscriptionId = existingRecord.subscriptionId || subscriptionId || null;
           await env.FATHOM_LICENSES.put(licenseKey, JSON.stringify(existingRecord));
           await env.FATHOM_LICENSES.put(`ORDER:${paymentId}`, licenseKey);
+          if (existingRecord.email) {
+            await env.FATHOM_LICENSES.put(`EMAIL:${existingRecord.email}`, licenseKey);
+          }
           if (subscriptionId) {
             await env.FATHOM_LICENSES.put(`SUB:${subscriptionId}`, licenseKey);
           }

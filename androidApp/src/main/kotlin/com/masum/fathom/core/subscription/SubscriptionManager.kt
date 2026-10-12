@@ -141,7 +141,20 @@ class SubscriptionManager(private val context: Context) {
 
     suspend fun revokeDevice(deviceId: String): Boolean {
         val key = getSavedLicenseKey() ?: return false
-        return licenseEngine.revokeDeviceRemote(key, deviceId)
+        val success = licenseEngine.revokeDeviceRemote(key, deviceId)
+        if (success && deviceId == getDeviceId()) {
+            resetToFree()
+        }
+        return success
+    }
+
+    suspend fun deactivateCurrentDevice(): Boolean {
+        val key = getSavedLicenseKey()
+        if (key != null) {
+            licenseEngine.revokeDeviceRemote(key, getDeviceId())
+        }
+        resetToFree()
+        return true
     }
 
     fun consecratePatron(tier: SubscriptionTier, sessionId: String = "") {
