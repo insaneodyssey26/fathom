@@ -9,9 +9,7 @@ import com.adamglin.phosphoricons.regular.FlowerLotus
 import com.adamglin.phosphoricons.regular.HandHeart
 import com.adamglin.phosphoricons.regular.Heart
 import com.adamglin.phosphoricons.regular.ShieldCheck
-import com.adamglin.phosphoricons.regular.Sparkle
 import com.adamglin.phosphoricons.regular.Sun
-import com.adamglin.phosphoricons.regular.Waves
 import androidx.compose.ui.graphics.vector.ImageVector
 
 enum class SacredTopic(

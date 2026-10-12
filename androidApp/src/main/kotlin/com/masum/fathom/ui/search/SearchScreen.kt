@@ -1,13 +1,6 @@
 package com.masum.fathom.ui.search
 
 import androidx.activity.compose.BackHandler
-import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideOutHorizontally
-import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -54,7 +47,6 @@ import com.masum.fathom.ui.design.ScreenHeader
 import com.masum.fathom.ui.design.WidthClass
 import com.masum.fathom.ui.design.tappable
 import com.masum.fathom.ui.feed.PassageContextSheet
-import com.masum.fathom.ui.theme.FathomMotion
 import com.masum.fathom.ui.theme.FathomTheme
 import com.masum.fathom.ui.theme.LocalTone
 import com.masum.fathom.ui.theme.rememberTone

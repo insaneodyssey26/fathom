@@ -42,7 +42,6 @@ import com.masum.fathom.ui.design.FathomSheet
 import com.masum.fathom.ui.design.Hairline
 import com.masum.fathom.ui.design.MonoLabel
 import com.masum.fathom.ui.design.SheetHeader
-import com.masum.fathom.ui.design.rememberSheetCloser
 import com.masum.fathom.ui.design.tappable
 import com.masum.fathom.ui.theme.FathomTheme
 import androidx.compose.runtime.rememberCoroutineScope

@@ -14,7 +14,6 @@ dependencies {
     implementation(project(":sharedLogic"))
 
     implementation(libs.androidx.activity.compose)
-    implementation(libs.androidx.fragment.ktx)
     implementation(libs.compose.runtime)
     implementation(libs.compose.foundation)
     implementation(libs.compose.material3)

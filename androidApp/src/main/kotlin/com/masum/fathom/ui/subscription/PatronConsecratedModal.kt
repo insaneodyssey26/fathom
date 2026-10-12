@@ -2,7 +2,6 @@ package com.masum.fathom.ui.subscription
 
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
@@ -19,7 +18,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -42,12 +40,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.adamglin.PhosphorIcons
 import com.adamglin.phosphoricons.Light
-import com.adamglin.phosphoricons.light.Check
 import com.adamglin.phosphoricons.light.DeviceMobile
 import com.adamglin.phosphoricons.light.Headphones
 import com.adamglin.phosphoricons.light.MapTrifold
 import com.adamglin.phosphoricons.light.Palette
-import com.adamglin.phosphoricons.light.Sparkle
 import com.masum.fathom.core.haptics.LocalFathomHaptics
 import com.masum.fathom.core.model.user.SubscriptionTier
 import com.masum.fathom.ui.design.ButtonStyle

@@ -2,7 +2,6 @@ package com.masum.fathom.core.repository
 
 import com.masum.fathom.core.common.result.DataError
 import com.masum.fathom.core.common.result.FathomResult
-import com.masum.fathom.core.model.TraditionId
 import com.masum.fathom.core.model.user.Bookmark
 import com.masum.fathom.core.model.user.ReadingRecord
 import com.masum.fathom.core.model.user.UserNote

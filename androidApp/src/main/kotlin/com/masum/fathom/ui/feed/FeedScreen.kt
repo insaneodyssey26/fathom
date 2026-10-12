@@ -6,12 +6,9 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -44,7 +41,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
 import com.adamglin.PhosphorIcons
 import com.adamglin.phosphoricons.Fill
 import com.adamglin.phosphoricons.Light
@@ -64,7 +60,6 @@ import com.masum.fathom.core.audio.LocalSanctuaryAmbienceEngine
 import com.masum.fathom.core.audio.SacredAudioState
 import com.masum.fathom.core.haptics.LocalFathomHaptics
 import com.masum.fathom.core.model.TraditionId
-import com.masum.fathom.core.subscription.LocalSubscriptionState
 import com.masum.fathom.ui.components.QuoteCardModal
 import com.masum.fathom.ui.design.Atmosphere
 import com.masum.fathom.ui.design.BreathingMark
@@ -73,11 +68,9 @@ import com.masum.fathom.ui.design.ScreenHeader
 import com.masum.fathom.ui.design.StateFrame
 import com.masum.fathom.ui.design.DepthGauge
 import com.masum.fathom.ui.design.Equalizer
-import com.masum.fathom.ui.design.FathomButton
 import com.masum.fathom.ui.design.GlassIconButton
 import com.masum.fathom.ui.design.GlassLayer
 import com.masum.fathom.ui.design.LocalShell
-import com.masum.fathom.ui.design.MonoLabel
 import com.masum.fathom.ui.design.NavToneEffect
 import com.masum.fathom.ui.design.glass
 import com.masum.fathom.ui.design.tappable

@@ -1,13 +1,6 @@
 package com.masum.fathom.ui.library
 
 import androidx.activity.compose.BackHandler
-import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideOutHorizontally
-import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -23,7 +16,6 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -55,11 +47,9 @@ import com.masum.fathom.ui.feed.PassageContextSheet
 import com.masum.fathom.ui.search.EditorialSearchField
 import com.masum.fathom.ui.search.TraditionChips
 import com.masum.fathom.ui.shell.traditionIdForLabel
-import com.masum.fathom.ui.theme.FathomMotion
 import com.masum.fathom.ui.theme.FathomTheme
 import com.masum.fathom.ui.theme.LocalTone
 import com.masum.fathom.ui.theme.rememberTone
-import com.masum.fathom.ui.whatsnew.WhatsNewModal
 import androidx.compose.foundation.lazy.rememberLazyListState
 
 sealed interface JournalPage {

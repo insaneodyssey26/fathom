@@ -74,12 +74,9 @@ import com.adamglin.phosphoricons.light.ArrowRight
 import com.adamglin.phosphoricons.light.Eye
 import com.adamglin.phosphoricons.light.EyeSlash
 import com.adamglin.phosphoricons.light.LockSimple
-import com.adamglin.phosphoricons.light.Minus
-import com.adamglin.phosphoricons.light.Plus
 import com.adamglin.phosphoricons.light.X
 import com.masum.fathom.core.audio.LocalSacredAudioEngine
 import com.masum.fathom.core.haptics.LocalFathomHaptics
-import com.masum.fathom.core.notification.DailyNotificationScheduler
 import com.masum.fathom.core.sanctuary.ByokProvider
 import com.masum.fathom.core.sanctuary.SanctuaryDataEngine
 import com.masum.fathom.core.sanctuary.SanctuaryPreferences
@@ -92,15 +89,12 @@ import com.masum.fathom.core.update.LocalAppUpdateEngine
 import com.masum.fathom.ui.design.Atmosphere
 import com.masum.fathom.ui.design.ButtonStyle
 import com.masum.fathom.ui.design.FathomButton
-import com.masum.fathom.ui.design.FathomSheet
-import com.masum.fathom.ui.design.FathomToggle
 import com.masum.fathom.ui.design.Hairline
 import com.masum.fathom.ui.design.fadeEdges
 import com.masum.fathom.ui.design.LocalBackdrop
 import com.masum.fathom.ui.design.MonoLabel
 import com.masum.fathom.ui.design.Pill
 import com.masum.fathom.ui.design.Seekline
-import com.masum.fathom.ui.design.SheetHeader
 import com.masum.fathom.ui.design.tappable
 import com.masum.fathom.ui.shell.LegalDoc
 import com.masum.fathom.ui.shell.LegalDocuments
@@ -110,7 +104,6 @@ import com.masum.fathom.ui.theme.ReadingTheme
 import com.masum.fathom.ui.theme.palette
 import com.masum.fathom.ui.theme.rememberTone
 import kotlinx.coroutines.launch
-import java.util.Locale
 
 @Composable
 fun SanctuaryScreen(
