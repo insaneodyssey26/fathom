@@ -22,6 +22,12 @@ import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
+import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.time.format.TextStyle
+import java.util.Locale
 import java.util.concurrent.ConcurrentHashMap
 
 private data class RawLibraryData(
@@ -246,79 +252,51 @@ class LibraryViewModel(
     }
 
     private fun calculateStreakAndHeatmap(history: List<com.masum.fathom.core.model.user.ReadingRecord>): Pair<Int, List<HeatmapDay>> {
-        val calendar = java.util.Calendar.getInstance()
-        val nowMs = System.currentTimeMillis()
-        calendar.timeInMillis = nowMs
+        val zoneId = ZoneId.systemDefault()
+        val today = LocalDate.now(zoneId)
 
-        val todayYear = calendar.get(java.util.Calendar.YEAR)
-        val todayDayOfYear = calendar.get(java.util.Calendar.DAY_OF_YEAR)
-
-        val daysWithReads = mutableMapOf<String, Int>()
-        val dayKeyFormatter = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US)
-
+        val daysWithReads = mutableMapOf<LocalDate, Int>()
         history.forEach { record ->
-            val d = java.util.Date(record.lastSeenAtEpochMs)
-            val key = dayKeyFormatter.format(d)
-            daysWithReads[key] = (daysWithReads[key] ?: 0) + record.readCount
+            val date = Instant.ofEpochMilli(record.lastSeenAtEpochMs).atZone(zoneId).toLocalDate()
+            daysWithReads[date] = (daysWithReads[date] ?: 0) + record.readCount
         }
 
         var streak = 0
-        val checkCal = java.util.Calendar.getInstance()
-        checkCal.timeInMillis = nowMs
-
-        val todayKey = dayKeyFormatter.format(checkCal.time)
-        val hasReadToday = (daysWithReads[todayKey] ?: 0) > 0
+        var checkDate = today
+        val hasReadToday = (daysWithReads[today] ?: 0) > 0
 
         if (hasReadToday) {
             streak++
-            checkCal.add(java.util.Calendar.DAY_OF_YEAR, -1)
+            checkDate = checkDate.minusDays(1)
         } else {
-            checkCal.add(java.util.Calendar.DAY_OF_YEAR, -1)
-            val yesterdayKey = dayKeyFormatter.format(checkCal.time)
-            if ((daysWithReads[yesterdayKey] ?: 0) > 0) {
+            val yesterday = today.minusDays(1)
+            if ((daysWithReads[yesterday] ?: 0) > 0) {
                 streak++
-                checkCal.add(java.util.Calendar.DAY_OF_YEAR, -1)
+                checkDate = yesterday.minusDays(1)
             }
         }
 
-        while (true) {
-            val key = dayKeyFormatter.format(checkCal.time)
-            if ((daysWithReads[key] ?: 0) > 0) {
-                streak++
-                checkCal.add(java.util.Calendar.DAY_OF_YEAR, -1)
-            } else {
-                break
-            }
+        while ((daysWithReads[checkDate] ?: 0) > 0) {
+            streak++
+            checkDate = checkDate.minusDays(1)
         }
 
-        val heatmapList = mutableListOf<HeatmapDay>()
-        val heatmapCal = java.util.Calendar.getInstance()
-        heatmapCal.timeInMillis = nowMs
-        heatmapCal.add(java.util.Calendar.DAY_OF_YEAR, -6)
-
-        val dayLabels = arrayOf("Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat")
-
-        for (i in 0..6) {
-            val key = dayKeyFormatter.format(heatmapCal.time)
-            val count = daysWithReads[key] ?: 0
-            val dayOfWeek = heatmapCal.get(java.util.Calendar.DAY_OF_WEEK) - 1
-            val dayOfMonth = heatmapCal.get(java.util.Calendar.DAY_OF_MONTH)
-            val isToday = heatmapCal.get(java.util.Calendar.YEAR) == todayYear && heatmapCal.get(java.util.Calendar.DAY_OF_YEAR) == todayDayOfYear
-
-            heatmapList.add(
-                HeatmapDay(
-                    dayOfWeekLabel = dayLabels.getOrElse(dayOfWeek) { "D" },
-                    dayOfMonth = dayOfMonth,
-                    dateString = key,
-                    readCount = count,
-                    isToday = isToday
-                )
+        val heatmapList = (6 downTo 0).map { daysAgo ->
+            val date = today.minusDays(daysAgo.toLong())
+            val count = daysWithReads[date] ?: 0
+            val dayOfWeekLabel = date.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.getDefault())
+            HeatmapDay(
+                dayOfWeekLabel = dayOfWeekLabel,
+                dayOfMonth = date.dayOfMonth,
+                dateString = date.format(DateTimeFormatter.ISO_LOCAL_DATE),
+                readCount = count,
+                isToday = date == today
             )
-            heatmapCal.add(java.util.Calendar.DAY_OF_YEAR, 1)
         }
 
         return Pair(streak, heatmapList)
     }
+
 
     private fun calculateMilestoneBadges(
         history: List<com.masum.fathom.core.model.user.ReadingRecord>,

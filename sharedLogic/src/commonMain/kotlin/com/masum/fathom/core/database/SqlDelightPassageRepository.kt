@@ -192,12 +192,13 @@ class SqlDelightPassageRepository(
     override suspend fun getChaptersForBook(bookId: String): FathomResult<List<Int>, DataError.Local> =
         withContext(ioDispatcher) {
             try {
-                val chapters = queries.selectChaptersForBook(bookId).executeAsList().mapNotNull { it?.toInt() }
+                val chapters = queries.selectChaptersForBook(bookId).executeAsList().map { it.toInt() }
                 FathomResult.Success(chapters)
             } catch (_: Throwable) {
                 FathomResult.Failure(DataError.Local.CORRUPTED_DATABASE)
             }
         }
+
 
     override suspend fun getPassagesForBookChapter(
         bookId: String,

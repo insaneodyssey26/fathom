@@ -66,14 +66,16 @@ class PathwaysViewModel(
         userDataRepository.observeReadingHistory()
             .onEach { records ->
                 readingRecords = records.associateBy { it.passageId }
-                val currentState = _uiState.value
-                if (currentState is PathwaysUiState.Success) {
-                    val updatedPathway = buildPathwayForBook(currentState.selectedBook)
-                    _uiState.update { currentState.copy(currentPathway = updatedPathway) }
+                _uiState.update { latest ->
+                    if (latest is PathwaysUiState.Success) {
+                        val updatedPathway = buildPathwayForBook(latest.selectedBook)
+                        latest.copy(currentPathway = updatedPathway)
+                    } else latest
                 }
             }
             .launchIn(viewModelScope)
     }
+
 
     private fun loadInitialData() {
         viewModelScope.launch {

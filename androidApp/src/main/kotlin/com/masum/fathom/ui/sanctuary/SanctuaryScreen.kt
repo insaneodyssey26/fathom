@@ -5,6 +5,8 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
@@ -133,14 +135,56 @@ fun SanctuaryScreen(
     val audioEngine = LocalSacredAudioEngine.current
 
     var stats by remember { mutableStateOf(SanctuaryStorageStats()) }
-    var showRestore by remember { mutableStateOf(false) }
     var keyInput by remember { mutableStateOf(settings.byokApiKey) }
     var maskKey by remember { mutableStateOf(true) }
     var isTestingKey by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) { stats = dataEngine.getStorageStats() }
 
+    val savePicker = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/octet-stream")) { destinationUri ->
+        if (destinationUri != null) {
+            scope.launch {
+                try {
+                    val bytes = dataEngine.exportVaultBytes()
+                    val outputStream = context.contentResolver.openOutputStream(destinationUri)
+                    if (outputStream != null) {
+                        outputStream.use { it.write(bytes) }
+                        haptics.success()
+                        Toast.makeText(context, "Sacred vault saved successfully", Toast.LENGTH_SHORT).show()
+                    } else {
+                        Toast.makeText(context, "Could not write to destination", Toast.LENGTH_SHORT).show()
+                    }
+                } catch (_: Exception) {
+                    Toast.makeText(context, "Could not export vault", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+    }
+
+    val restorePicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri != null) {
+            scope.launch {
+                val stream = context.contentResolver.openInputStream(uri)
+                if (stream == null) {
+                    Toast.makeText(context, "Could not open vault archive", Toast.LENGTH_SHORT).show()
+                    return@launch
+                }
+                val outcome = dataEngine.restoreVaultArchive(stream)
+                outcome.onSuccess { count ->
+                    haptics.success()
+                    Toast.makeText(context, "Restored $count items into your vault", Toast.LENGTH_SHORT).show()
+                    stats = dataEngine.getStorageStats()
+                }.onFailure {
+                    haptics.error()
+                    Toast.makeText(context, "Invalid or corrupt .fathom archive", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+    }
+
     val version = remember(context) {
+
+
         runCatching {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                 context.packageManager.getPackageInfo(context.packageName, android.content.pm.PackageManager.PackageInfoFlags.of(0))
@@ -321,30 +365,26 @@ fun SanctuaryScreen(
                                                 openPaywall()
                                             } else {
                                                 haptics.light()
-                                                scope.launch {
-                                                    val json = dataEngine.exportBackupJson()
-                                                    val send = Intent(Intent.ACTION_SEND).apply {
-                                                        type = "text/plain"
-                                                        putExtra(Intent.EXTRA_SUBJECT, "Fathom backup")
-                                                        putExtra(Intent.EXTRA_TEXT, json)
-                                                    }
-                                                    context.startActivity(Intent.createChooser(send, "Export backup"))
-                                                }
+                                                val dateStamp = java.time.LocalDate.now().toString()
+                                                savePicker.launch("fathom-vault-$dateStamp.fathom")
                                             }
                                         },
                                         style = ButtonStyle.Tone,
                                         modifier = Modifier.weight(1f)
+
                                     )
+
                                     FathomButton(
                                         text = "Restore",
                                         onClick = {
                                             haptics.light()
-                                            showRestore = true
+                                            restorePicker.launch(arrayOf("*/*"))
                                         },
                                         style = ButtonStyle.Ghost,
                                         modifier = Modifier.weight(1f)
                                     )
                                 }
+
                                 Row(
                                     Modifier.padding(top = 16.dp),
                                     horizontalArrangement = Arrangement.spacedBy(10.dp),
@@ -466,25 +506,8 @@ fun SanctuaryScreen(
             }
         }
     }
-
-    if (showRestore) {
-        RestoreSheet(
-            onDismiss = { showRestore = false },
-            onRestore = { json ->
-                scope.launch {
-                    val outcome = dataEngine.restoreBackupJson(json)
-                    outcome.onSuccess { count ->
-                        Toast.makeText(context, "Restored $count items", Toast.LENGTH_SHORT).show()
-                        showRestore = false
-                        stats = dataEngine.getStorageStats()
-                    }.onFailure {
-                        Toast.makeText(context, "That backup could not be read", Toast.LENGTH_SHORT).show()
-                    }
-                }
-            }
-        )
-    }
 }
+
 
 @Composable
 private fun Heading(overline: String, title: String) {
@@ -641,41 +664,6 @@ private fun KeyField(
             }
         }
         Box(Modifier.fillMaxWidth().height(1.dp).background(rule))
-    }
-}
-
-@Composable
-private fun RestoreSheet(onDismiss: () -> Unit, onRestore: (String) -> Unit) {
-    val colors = FathomTheme.colors
-    val tone = FathomTheme.tone
-    var json by remember { mutableStateOf("") }
-    FathomSheet(onDismiss = onDismiss) {
-        SheetHeader(overline = "Restore", title = "Paste a backup", subtitle = "Bookmarks and reflections from an exported file.", onClose = onDismiss)
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(180.dp)
-                .clip(RoundedCornerShape(20.dp))
-                .background(colors.surfaceElevated)
-                .padding(16.dp)
-        ) {
-            if (json.isEmpty()) Text(text = "Paste JSON here", style = FathomTheme.typography.body, color = colors.textTertiary)
-            BasicTextField(
-                value = json,
-                onValueChange = { json = it },
-                textStyle = FathomTheme.typography.body.copy(fontSize = 14.sp, color = colors.textPrimary),
-                cursorBrush = SolidColor(tone.hue),
-                modifier = Modifier.fillMaxSize()
-            )
-        }
-        Spacer(Modifier.height(20.dp))
-        FathomButton(
-            text = "Restore data",
-            onClick = { onRestore(json) },
-            enabled = json.isNotBlank(),
-            style = ButtonStyle.Tone,
-            modifier = Modifier.fillMaxWidth()
-        )
     }
 }
 

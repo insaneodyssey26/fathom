@@ -126,13 +126,13 @@ class SacredAudioEngine(
                 }
             }
 
+            @Deprecated("Deprecated in Java")
             override fun onError(utteranceId: String?) {
                 scope.launch {
                     _playbackState.value = SacredAudioState.Idle
                 }
             }
 
-            @Deprecated("Deprecated in Java")
             override fun onError(utteranceId: String?, errorCode: Int) {
                 scope.launch {
                     _playbackState.value = SacredAudioState.Idle
@@ -140,6 +140,7 @@ class SacredAudioEngine(
             }
         })
     }
+
 
     fun play(passage: Passage, mode: RecitationMode = RecitationMode.TRANSLATION_ONLY, fromCharOffset: Int = 0) {
         stopInternal()
@@ -326,20 +327,18 @@ class SacredAudioEngine(
         val engine = tts ?: return
         try {
             val avail = engine.isLanguageAvailable(preferredLocale)
-            if (avail >= TextToSpeech.LANG_AVAILABLE) {
-                engine.language = preferredLocale
-            } else {
-                engine.language = Locale.US
-            }
+            val targetLocale = if (avail >= TextToSpeech.LANG_AVAILABLE) preferredLocale else Locale.US
+            engine.language = targetLocale
 
             val voices = engine.voices
             val matchedVoice = voices?.filter {
-                it.locale.language == engine.language.language && !it.isNetworkConnectionRequired
+                it.locale.language == targetLocale.language && !it.isNetworkConnectionRequired
             }?.maxByOrNull { it.quality }
 
             if (matchedVoice != null) {
                 engine.voice = matchedVoice
             }
+
         } catch (_: Exception) {
             engine.language = Locale.US
         }

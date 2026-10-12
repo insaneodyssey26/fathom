@@ -185,11 +185,14 @@ private fun ExploreRoot(
                                     )
                                 }
                             }
+                            val currentTopic = state.selectedTopic
                             when {
                                 searching -> resultsItems(state, onEvent)
-                                inTopic -> topicItems(state, state.selectedTopic!!, onEvent)
+                                !searching && currentTopic != null -> topicItems(state, currentTopic, onEvent)
                                 else -> directoryItems(state, shell.widthClass != WidthClass.Compact, onOpenBook, onEvent)
                             }
+
+
                         }
                     }
                 }
