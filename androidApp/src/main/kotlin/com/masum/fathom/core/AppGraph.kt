@@ -35,8 +35,17 @@ class AppGraph(context: Context) {
                 ): QueryResult.Value<Unit> = QueryResult.Unit
             },
             context = context,
-            name = CONTENT_DB
+            name = CONTENT_DB,
+            callback = object : androidx.sqlite.db.SupportSQLiteOpenHelper.Callback(1) {
+                override fun onCreate(db: androidx.sqlite.db.SupportSQLiteDatabase) = Unit
+                override fun onUpgrade(db: androidx.sqlite.db.SupportSQLiteDatabase, oldVersion: Int, newVersion: Int) = Unit
+                override fun onConfigure(db: androidx.sqlite.db.SupportSQLiteDatabase) {
+                    db.query("PRAGMA mmap_size = 268435456;").close()
+                    db.query("PRAGMA query_only = ON;").close()
+                }
+            }
         )
+
 
         val userDb = FathomUserDatabase(userDriver)
         val contentDb = FathomContentDatabase(contentDriver)

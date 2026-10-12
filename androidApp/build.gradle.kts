@@ -49,11 +49,23 @@ android {
         versionName = "1.6.0"
         manifestPlaceholders["appLabel"] = "Fathom"
     }
+
+    androidResources {
+        localeFilters += listOf("en")
+    }
+
     packaging {
         resources {
-            excludes += "/META-INF/{AL2.0,LGPL2.1}"
+            excludes += listOf(
+                "/META-INF/{AL2.0,LGPL2.1}",
+                "/META-INF/*.version",
+                "/META-INF/*.kotlin_module",
+                "/META-INF/DEPENDENCIES",
+                "DebugProbesKt.bin"
+            )
         }
     }
+
     buildTypes {
         debug {
             applicationIdSuffix = ".debug"

@@ -108,9 +108,10 @@ fun Atmosphere(
         Box(
             modifier = Modifier
                 .matchParentSize()
-                .graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }
+                .graphicsLayer { compositingStrategy = CompositingStrategy.Auto }
                 .then(canvas)
         )
+
         content()
     }
 }

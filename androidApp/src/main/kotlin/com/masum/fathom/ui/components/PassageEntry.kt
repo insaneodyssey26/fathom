@@ -56,7 +56,6 @@ import com.masum.fathom.ui.design.tappable
 import com.masum.fathom.ui.theme.FathomMotion
 import com.masum.fathom.ui.theme.FathomTheme
 import com.masum.fathom.ui.theme.toneFor
-import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.launch
 
 fun highlighted(text: String, query: String, color: Color, background: Color): AnnotatedString {
@@ -185,16 +184,16 @@ private fun SaveMark(saved: Boolean, hue: Color) {
     val burst = remember { Animatable(1f) }
     val pop = remember { Animatable(1f) }
     var previous by remember { mutableStateOf(saved) }
-    val scope = rememberCoroutineScope()
     LaunchedEffect(saved) {
         if (saved && !previous) {
             burst.snapTo(0f)
             pop.snapTo(0.6f)
-            scope.launch { burst.animateTo(1f, tween(560, easing = FathomMotion.Emphasized)) }
+            launch { burst.animateTo(1f, tween(560, easing = FathomMotion.Emphasized)) }
             pop.animateTo(1f, FathomMotion.bounce())
         }
         previous = saved
     }
+
     Box(contentAlignment = Alignment.Center) {
         Canvas(Modifier.size(40.dp)) {
             val p = burst.value
