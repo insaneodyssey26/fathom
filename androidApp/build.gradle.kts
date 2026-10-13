@@ -10,6 +10,10 @@ kotlin {
         jvmTarget = JvmTarget.JVM_11
     }
 }
+
+composeCompiler {
+    stabilityConfigurationFiles.add(layout.projectDirectory.file("compose-stability.conf"))
+}
 dependencies {
     implementation(project(":sharedLogic"))
 

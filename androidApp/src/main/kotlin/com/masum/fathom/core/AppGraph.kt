@@ -22,7 +22,23 @@ class AppGraph(context: Context) {
     init {
         installContentDatabase(context)
 
-        val userDriver = AndroidSqliteDriver(FathomUserDatabase.Schema, context, "app_user_data.db")
+        val userDriver = AndroidSqliteDriver(
+            schema = FathomUserDatabase.Schema,
+            context = context,
+            name = "app_user_data.db",
+            callback = object : androidx.sqlite.db.SupportSQLiteOpenHelper.Callback(FathomUserDatabase.Schema.version.toInt()) {
+                override fun onCreate(db: androidx.sqlite.db.SupportSQLiteDatabase) {
+                    FathomUserDatabase.Schema.create(AndroidSqliteDriver(db))
+                }
+                override fun onUpgrade(db: androidx.sqlite.db.SupportSQLiteDatabase, oldVersion: Int, newVersion: Int) {
+                    FathomUserDatabase.Schema.migrate(AndroidSqliteDriver(db), oldVersion.toLong(), newVersion.toLong())
+                }
+                override fun onConfigure(db: androidx.sqlite.db.SupportSQLiteDatabase) {
+                    db.enableWriteAheadLogging()
+                    db.query("PRAGMA synchronous = NORMAL;").close()
+                }
+            }
+        )
         val contentDriver = AndroidSqliteDriver(
             schema = object : SqlSchema<QueryResult.Value<Unit>> {
                 override val version: Long get() = 1L
