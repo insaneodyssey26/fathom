@@ -15,6 +15,10 @@ import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -94,6 +98,8 @@ import com.masum.fathom.ui.pathways.PathwaysUiState
 import com.masum.fathom.ui.pathways.PathwaysViewModel
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.ContentTransform
+import androidx.navigation3.runtime.NavEntryDecorator
+import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.scene.Scene
 import androidx.navigation3.ui.NavDisplay
@@ -383,15 +389,37 @@ private fun MainStage(
         CompositionLocalProvider(LocalBackdrop provides backdrop, LocalShell provides metrics, LocalNavTradition provides navTradition) {
             Box(modifier = Modifier.fillMaxSize().layerBackdrop(backdrop)) {
                 CompositionLocalProvider(LocalBackdrop provides null) {
+                    val entryDecorator = remember {
+                        NavEntryDecorator<AppRoute> { entry ->
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .graphicsLayer {
+                                        shape = RoundedCornerShape(28.dp)
+                                        clip = true
+                                    }
+                            ) {
+                                entry.Content()
+                            }
+                        }
+                    }
+
                     NavDisplay(
                         backStack = navigator.stack,
                         modifier = Modifier.fillMaxSize(),
                         onBack = navigator::pop,
+                        entryDecorators = listOf(
+                            rememberSaveableStateHolderNavEntryDecorator(),
+                            entryDecorator
+                        ),
                         transitionSpec = { routeTransition(forward = true) },
                         popTransitionSpec = { routeTransition(forward = false) },
                         predictivePopTransitionSpec = { _ ->
-                            (scaleIn(tween(300, easing = FathomMotion.Emphasized), initialScale = 0.94f))
-                                .togetherWith(fadeOut(tween(260, delayMillis = 180)) + scaleOut(tween(300, easing = FathomMotion.Emphasized), targetScale = 0.9f))
+                            (fadeIn(tween(360, easing = FathomMotion.Emphasized)) + scaleIn(tween(400, easing = FathomMotion.Emphasized), initialScale = 0.95f))
+                                .togetherWith(
+                                    fadeOut(tween(280, delayMillis = 100)) +
+                                    scaleOut(tween(360, easing = FathomMotion.Emphasized), targetScale = 0.88f)
+                                )
                         },
                         entryProvider = entryProvider {
                             entry<AppRoute.Tab> { route ->
