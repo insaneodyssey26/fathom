@@ -39,12 +39,12 @@ dependencies {
 
 android {
     namespace = "com.masum.fathom"
-    compileSdk = libs.versions.android.compileSdk.get().toInt()
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "com.masum.fathom"
-        minSdk = libs.versions.android.minSdk.get().toInt()
-        targetSdk = libs.versions.android.targetSdk.get().toInt()
+        minSdk = 26
+        targetSdk = 37
         versionCode = 7
         versionName = "1.6.0"
         manifestPlaceholders["appLabel"] = "Fathom"

@@ -1,21 +1,18 @@
 [versions]
-agp = "9.1.1"
-android-compileSdk = "37"
-android-minSdk = "26"
-android-targetSdk = "37"
+agp = "9.4.1"
 androidx-activity = "1.13.0"
 androidx-lifecycle = "2.11.0"
-composeMultiplatform = "1.12.0"
+composeMultiplatform = "1.12.1"
 junit = "4.13.2"
 kotlin = "2.4.20"
-kotlinx-coroutines = "1.10.1"
+kotlinx-coroutines = "1.11.0"
 material3 = "1.12.0-alpha03"
-sqldelight = "2.0.2"
+sqldelight = "2.4.1"
 backdrop = "2.0.1"
 navigation3 = "1.2.0"
 work = "2.12.0"
 graphics-shapes = "1.1.0"
-androidx-browser = "1.8.0"
+androidx-browser = "1.10.0"
 
 [libraries]
 androidx-browser = { module = "androidx.browser:browser", version.ref = "androidx-browser" }
