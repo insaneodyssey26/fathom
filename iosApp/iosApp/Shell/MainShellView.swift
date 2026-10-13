@@ -32,9 +32,13 @@ public struct MainShellView: View {
     @StateObject private var searchViewModel: SearchViewModel
     @StateObject private var journalViewModel: JournalViewModel
 
+    @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding: Bool = false
+    @ObservedObject private var ambienceEngine = AmbienceEngine.shared
     @State private var selectedTab: FathomTab = .read
     @State private var showScriptureSheet: Bool = false
     @State private var showSettingsSheet: Bool = false
+    @State private var showOnboardingSheet: Bool = false
+    @State private var showAmbienceSheet: Bool = false
     @State private var currentTheme: ReadingThemeId = .nocturne
 
     public init(graph: IosAppGraph) {
@@ -59,7 +63,8 @@ public struct MainShellView: View {
                 FeedView(
                     viewModel: feedViewModel,
                     colors: colors,
-                    onOpenScriptureSelector: { showScriptureSheet = true }
+                    onOpenScriptureSelector: { showScriptureSheet = true },
+                    onOpenAmbience: { showAmbienceSheet = true }
                 )
                 .tag(FathomTab.read)
 
@@ -86,14 +91,50 @@ public struct MainShellView: View {
             .tabViewStyle(.page(indexDisplayMode: .never))
             .ignoresSafeArea()
 
-            floatingDock
-                .padding(.horizontal, 24)
-                .padding(.bottom, 12)
+            VStack(spacing: 8) {
+                if let track = ambienceEngine.currentTrack {
+                    Button(action: {
+                        FathomHaptics.light()
+                        showAmbienceSheet = true
+                    }) {
+                        HStack(spacing: 10) {
+                            Image(systemName: ambienceEngine.isPlaying ? "waveform" : "pause.fill")
+                                .font(.system(size: 13))
+                                .foregroundColor(TraditionTones.hue(for: feedViewModel.currentPassage?.traditionId))
+
+                            Text(track.title)
+                                .font(.system(size: 13, weight: .medium, design: .serif))
+                                .foregroundColor(colors.textPrimary)
+
+                            Spacer()
+
+                            Image(systemName: "chevron.up")
+                                .font(.system(size: 11, weight: .semibold))
+                                .foregroundColor(colors.textTertiary)
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 8)
+                        .liquidGlass(cornerRadius: 20)
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                }
+
+                floatingDock
+            }
+            .padding(.horizontal, 24)
+            .padding(.bottom, 12)
         }
         .sheet(isPresented: $showSettingsSheet) {
             SettingsView(currentTheme: $currentTheme, colors: colors)
                 .presentationDetents([.fraction(0.75), .large])
                 .presentationDragIndicator(.visible)
+        }
+        .sheet(isPresented: $showAmbienceSheet) {
+            AmbiencePlayerSheet(
+                colors: colors,
+                accentColor: TraditionTones.hue(for: feedViewModel.currentPassage?.traditionId)
+            )
         }
         .sheet(isPresented: $showScriptureSheet) {
             ScriptureSelectorSheet(
@@ -127,6 +168,23 @@ public struct MainShellView: View {
             )
             .presentationDetents([.fraction(0.85), .large])
             .presentationDragIndicator(.visible)
+        }
+        .fullScreenCover(isPresented: $showOnboardingSheet) {
+            OnboardingView(
+                colors: colors,
+                onComplete: { name, tradition, personalizeFeed in
+                    hasCompletedOnboarding = true
+                    showOnboardingSheet = false
+                    if let tradition = tradition {
+                        feedViewModel.selectTradition(tradition: tradition)
+                    }
+                }
+            )
+        }
+        .onAppear {
+            if !hasCompletedOnboarding {
+                showOnboardingSheet = true
+            }
         }
     }
 

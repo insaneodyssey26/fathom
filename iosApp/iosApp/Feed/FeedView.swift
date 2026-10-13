@@ -5,6 +5,7 @@ public struct FeedView: View {
     @ObservedObject public var viewModel: FeedViewModel
     public let colors: ThemeColors
     public let onOpenScriptureSelector: () -> Void
+    public let onOpenAmbience: () -> Void
 
     @State private var reflectingPassage: Passage? = nil
 
@@ -71,20 +72,30 @@ public struct FeedView: View {
 
                     Spacer()
 
-                    Button(action: onOpenScriptureSelector) {
-                        HStack(spacing: 6) {
-                            Text(headerTitle)
-                                .font(.system(size: 13, weight: .semibold))
-                                .foregroundColor(colors.textPrimary)
-                                .lineLimit(1)
-
-                            Image(systemName: "chevron.down")
-                                .font(.system(size: 10, weight: .bold))
+                    HStack(spacing: 8) {
+                        Button(action: onOpenAmbience) {
+                            Image(systemName: "waveform")
+                                .font(.system(size: 14, weight: .medium))
                                 .foregroundColor(colors.textSecondary)
+                                .padding(10)
+                                .liquidGlass(cornerRadius: 50)
                         }
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 9)
-                        .liquidGlass(cornerRadius: 50)
+
+                        Button(action: onOpenScriptureSelector) {
+                            HStack(spacing: 6) {
+                                Text(headerTitle)
+                                    .font(.system(size: 13, weight: .semibold))
+                                    .foregroundColor(colors.textPrimary)
+                                    .lineLimit(1)
+
+                                Image(systemName: "chevron.down")
+                                    .font(.system(size: 10, weight: .bold))
+                                    .foregroundColor(colors.textSecondary)
+                            }
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 9)
+                            .liquidGlass(cornerRadius: 50)
+                        }
                     }
                 }
                 .padding(.horizontal, 22)

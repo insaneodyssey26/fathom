@@ -29,6 +29,8 @@ public struct JournalView: View {
     public let colors: ThemeColors
     public let onOpenSettings: () -> Void
 
+    @State private var showSanctuaryHub: Bool = false
+
     public var body: some View {
         let tone = TraditionTones.hue(for: nil)
 
@@ -42,12 +44,22 @@ public struct JournalView: View {
                         .foregroundColor(colors.textPrimary)
                     Spacer()
 
-                    Button(action: { onOpenSettings() }) {
-                        Image(systemName: "gearshape")
-                            .font(.system(size: 16, weight: .semibold))
-                            .foregroundColor(colors.textPrimary)
-                            .padding(10)
-                            .liquidGlass(cornerRadius: 50)
+                    HStack(spacing: 8) {
+                        Button(action: { showSanctuaryHub = true }) {
+                            Image(systemName: "sparkles")
+                                .font(.system(size: 15, weight: .semibold))
+                                .foregroundColor(tone)
+                                .padding(10)
+                                .liquidGlass(cornerRadius: 50)
+                        }
+
+                        Button(action: { onOpenSettings() }) {
+                            Image(systemName: "gearshape")
+                                .font(.system(size: 16, weight: .semibold))
+                                .foregroundColor(colors.textPrimary)
+                                .padding(10)
+                                .liquidGlass(cornerRadius: 50)
+                        }
                     }
                 }
                 .padding(.horizontal, 22)
@@ -149,6 +161,15 @@ public struct JournalView: View {
         }
         .onAppear {
             viewModel.loadJournalData()
+        }
+        .sheet(isPresented: $showSanctuaryHub) {
+            SanctuaryHubSheet(
+                colors: colors,
+                streakDays: viewModel.streakDays,
+                notesCount: viewModel.savedNotes.count,
+                bookmarksCount: viewModel.savedBookmarks.count,
+                onOpenSettings: onOpenSettings
+            )
         }
     }
 
