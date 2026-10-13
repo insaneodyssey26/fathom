@@ -4,6 +4,7 @@ import SharedLogic
 public struct SettingsView: View {
     @Binding public var currentTheme: ReadingThemeId
     public let colors: ThemeColors
+    @State private var showWhatsNew: Bool = false
     @Environment(\.dismiss) private var dismiss
 
     public var body: some View {
@@ -83,11 +84,51 @@ public struct SettingsView: View {
                             .padding(18)
                             .liquidGlass(cornerRadius: 18)
                         }
+
+                        VStack(alignment: .leading, spacing: 14) {
+                            Text("CHRONICLES")
+                                .font(.system(size: 11, weight: .bold, design: .monospaced))
+                                .foregroundColor(colors.textTertiary)
+                                .tracking(1.2)
+
+                            Button(action: {
+                                FathomHaptics.light()
+                                showWhatsNew = true
+                            }) {
+                                HStack(spacing: 14) {
+                                    Image(systemName: "sparkles")
+                                        .font(.system(size: 16))
+                                        .foregroundColor(TraditionTones.hue(for: nil))
+
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text("What’s New in Fathom")
+                                            .font(.system(size: 15, weight: .medium, design: .serif))
+                                            .foregroundColor(colors.textPrimary)
+
+                                        Text("v1.6.0 · Release notes & additions")
+                                            .font(.system(size: 12))
+                                            .foregroundColor(colors.textTertiary)
+                                    }
+
+                                    Spacer()
+
+                                    Image(systemName: "chevron.right")
+                                        .font(.system(size: 12, weight: .semibold))
+                                        .foregroundColor(colors.textTertiary)
+                                }
+                                .padding(16)
+                                .liquidGlass(cornerRadius: 18)
+                            }
+                            .buttonStyle(PlainButtonStyle())
+                        }
                     }
                     .padding(.horizontal, 22)
                     .padding(.bottom, 60)
                 }
             }
+        }
+        .sheet(isPresented: $showWhatsNew) {
+            WhatsNewSheet(colors: colors, accentColor: TraditionTones.hue(for: nil))
         }
     }
 

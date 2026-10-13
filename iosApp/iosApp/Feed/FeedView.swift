@@ -8,6 +8,7 @@ public struct FeedView: View {
     public let onOpenAmbience: () -> Void
 
     @State private var reflectingPassage: Passage? = nil
+    @State private var sharingCardPassage: Passage? = nil
 
     public var body: some View {
         ZStack {
@@ -55,7 +56,7 @@ public struct FeedView: View {
                             isBookmarked: viewModel.bookmarkedIds.contains(passage.id),
                             onBookmark: { viewModel.toggleBookmark(passage: passage) },
                             onReflect: { reflectingPassage = passage },
-                            onShare: { sharePassage(passage) }
+                            onShare: { sharingCardPassage = passage }
                         )
                         .tag(index)
                     }
@@ -114,6 +115,13 @@ public struct FeedView: View {
             )
             .presentationDetents([.fraction(0.7), .large])
             .presentationDragIndicator(.visible)
+        }
+        .sheet(item: $sharingCardPassage) { passage in
+            ShareCardSheet(
+                passage: passage,
+                colors: colors,
+                accentColor: TraditionTones.hue(for: passage.traditionId)
+            )
         }
     }
 
