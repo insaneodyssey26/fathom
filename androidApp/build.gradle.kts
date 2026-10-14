@@ -49,8 +49,8 @@ android {
         applicationId = "com.masum.fathom"
         minSdk = 26
         targetSdk = 37
-        versionCode = 7
-        versionName = "1.6.0"
+        versionCode = 8
+        versionName = "1.6.1"
         manifestPlaceholders["appLabel"] = "Fathom"
     }
 

@@ -51,9 +51,20 @@ fun WhatsNewModal(
     val releases = remember {
         listOf(
             ReleaseNote(
+                version = "v1.6.1",
+                title = "Refined Back Gestures, Vault History & Smoother Reading",
+                isCurrent = true,
+                highlights = listOf(
+                    "Fluid Predictive Back: Natural curved back gesture with smooth rounded corners as you glide between verses, chapters, and the library.",
+                    "Complete Vault History: Reading journey and streak history are now fully preserved inside your private encrypted vault backups.",
+                    "Chapter Celebration Polish: Seamless transition when completing sacred pathways chapters without unexpected screen resets.",
+                    "Faster & Lighter: Smaller download size, quicker app opening, and butter-smooth scrolling across all contemplative reading feeds."
+                )
+            ),
+            ReleaseNote(
                 version = "v1.6.0",
                 title = "Sanctuary Patron, Neural Studio Voices & 8 Sacred Themes",
-                isCurrent = true,
+                isCurrent = false,
                 highlights = listOf(
                     "Sanctuary Patron Consecration: Support independent sacred wisdom with flexible monthly, annual, and lifetime patron plans. Unlocks all 8 themes, full pathway journeys, and all soundscapes.",
                     "Studio Neural Voice Narration (BYOK): High-fidelity recitation powered by your own ElevenLabs or OpenAI keys with automatic on-device caching for offline listening.",

@@ -2,6 +2,19 @@
 
 All notable changes to the Fathom project are documented in this file.
 
+## [1.6.1] - 2026-10-14
+
+### Added
+- **Fluid Predictive Back Gestures:** Modernized back gesture animation with organic rounded contours, smooth scaling curves, and soft elevation as you navigate back through verses and screens.
+- **Reading History in Vault Backups:** Complete reading journey and streak history are now bundled into your private, encrypted vault backup files for seamless archiving and restore.
+
+### Changed
+- **Performance & Cold-Start Optimization:** Reduced app package size and accelerated startup times with streamlined asset pipelines, database concurrency, and smoother scrolling transitions.
+- **Pathways Chapter Progression:** Polished chapter study completion so celebration checkpoints render reliably without unintended screen resets.
+- **Sanctuary Patron Regional Clarity:** Refined regional checkout pricing and clear Purchasing Power Parity indications.
+
+---
+
 ## [1.6.0] - 2026-10-11
 
 ### Added
