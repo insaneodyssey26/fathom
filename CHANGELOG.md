@@ -2,7 +2,7 @@
 
 All notable changes to the Fathom project are documented in this file.
 
-## [1.6.1] - 2026-10-14
+## [1.7.0] - 2026-10-14
 
 ### Added
 - **Fluid Predictive Back Gestures:** Modernized back gesture animation with organic rounded contours, smooth scaling curves, and soft elevation as you navigate back through verses and screens.

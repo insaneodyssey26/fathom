@@ -51,7 +51,7 @@ fun WhatsNewModal(
     val releases = remember {
         listOf(
             ReleaseNote(
-                version = "v1.6.1",
+                version = "v1.7.0",
                 title = "Refined Back Gestures, Vault History & Smoother Reading",
                 isCurrent = true,
                 highlights = listOf(
