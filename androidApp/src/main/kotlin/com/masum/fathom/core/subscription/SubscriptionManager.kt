@@ -70,9 +70,15 @@ class SubscriptionManager(private val context: Context) {
 
         if (baseUrl.isBlank()) return
 
+        val currencyParam = "&paymentCurrency=USD"
+        val currencySelectorParam = "&showCurrencySelector=true"
         val redirectParam = "redirect_url=" + Uri.encode("fathom://billing/success?tier=${tier.name}")
         val emailParam = if (!customerEmail.isNullOrBlank()) "&email=" + Uri.encode(customerEmail.trim()) else ""
-        val finalUrl = if (baseUrl.contains("?")) "$baseUrl&$redirectParam$emailParam" else "$baseUrl?$redirectParam$emailParam"
+        val finalUrl = if (baseUrl.contains("?")) {
+            "$baseUrl&$redirectParam$emailParam$currencyParam$currencySelectorParam"
+        } else {
+            "$baseUrl?$redirectParam$emailParam$currencyParam$currencySelectorParam"
+        }
 
         try {
             val customTabsIntent = CustomTabsIntent.Builder()

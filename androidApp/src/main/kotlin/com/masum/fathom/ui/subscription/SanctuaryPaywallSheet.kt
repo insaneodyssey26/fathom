@@ -176,10 +176,13 @@ fun SanctuaryPaywallSheet(onDismiss: () -> Unit) {
             }
 
             if (!isPro) {
-                Column(Modifier.padding(top = 30.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                val countryCode = remember { java.util.Locale.getDefault().country.orEmpty() }
+
+                Column(Modifier.padding(top = 28.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     listOf(SubscriptionTier.LIFETIME, SubscriptionTier.ANNUAL, SubscriptionTier.MONTHLY).forEach { tier ->
                         PatronTierRow(
                             tier = tier,
+                            countryCode = countryCode,
                             selected = selected == tier,
                             onClick = {
                                 haptics.light()
@@ -189,7 +192,42 @@ fun SanctuaryPaywallSheet(onDismiss: () -> Unit) {
                     }
                 }
 
-                Spacer(Modifier.height(28.dp))
+                Spacer(Modifier.height(20.dp))
+
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(colors.surface)
+                        .border(0.75.dp, colors.hairline, RoundedCornerShape(16.dp))
+                        .padding(horizontal = 18.dp, vertical = 14.dp)
+                ) {
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(6.dp)
+                                    .clip(CircleShape)
+                                    .background(tone.hue)
+                            )
+                            MonoLabel(text = "Purchasing Power Parity", color = tone.hue)
+                        }
+                        Text(
+                            text = if (countryCode.equals("IN", ignoreCase = true)) {
+                                "Prices are localized for India via Purchasing Power Parity. Handled securely with instant activation by Dodo Payments."
+                            } else {
+                                "Prices are listed in USD. Regional purchasing power parity discounts and local currencies are automatically applied at checkout by Dodo Payments."
+                            },
+                            style = FathomTheme.typography.caption,
+                            color = colors.textSecondary
+                        )
+                    }
+                }
+
+                Spacer(Modifier.height(18.dp))
                 FathomButton(
                     text = "Become a Patron (${selected.title})",
                     onClick = {
@@ -217,7 +255,7 @@ fun SanctuaryPaywallSheet(onDismiss: () -> Unit) {
 }
 
 @Composable
-private fun PatronTierRow(tier: SubscriptionTier, selected: Boolean, onClick: () -> Unit) {
+private fun PatronTierRow(tier: SubscriptionTier, countryCode: String, selected: Boolean, onClick: () -> Unit) {
     val colors = FathomTheme.colors
     val tone = FathomTheme.tone
     val shape = RoundedCornerShape(22.dp)
@@ -246,12 +284,18 @@ private fun PatronTierRow(tier: SubscriptionTier, selected: Boolean, onClick: ()
         }
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
             Text(text = tier.title, style = FathomTheme.typography.title, color = colors.textPrimary)
-            MonoLabel(text = tier.billingPeriod, color = colors.textTertiary)
-            tier.badgeLabel?.let { MonoLabel(text = it, color = tone.hue) }
+            MonoLabel(text = tier.localizedBillingPeriod(countryCode), color = colors.textTertiary)
+            tier.badgeLabel?.let {
+                MonoLabel(
+                    text = it,
+                    color = tone.hue,
+                    maxLines = 2
+                )
+            }
         }
         Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Text(text = tier.priceDisplay, style = FathomTheme.typography.headline.copy(fontSize = 20.sp), color = colors.textPrimary)
-            MonoLabel(text = tier.equivalentMonthlyPrice, color = colors.textTertiary)
+            Text(text = tier.localizedPriceDisplay(countryCode), style = FathomTheme.typography.headline.copy(fontSize = 20.sp), color = colors.textPrimary)
+            MonoLabel(text = tier.localizedEquivalentMonthlyPrice(countryCode), color = colors.textTertiary)
         }
     }
 }

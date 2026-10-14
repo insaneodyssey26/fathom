@@ -36,8 +36,47 @@ enum class SubscriptionTier(
         priceDisplay = "$79.99",
         billingPeriod = "One-time purchase",
         equivalentMonthlyPrice = "Forever Access",
-        badgeLabel = "PATRON'S CHOICE · NO SUBSCRIPTION"
-    )
+        badgeLabel = "PATRON'S CHOICE · LIFETIME"
+    );
+
+    fun localizedPriceDisplay(countryCode: String?): String {
+        return if (countryCode.equals("IN", ignoreCase = true)) {
+            when (this) {
+                FREE -> "₹0"
+                MONTHLY -> "₹147"
+                ANNUAL -> "₹1,451"
+                LIFETIME -> "₹2,369"
+            }
+        } else {
+            priceDisplay
+        }
+    }
+
+    fun localizedBillingPeriod(countryCode: String?): String {
+        return if (countryCode.equals("IN", ignoreCase = true)) {
+            when (this) {
+                FREE -> "Free Forever"
+                MONTHLY -> "Billed monthly"
+                ANNUAL -> "Billed annually (₹1,451/yr)"
+                LIFETIME -> "One-time purchase"
+            }
+        } else {
+            billingPeriod
+        }
+    }
+
+    fun localizedEquivalentMonthlyPrice(countryCode: String?): String {
+        return if (countryCode.equals("IN", ignoreCase = true)) {
+            when (this) {
+                FREE -> "₹0"
+                MONTHLY -> "₹147 / mo"
+                ANNUAL -> "₹121 / mo"
+                LIFETIME -> "Forever Access"
+            }
+        } else {
+            equivalentMonthlyPrice
+        }
+    }
 }
 
 enum class Entitlement {
