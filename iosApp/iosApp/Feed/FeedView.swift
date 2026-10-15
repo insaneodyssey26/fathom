@@ -1,6 +1,8 @@
 import SwiftUI
 import SharedLogic
 
+extension Passage: @retroactive Identifiable {}
+
 public struct FeedView: View {
     @ObservedObject public var viewModel: FeedViewModel
     public let colors: ThemeColors

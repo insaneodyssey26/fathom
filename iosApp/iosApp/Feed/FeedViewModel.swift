@@ -47,7 +47,7 @@ public final class FeedViewModel: ObservableObject {
                 selectedThemeIds: [],
                 selectedBookId: selectedBookId,
                 enableSeenFilter: true,
-                preferredTranslations: [:]
+                traditionDiversityFactor: 0.7
             )
 
             let result = try? await graph.feedEngine.getFeedBatch(config: config, batchSize: 20)
@@ -83,7 +83,7 @@ public final class FeedViewModel: ObservableObject {
                 selectedThemeIds: [],
                 selectedBookId: selectedBookId,
                 enableSeenFilter: true,
-                preferredTranslations: [:]
+                traditionDiversityFactor: 0.7
             )
 
             let result = try? await graph.feedEngine.getFeedBatch(config: config, batchSize: 20)
