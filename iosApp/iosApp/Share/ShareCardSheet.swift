@@ -83,7 +83,7 @@ public struct ShareCardSheet: View {
                     .fill(accentColor)
                     .frame(width: 8, height: 8)
 
-                Text(passage.traditionId?.displayName ?? "Sacred Canon")
+                Text(passage.traditionId.displayName)
                     .font(.system(size: 12, weight: .semibold, design: .monospaced))
                     .foregroundColor(accentColor)
                     .tracking(1.0)
