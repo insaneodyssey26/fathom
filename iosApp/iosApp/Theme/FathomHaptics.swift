@@ -25,6 +25,12 @@ public enum FathomHaptics {
         generator.impactOccurred()
     }
 
+    public static func selection() {
+        let generator = UISelectionFeedbackGenerator()
+        generator.prepare()
+        generator.selectionChanged()
+    }
+
     public static func success() {
         let generator = UINotificationFeedbackGenerator()
         generator.prepare()

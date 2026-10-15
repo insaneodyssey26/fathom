@@ -17,9 +17,15 @@ public final class JournalViewModel: ObservableObject {
 
     public func loadJournalData() {
         Task {
-            self.streakDays = Int(await graph.getReadingStreakDays())
-            self.savedBookmarks = await graph.getBookmarkedPassages()
-            self.savedNotes = await graph.getAllNotes()
+            if let streak = try? await graph.getReadingStreakDays() {
+                self.streakDays = Int(streak)
+            }
+            if let bookmarks = try? await graph.getBookmarkedPassages() {
+                self.savedBookmarks = bookmarks
+            }
+            if let notes = try? await graph.getAllNotes() {
+                self.savedNotes = notes
+            }
         }
     }
 }

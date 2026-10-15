@@ -43,7 +43,7 @@ public struct ScriptureSelectorSheet: View {
     }
 
     private var isAllScriptures: Bool {
-        selectedBookId == nil && (selectedTraditions.isEmpty() || selectedTraditions.count == TraditionId.entries.count)
+        selectedBookId == nil && (selectedTraditions.isEmpty || selectedTraditions.count == TraditionId.entries.count)
     }
 
     public var body: some View {

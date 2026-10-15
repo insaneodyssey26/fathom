@@ -53,7 +53,7 @@ public final class PathwaysViewModel: ObservableObject {
                 self.isLoading = false
                 self.completedChapters.insert(chapter)
                 if let first = list.first {
-                    await graph.recordReading(passageId: first.id, bookId: book.id)
+                    _ = try? await graph.recordReading(passageId: first.id, bookId: book.id)
                 }
             }
         }

@@ -56,7 +56,7 @@ public final class FeedViewModel: ObservableObject {
                 self.currentIndex = 0
                 self.isLoading = false
                 if let first = list.first {
-                    await graph.recordReading(passageId: first.id, bookId: first.bookId)
+                    _ = try? await graph.recordReading(passageId: first.id, bookId: first.bookId)
                 }
             } else {
                 self.isLoading = false
@@ -70,7 +70,7 @@ public final class FeedViewModel: ObservableObject {
         if currentIndex >= 0 && currentIndex < passages.count {
             let p = passages[currentIndex]
             Task {
-                await graph.recordReading(passageId: p.id, bookId: p.bookId)
+                _ = try? await graph.recordReading(passageId: p.id, bookId: p.bookId)
             }
         }
         guard currentIndex >= passages.count - 4, !isLoading else { return }
@@ -99,10 +99,10 @@ public final class FeedViewModel: ObservableObject {
         let id = passage.id
         Task {
             if bookmarkedIds.contains(id) {
-                await graph.removeBookmark(passageId: id)
+                _ = try? await graph.removeBookmark(passageId: id)
                 bookmarkedIds.remove(id)
             } else {
-                await graph.saveBookmark(passageId: id)
+                _ = try? await graph.saveBookmark(passageId: id)
                 bookmarkedIds.insert(id)
             }
         }
@@ -111,14 +111,15 @@ public final class FeedViewModel: ObservableObject {
     public func saveReflection(passage: Passage, content: String) {
         FathomHaptics.medium()
         Task {
-            await graph.saveNote(passageId: passage.id, content: content)
+            _ = try? await graph.saveNote(passageId: passage.id, content: content)
         }
     }
 
     public func loadBookmarks() {
         Task {
-            let list = await graph.getBookmarkedPassages()
-            self.bookmarkedIds = Set(list.map { $0.id })
+            if let list = try? await graph.getBookmarkedPassages() {
+                self.bookmarkedIds = Set(list.map { $0.id })
+            }
         }
     }
 

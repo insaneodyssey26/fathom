@@ -79,8 +79,8 @@ public final class SearchViewModel: ObservableObject {
             let result = try? await graph.passageRepository.searchPassages(
                 query: trimmed,
                 traditionId: selectedTraditionFilter,
-                limit: 50,
-                offset: 0
+                offset: 0,
+                limit: 50
             )
 
             if let result = result as? FathomResultSuccess<NSArray>, let list = result.data as? [Passage] {

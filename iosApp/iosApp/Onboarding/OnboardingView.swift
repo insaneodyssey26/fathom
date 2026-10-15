@@ -17,7 +17,7 @@ public struct OnboardingLineage: Identifiable {
 
 public struct OnboardingView: View {
     public let colors: ThemeColors
-    public let onComplete: (_ name: String, _ tradition: String?, _ personalizeFeed: Bool) -> Void
+    public let onComplete: (_ name: String, _ tradition: TraditionId?, _ personalizeFeed: Bool) -> Void
 
     @State private var step: Int = 0
     @State private var name: String = ""
@@ -50,7 +50,7 @@ public struct OnboardingView: View {
 
     public init(
         colors: ThemeColors,
-        onComplete: @escaping (_ name: String, _ tradition: String?, _ personalizeFeed: Bool) -> Void
+        onComplete: @escaping (_ name: String, _ tradition: TraditionId?, _ personalizeFeed: Bool) -> Void
     ) {
         self.colors = colors
         self.onComplete = onComplete
@@ -325,8 +325,8 @@ public struct OnboardingView: View {
             }
         } else {
             let finalName = name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "Seeker" : name.trimmingCharacters(in: .whitespacesAndNewlines)
-            let finalTradition = selectedLineageId == "All Traditions" ? nil : selectedLineageId
-            onComplete(finalName, finalTradition, KotlinBoolean(bool: personalize && finalTradition != nil))
+            let finalTradition = currentLineage.tradition
+            onComplete(finalName, finalTradition, personalize && finalTradition != nil)
         }
     }
 }
