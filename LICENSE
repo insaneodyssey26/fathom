@@ -17,16 +17,16 @@ Section 7(e) of the GNU GPLv3).
    on any app store, marketplace, or distribution channel without prior written
    consent.
 
-2. MEDIA ASSETS & SOUNDSCAPES:
-   All bundled ambient audio recordings (including files located in
-   androidApp/src/main/assets/ambience/), custom graphics, and illustrations are
-   proprietary creative assets. They are NOT licensed for commercial redistribution
-   or publication in competing products/applications without explicit written
-   authorization.
+2. MEDIA ASSETS & THIRD-PARTY ATTRIBUTION:
+   Original visual design elements, customized brand iconography, and promotional
+   graphics are proprietary creative assets of Masum Ali. Bundled ambient audio
+   soundscapes located in androidApp/src/main/assets/ambience/ are licensed under
+   their respective Creative Commons licenses (see ATTRIBUTION.md for individual
+   author attributions and licensing details).
 
 If you create and distribute a modified version or fork of this application:
 - You MUST choose a distinctly different name and logo.
-- You MUST remove or replace the proprietary branding and audio soundscapes.
+- You MUST remove or replace the proprietary branding and visual assets.
 - You MUST comply fully with all GPLv3 source disclosure and copyleft requirements.
 
 ==============================================================================

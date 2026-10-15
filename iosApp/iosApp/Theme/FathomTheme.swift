@@ -19,7 +19,7 @@ public enum ReadingThemeId: String, CaseIterable, Identifiable {
     }
 }
 
-public struct ThemeColors {
+public struct ThemeColors: Sendable {
     public let background: Color
     public let surface: Color
     public let surfaceElevated: Color

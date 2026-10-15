@@ -17,7 +17,7 @@ public struct OnboardingLineage: Identifiable {
 
 public struct OnboardingView: View {
     public let colors: ThemeColors
-    public let onComplete: (_ name: String, _ tradition: String?, _ personalizeFeed: Boolean) -> Void
+    public let onComplete: (_ name: String, _ tradition: String?, _ personalizeFeed: Bool) -> Void
 
     @State private var step: Int = 0
     @State private var name: String = ""
@@ -50,7 +50,7 @@ public struct OnboardingView: View {
 
     public init(
         colors: ThemeColors,
-        onComplete: @escaping (_ name: String, _ tradition: String?, _ personalizeFeed: Boolean) -> Void
+        onComplete: @escaping (_ name: String, _ tradition: String?, _ personalizeFeed: Bool) -> Void
     ) {
         self.colors = colors
         self.onComplete = onComplete

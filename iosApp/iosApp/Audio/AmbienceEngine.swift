@@ -34,6 +34,7 @@ public enum AmbienceTrack: String, CaseIterable, Identifiable {
     }
 }
 
+@MainActor
 public final class AmbienceEngine: ObservableObject {
     public static let shared = AmbienceEngine()
 
