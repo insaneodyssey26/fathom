@@ -208,19 +208,15 @@ fun SanctuaryPaywallSheet(onDismiss: () -> Unit) {
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             Box(
-                                modifier = Modifier
+                                 modifier = Modifier
                                     .size(6.dp)
                                     .clip(CircleShape)
                                     .background(tone.hue)
                             )
-                            MonoLabel(text = "Purchasing Power Parity", color = tone.hue)
+                            MonoLabel(text = "Secure Global Checkout", color = tone.hue)
                         }
                         Text(
-                            text = if (countryCode.equals("IN", ignoreCase = true)) {
-                                "Prices are localized for India via Purchasing Power Parity. Handled securely with instant activation by Dodo Payments."
-                            } else {
-                                "Prices are listed in USD. Regional purchasing power parity discounts and local currencies are automatically applied at checkout by Dodo Payments."
-                            },
+                            text = "Prices are listed in USD. Handled securely with instant multi-device activation by Dodo Payments.",
                             style = FathomTheme.typography.caption,
                             color = colors.textSecondary
                         )
