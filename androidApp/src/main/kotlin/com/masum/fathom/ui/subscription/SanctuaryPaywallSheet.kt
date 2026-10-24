@@ -176,23 +176,7 @@ fun SanctuaryPaywallSheet(onDismiss: () -> Unit) {
             }
 
             if (!isPro) {
-                val countryCode = remember { java.util.Locale.getDefault().country.orEmpty() }
-
-                Column(Modifier.padding(top = 28.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    listOf(SubscriptionTier.LIFETIME, SubscriptionTier.ANNUAL, SubscriptionTier.MONTHLY).forEach { tier ->
-                        PatronTierRow(
-                            tier = tier,
-                            countryCode = countryCode,
-                            selected = selected == tier,
-                            onClick = {
-                                haptics.light()
-                                selected = tier
-                            }
-                        )
-                    }
-                }
-
-                Spacer(Modifier.height(20.dp))
+                Spacer(Modifier.height(28.dp))
 
                 Box(
                     modifier = Modifier
@@ -200,35 +184,35 @@ fun SanctuaryPaywallSheet(onDismiss: () -> Unit) {
                         .clip(RoundedCornerShape(16.dp))
                         .background(colors.surface)
                         .border(0.75.dp, colors.hairline, RoundedCornerShape(16.dp))
-                        .padding(horizontal = 18.dp, vertical = 14.dp)
+                        .padding(horizontal = 18.dp, vertical = 18.dp)
                 ) {
-                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             Box(
-                                 modifier = Modifier
+                                modifier = Modifier
                                     .size(6.dp)
                                     .clip(CircleShape)
                                     .background(tone.hue)
                             )
-                            MonoLabel(text = "Secure Global Checkout", color = tone.hue)
+                            MonoLabel(text = "Patron Sanctuary", color = tone.hue)
                         }
                         Text(
-                            text = "Prices are listed in USD. Handled securely with instant multi-device activation by Dodo Payments.",
-                            style = FathomTheme.typography.caption,
+                            text = "Consecrated Patron membership will open soon. Keep exploring sacred texts and rituals freely.",
+                            style = FathomTheme.typography.body,
                             color = colors.textSecondary
                         )
                     }
                 }
 
-                Spacer(Modifier.height(18.dp))
+                Spacer(Modifier.height(20.dp))
                 FathomButton(
-                    text = "Become a Patron (${selected.title})",
+                    text = "Understood",
                     onClick = {
-                        haptics.heavy()
-                        manager.launchDodoCheckout(selected)
+                        haptics.light()
+                        onDismiss()
                     },
                     style = ButtonStyle.Tone,
                     modifier = Modifier.fillMaxWidth()
