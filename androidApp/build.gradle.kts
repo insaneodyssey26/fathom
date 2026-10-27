@@ -34,6 +34,7 @@ dependencies {
     implementation(libs.androidx.work.runtime)
     implementation(libs.androidx.graphics.shapes)
     implementation(libs.androidx.browser)
+    implementation(libs.androidx.fragment)
 
     implementation(libs.compose.uiToolingPreview)
     debugImplementation(libs.compose.uiTooling)
@@ -49,7 +50,7 @@ android {
         applicationId = "com.masum.fathom"
         minSdk = 26
         targetSdk = 37
-        versionCode = 11
+        versionCode = 12
         versionName = "1.7.0"
         manifestPlaceholders["appLabel"] = "Fathom"
     }
