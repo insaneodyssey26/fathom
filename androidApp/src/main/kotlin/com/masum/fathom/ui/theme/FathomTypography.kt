@@ -87,9 +87,9 @@ val InterfaceFamily = FontFamily(
 )
 
 val MonoFamily = FontFamily(
-    axis(R.font.geist_mono, 400),
-    axis(R.font.geist_mono, 500),
-    axis(R.font.geist_mono, 600)
+    axis(R.font.geist, 400),
+    axis(R.font.geist, 500),
+    axis(R.font.geist, 600)
 )
 
 @Immutable

@@ -80,7 +80,7 @@ object QuoteCardRenderer {
 
         val scripture = FathomTypefaces.load(context, R.font.newsreader, "'wght' 400, 'opsz' 36")
         val original = FathomTypefaces.load(context, R.font.newsreader, "'wght' 400, 'opsz' 16")
-        val mono = FathomTypefaces.load(context, R.font.geist_mono, "'wght' 500")
+        val mono = FathomTypefaces.load(context, R.font.geist, "'wght' 500")
         val display = FathomTypefaces.load(context, R.font.fraunces_italic, "'wght' 400, 'opsz' 144, 'SOFT' 60, 'WONK' 1")
 
         canvas.drawColor(palette.background.toArgb())

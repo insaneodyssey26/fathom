@@ -67,14 +67,14 @@ fun AppUpdateBanner(
             horizontalArrangement = Arrangement.spacedBy(14.dp)
         ) {
             AnimatedContent(
-                targetState = status::class,
+                targetState = status,
                 transitionSpec = { fadeIn(tween(200)) togetherWith fadeOut(tween(120)) },
                 label = "update_copy",
                 modifier = Modifier.weight(1f)
-            ) {
-                when (val current = status) {
+            ) { currentStatus ->
+                when (currentStatus) {
                     is AppUpdateStatus.Downloading -> {
-                        val fraction = if (current.totalBytes > 0) current.bytesDownloaded.toFloat() / current.totalBytes else 0f
+                        val fraction = if (currentStatus.totalBytes > 0) currentStatus.bytesDownloaded.toFloat() / currentStatus.totalBytes else 0f
                         Column {
                             MonoLabel(text = "Downloading · ${(fraction * 100).toInt()}%", color = tone.hue)
                             Seekline(progress = fraction, onSeek = {}, color = tone.hue)

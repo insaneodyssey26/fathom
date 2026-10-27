@@ -22,6 +22,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -53,13 +54,13 @@ import com.masum.fathom.core.subscription.ActiveDeviceInfo
 private data class PatronPerk(val number: String, val title: String, val body: String)
 
 private val PatronPerks = listOf(
-    PatronPerk("01", "Eight sacred reading themes", "Nocturne, Vellum, Abyss, Moss, Sahara, Twilight, Cinnabar, and Dawn."),
-    PatronPerk("02", "Full sacred pathways immersion", "Sequential chapter progression across all 15 canonical texts with DepthDial radial progress tracking."),
-    PatronPerk("03", "Unlimited reflections & vault", "Write unlimited personal verse reflections and export your private encrypted data archive."),
-    PatronPerk("04", "Sanctuary streak ritual widget", "Live ritual counter and consecrated contemplation tracker on your home screen."),
-    PatronPerk("05", "Sacred tradition morning alarms", "Tailored daily morning contemplation notifications delivering wisdom from your chosen path."),
-    PatronPerk("06", "All ambient soundscapes & timers", "Continuous sacred audio soundscapes with unlimited extended contemplation timers."),
-    PatronPerk("07", "Patron seal & zero ads forever", "Golden consecrated Patron emblem in your Sanctuary profile with guaranteed zero tracking.")
+    PatronPerk("01", "Eight reading themes", "Nocturne, Vellum, Abyss, Moss, Sahara, Twilight, Cinnabar, and Dawn."),
+    PatronPerk("02", "Guided pathway reading", "Chapter-by-chapter progression across all 15 texts with progress tracking."),
+    PatronPerk("03", "Unlimited reflections & vault", "Write personal verse notes and export your private encrypted backup file."),
+    PatronPerk("04", "Home screen streak widget", "Track your daily reading streak right from your Android home screen."),
+    PatronPerk("05", "Daily morning reminders", "Gentle notifications with daily verses from your chosen tradition."),
+    PatronPerk("06", "All ambient soundscapes & timers", "Background audio soundscapes with custom sleep and meditation timers."),
+    PatronPerk("07", "Patron badge & zero ads forever", "Patron emblem on your profile with zero tracking or ads.")
 )
 
 @Composable
@@ -71,7 +72,8 @@ fun SanctuaryPaywallSheet(onDismiss: () -> Unit) {
     val colors = FathomTheme.colors
     val tone = FathomTheme.tone
     val typography = FathomTheme.typography
-    val isPro = manager.subscriptionState.value.isPro
+    val subscriptionState by manager.subscriptionState.collectAsState()
+    val isPro = subscriptionState.isPro
     var selected by remember { mutableStateOf(SubscriptionTier.ANNUAL) }
     var showRestoreSheet by remember { mutableStateOf(false) }
     var showDeviceSheet by remember { mutableStateOf(false) }
@@ -113,9 +115,9 @@ fun SanctuaryPaywallSheet(onDismiss: () -> Unit) {
             modifier = Modifier.fillMaxWidth().weight(1f, fill = false).verticalScroll(rememberScrollState())
         ) {
             Column(Modifier.padding(top = 6.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                MonoLabel(text = if (isPro) "PATRON CONSECRATED" else "FATHOM PATRON", color = tone.hue)
+                MonoLabel(text = if (isPro) "PATRON ACTIVE" else "FATHOM PATRON", color = tone.hue)
                 Text(
-                    text = if (isPro) "Sanctuary Is Active." else "Consecrate Your Sanctuary.",
+                    text = if (isPro) "Patron Access Active." else "Support Fathom Patron.",
                     style = typography.display,
                     color = colors.textPrimary
                 )
@@ -123,7 +125,7 @@ fun SanctuaryPaywallSheet(onDismiss: () -> Unit) {
                     text = if (isPro) {
                         "Your Patron license is active on this device. You can manage connected devices or deactivate this phone anytime."
                     } else {
-                        "Support independent sacred wisdom. Unlock all themes, pathways, reflections, and neural studio audio."
+                        "Support independent development and unlock all themes, pathways, notes, and ambient soundscapes."
                     },
                     style = typography.commentaryBody,
                     color = colors.textSecondary
@@ -181,28 +183,31 @@ fun SanctuaryPaywallSheet(onDismiss: () -> Unit) {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clip(RoundedCornerShape(16.dp))
-                        .background(colors.surface)
-                        .border(0.75.dp, colors.hairline, RoundedCornerShape(16.dp))
-                        .padding(horizontal = 18.dp, vertical = 18.dp)
+                        .clip(RoundedCornerShape(18.dp))
+                        .background(colors.surfaceElevated)
+                        .border(1.dp, tone.hue.copy(alpha = 0.35f), RoundedCornerShape(18.dp))
+                        .padding(horizontal = 20.dp, vertical = 20.dp)
                 ) {
-                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
                         ) {
                             Box(
                                 modifier = Modifier
-                                    .size(6.dp)
+                                    .size(8.dp)
                                     .clip(CircleShape)
                                     .background(tone.hue)
                             )
-                            MonoLabel(text = "Patron Sanctuary", color = tone.hue)
+                            MonoLabel(
+                                text = "Patron Sanctuary",
+                                color = tone.hue
+                            )
                         }
                         Text(
-                            text = "Consecrated Patron membership will open soon. Keep exploring sacred texts and rituals freely.",
-                            style = FathomTheme.typography.body,
-                            color = colors.textSecondary
+                            text = "Patron membership will open soon. Enjoy exploring all texts, soundscapes, and features freely.",
+                            style = FathomTheme.typography.body.copy(fontSize = 15.sp, lineHeight = 22.sp),
+                            color = colors.textPrimary
                         )
                     }
                 }
@@ -225,9 +230,13 @@ fun SanctuaryPaywallSheet(onDismiss: () -> Unit) {
                             haptics.light()
                             showRestoreSheet = true
                         }
-                        .padding(vertical = 16.dp, horizontal = 24.dp)
+                        .padding(vertical = 14.dp, horizontal = 20.dp)
                 ) {
-                    MonoLabel(text = "Already a Patron? Enter license key", color = colors.textTertiary)
+                    Text(
+                        text = "Already a Patron? Enter license key",
+                        style = typography.caption.copy(fontSize = 13.sp),
+                        color = colors.textSecondary
+                    )
                 }
             }
         }
@@ -323,7 +332,8 @@ private fun RestorePurchaseSheet(onDismiss: () -> Unit, onRestore: (String) -> U
             style = ButtonStyle.Tone,
             modifier = Modifier.fillMaxWidth()
         )
-        if (manager.subscriptionState.value.isPro) {
+        val isCurrentPro = manager.subscriptionState.collectAsState().value.isPro
+        if (isCurrentPro) {
             Spacer(Modifier.height(10.dp))
             FathomButton(
                 text = "Reset to Free Tier",

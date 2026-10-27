@@ -83,11 +83,11 @@ fun WhatsNewModal(
     val features = remember {
         listOf(
             FeatureHighlight(
-                title = "7 Sacred Traditions, 100% Offline",
+                title = "7 World Traditions, 100% Offline",
                 description = "Over 15,000 passages across Stoicism, Taoism, Hinduism, Buddhism, Christianity, Islam, and Judaism."
             ),
             FeatureHighlight(
-                title = "Meditative Soundscapes & Timers",
+                title = "Ambient Soundscapes & Timers",
                 description = "Continuous background rain, singing bowls, temple bells, and chanting with an auto-fade sleep timer."
             ),
             FeatureHighlight(
@@ -95,8 +95,8 @@ fun WhatsNewModal(
                 description = "Glanceable daily wisdom and reading streak widgets right on your Android home screen."
             ),
             FeatureHighlight(
-                title = "8 Handcrafted Reading Themes",
-                description = "Deep OLED blacks, soft manuscripts, and warm morning tones designed for eye comfort day and night."
+                title = "8 Reading Themes",
+                description = "Dark and light palettes tuned for night and day reading, including pure black for OLED screens."
             ),
             FeatureHighlight(
                 title = "Private & Ad-Free Forever",

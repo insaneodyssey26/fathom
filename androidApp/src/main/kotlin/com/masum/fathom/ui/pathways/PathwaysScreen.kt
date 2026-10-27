@@ -57,6 +57,7 @@ import com.adamglin.PhosphorIcons
 import com.adamglin.phosphoricons.Light
 import com.adamglin.phosphoricons.light.ArrowDown
 import com.adamglin.phosphoricons.light.ArrowRight
+import com.adamglin.phosphoricons.light.ArrowUp
 import com.adamglin.phosphoricons.light.CaretDown
 import com.adamglin.phosphoricons.light.Check
 import com.adamglin.phosphoricons.light.LockSimple
@@ -210,6 +211,12 @@ private fun PathwaysHome(
             val topPad = with(androidx.compose.ui.platform.LocalDensity.current) { panelHeight.toDp() } + 24.dp
             val bottomPad = shell.bottomInset + 28.dp
 
+            val isTargetAbove by remember(currentIndex, heroInList) {
+                derivedStateOf {
+                    currentIndex >= 0 && listState.firstVisibleItemIndex > (currentIndex + heroInList)
+                }
+            }
+
             val jumpVisible by remember(currentIndex, heroInList) {
                 derivedStateOf {
                     currentIndex >= 0 && listState.layoutInfo.visibleItemsInfo.none { it.index == currentIndex + heroInList }
@@ -323,7 +330,12 @@ private fun PathwaysHome(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(10.dp)
                         ) {
-                            Icon(PhosphorIcons.Light.ArrowDown, null, tint = tone.hue, modifier = Modifier.size(16.dp))
+                            Icon(
+                                if (isTargetAbove) PhosphorIcons.Light.ArrowUp else PhosphorIcons.Light.ArrowDown,
+                                null,
+                                tint = tone.hue,
+                                modifier = Modifier.size(16.dp)
+                            )
                             Text(text = "Where you left off", style = FathomTheme.typography.label, color = colors.textPrimary)
                         }
                     }
@@ -367,7 +379,7 @@ private fun ChapterList(
                             pathway = pathway,
                             onContinue = {
                                 openCurrent(pathway) { chNum ->
-                                    if (chNum > 3 && !subscription.isPro) {
+                                    if (chNum > 2 && !subscription.isPro) {
                                         haptics.medium()
                                         openPaywall()
                                     } else {
@@ -381,7 +393,7 @@ private fun ChapterList(
             }
         }
         itemsIndexed(pathway.chapters, key = { _, c -> c.chapterNumber }) { index, chapter ->
-            val locked = chapter.chapterNumber > 3 && !subscription.isPro
+            val locked = chapter.chapterNumber > 2 && !subscription.isPro
             Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.TopCenter) {
                 ChapterRow(
                     chapter = chapter,

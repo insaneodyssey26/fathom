@@ -196,7 +196,7 @@ fun NotificationSettings(
                                 onClick = { haptics.light(); preferences.updateVerseSource(VerseSource.ALL_TRADITIONS) }
                             )
                             Pill(
-                                text = "Mostly $tradition",
+                                text = "$tradition only",
                                 selected = settings.verseSource == VerseSource.MY_TRADITION,
                                 onClick = {
                                     haptics.light()

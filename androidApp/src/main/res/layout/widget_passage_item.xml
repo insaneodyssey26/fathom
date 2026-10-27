@@ -11,7 +11,7 @@
         android:id="@+id/widget_item_label"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:fontFamily="@font/geist_mono"
+        android:fontFamily="@font/geist"
         android:fontVariationSettings="'wght' 500"
         android:letterSpacing="0.10"
         android:textColor="#9DB0CC"
