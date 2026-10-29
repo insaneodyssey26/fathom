@@ -6,10 +6,10 @@
 
 <p align="center">
   <a href="https://play.google.com/store/apps/details?id=com.masum.fathom">
-    <img src="https://img.shields.io/badge/Google_Play-Get_Fathom-00875A?style=for-the-badge&logo=google-play&logoColor=white" alt="Google Play" />
+    <img alt="Get it on Google Play" height="80" src="docs/badges/google-play-badge.svg" />
   </a>
-  <a href="https://github.com/insaneodyssey26/fathom/releases">
-    <img src="https://img.shields.io/badge/GitHub-Releases-24292e?style=for-the-badge&logo=github&logoColor=white" alt="GitHub Releases" />
+  <a href="https://github.com/insaneodyssey26/fathom/releases/latest">
+    <img alt="Get it on GitHub" height="80" src="docs/badges/github.svg" />
   </a>
 </p>
 
