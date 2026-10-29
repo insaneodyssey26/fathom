@@ -14,11 +14,13 @@ work = "2.12.0"
 graphics-shapes = "1.1.0"
 androidx-browser = "1.10.0"
 androidx-fragment = "1.9.1"
+androidx-media = "1.7.0"
 androidx-security-crypto = "1.1.0"
 
 [libraries]
 androidx-browser = { module = "androidx.browser:browser", version.ref = "androidx-browser" }
 androidx-fragment = { module = "androidx.fragment:fragment", version.ref = "androidx-fragment" }
+androidx-media = { module = "androidx.media:media", version.ref = "androidx-media" }
 androidx-security-crypto = { module = "androidx.security:security-crypto", version.ref = "androidx-security-crypto" }
 sqldelight-android-driver = { module = "app.cash.sqldelight:android-driver", version.ref = "sqldelight" }
 sqldelight-native-driver = { module = "app.cash.sqldelight:native-driver", version.ref = "sqldelight" }

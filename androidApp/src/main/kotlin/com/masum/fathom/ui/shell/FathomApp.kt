@@ -190,6 +190,10 @@ fun FathomApp(
     DisposableEffect(audioEngine) { onDispose { audioEngine.release() } }
     val ambienceEngine = remember { SanctuaryAmbienceEngine(context) }
     DisposableEffect(ambienceEngine) { onDispose { ambienceEngine.release() } }
+    val mediaSessionManager = remember(audioEngine, ambienceEngine) {
+        com.masum.fathom.core.audio.FathomMediaSessionManager(context, audioEngine, ambienceEngine)
+    }
+    DisposableEffect(mediaSessionManager) { onDispose { mediaSessionManager.release() } }
 
     val versionCode = remember(context) { currentVersionCode(context) }
 

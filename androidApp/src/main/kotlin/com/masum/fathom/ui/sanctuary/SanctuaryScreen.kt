@@ -80,7 +80,6 @@ import com.masum.fathom.core.haptics.LocalFathomHaptics
 import com.masum.fathom.core.sanctuary.ByokProvider
 import com.masum.fathom.core.sanctuary.SanctuaryDataEngine
 import com.masum.fathom.core.sanctuary.SanctuaryPreferences
-import com.masum.fathom.core.sanctuary.SanctuaryStorageStats
 import com.masum.fathom.core.subscription.LocalOpenPaywall
 import com.masum.fathom.core.subscription.LocalSubscriptionManager
 import com.masum.fathom.core.subscription.LocalSubscriptionState
@@ -127,12 +126,9 @@ fun SanctuaryScreen(
     val openLegal = LocalOpenLegal.current
     val audioEngine = LocalSacredAudioEngine.current
 
-    var stats by remember { mutableStateOf(SanctuaryStorageStats()) }
     var keyInput by remember { mutableStateOf(settings.byokApiKey) }
     var maskKey by remember { mutableStateOf(true) }
     var isTestingKey by remember { mutableStateOf(false) }
-
-    LaunchedEffect(Unit) { stats = dataEngine.getStorageStats() }
 
     val savePicker = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/octet-stream")) { destinationUri ->
         if (destinationUri != null) {
@@ -166,7 +162,6 @@ fun SanctuaryScreen(
                 outcome.onSuccess { count ->
                     haptics.success()
                     Toast.makeText(context, "Restored $count items into your vault", Toast.LENGTH_SHORT).show()
-                    stats = dataEngine.getStorageStats()
                 }.onFailure {
                     haptics.error()
                     Toast.makeText(context, "Invalid or corrupt .fathom archive", Toast.LENGTH_SHORT).show()
@@ -333,22 +328,11 @@ fun SanctuaryScreen(
                             }
                         }
 
-                        item { Heading("Data", "Your private vault") }
+                        item { Heading("Backup", "Reflections & bookmarks") }
                         item {
                             Column {
                                 Hairline()
-                                Row(Modifier.fillMaxWidth().padding(vertical = 20.dp)) {
-                                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                                        Text(text = stats.totalVerses.toString(), style = typography.numeral, color = colors.textPrimary)
-                                        MonoLabel(text = "Verses · ${stats.totalBooks} books")
-                                    }
-                                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                                        Text(text = stats.contentDbSizeMb, style = typography.numeral, color = colors.textPrimary)
-                                        MonoLabel(text = "On device · offline")
-                                    }
-                                }
-                                Hairline()
-                                Spacer(Modifier.height(20.dp))
+                                Spacer(Modifier.height(18.dp))
                                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                                     FathomButton(
                                         text = "Export backup",
@@ -364,7 +348,6 @@ fun SanctuaryScreen(
                                         },
                                         style = ButtonStyle.Tone,
                                         modifier = Modifier.weight(1f)
-
                                     )
 
                                     FathomButton(
@@ -384,7 +367,7 @@ fun SanctuaryScreen(
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Icon(PhosphorIcons.Light.LockSimple, null, tint = colors.textTertiary, modifier = Modifier.size(16.dp))
-                                    Text(text = "Bookmarks, notes and history never leave this phone.", style = typography.caption, color = colors.textTertiary)
+                                    Text(text = "Your journal and bookmarks remain stored on this device.", style = typography.caption, color = colors.textTertiary)
                                 }
                             }
                         }

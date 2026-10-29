@@ -9,10 +9,12 @@ import androidx.core.app.NotificationManagerCompat
 object NotificationChannels {
     const val DAILY_VERSE = "fathom_daily_verse"
     const val APP_UPDATES = "fathom_app_updates"
+    const val AUDIO_PLAYBACK = "fathom_audio_playback"
     private const val LEGACY_DAILY = "fathom_daily_contemplation"
 
     const val DAILY_VERSE_ID = 1001
     const val APP_UPDATE_ID = 1002
+    const val AUDIO_PLAYBACK_ID = 1003
 
     fun register(context: Context) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
@@ -28,6 +30,12 @@ object NotificationChannels {
         manager.createNotificationChannel(
             NotificationChannel(APP_UPDATES, "App updates", NotificationManager.IMPORTANCE_LOW).apply {
                 description = "A quiet note when a new version of Fathom is available on Google Play."
+                setShowBadge(false)
+            }
+        )
+        manager.createNotificationChannel(
+            NotificationChannel(AUDIO_PLAYBACK, "Audio recitation & ambience", NotificationManager.IMPORTANCE_LOW).apply {
+                description = "Controls and status for spoken scripture and ambient soundscapes."
                 setShowBadge(false)
             }
         )
