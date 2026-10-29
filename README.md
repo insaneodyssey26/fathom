@@ -1,8 +1,32 @@
 # Fathom
 
+<p align="center">
+  <img src="docs/art/feature_banner.png" alt="Fathom Feature Banner" width="100%" />
+</p>
+
+<p align="center">
+  <a href="https://play.google.com/store/apps/details?id=com.masum.fathom">
+    <img src="https://img.shields.io/badge/Google_Play-Get_Fathom-00875A?style=for-the-badge&logo=google-play&logoColor=white" alt="Google Play" />
+  </a>
+  <a href="https://github.com/insaneodyssey26/fathom/releases">
+    <img src="https://img.shields.io/badge/GitHub-Releases-24292e?style=for-the-badge&logo=github&logoColor=white" alt="GitHub Releases" />
+  </a>
+</p>
+
 Fathom is an offline-first sacred wisdom and philosophical text reader. It gathers over 15,000 verses across 7 ancient traditions—Sanatana Dharma (Hinduism), Buddhism, Taoism, Stoicism, Christianity, Islam, and Judaism—into a calm, distraction-free reading sanctuary.
 
 There are no social feeds, metrics, algorithms, ads, or tracking. The app lives completely on your device.
+
+---
+
+## App Previews
+
+<p align="center">
+  <img src="docs/art/mockup_01_explore.png" width="23%" alt="Begin with a feeling" />
+  <img src="docs/art/mockup_02_traditions.png" width="23%" alt="7 Ancient Traditions" />
+  <img src="docs/art/mockup_03_context.png" width="23%" alt="Context and Commentary" />
+  <img src="docs/art/mockup_04_themes.png" width="23%" alt="Reading Themes" />
+</p>
 
 ---
 
