@@ -36,7 +36,9 @@ data class SanctuarySettings(
     val feedSelectedTraditions: Set<TraditionId> = TraditionId.entries.toSet(),
     val feedSelectedBookId: String? = null,
     val feedAlignedTraditions: Set<TraditionId> = emptySet(),
-    val feedMode: FeedMode = FeedMode.EXPLORATION_DISCOVERY
+    val feedMode: FeedMode = FeedMode.EXPLORATION_DISCOVERY,
+    val readingTextScale: Float = 1.0f,
+    val readingLineHeightScale: Float = 1.0f
 )
 
 class SanctuaryPreferences(context: Context) {
@@ -95,6 +97,8 @@ class SanctuaryPreferences(context: Context) {
         val feedAlignedTraditions = savedAlignedKeys?.mapNotNull { TraditionId.fromKeyOrNull(it) }?.toSet().orEmpty()
         val feedModeName = prefs.getString("feed_mode", FeedMode.EXPLORATION_DISCOVERY.name) ?: FeedMode.EXPLORATION_DISCOVERY.name
         val feedMode = runCatching { FeedMode.valueOf(feedModeName) }.getOrDefault(FeedMode.EXPLORATION_DISCOVERY)
+        val textScale = prefs.getFloat("reading_text_scale", 1.0f).coerceIn(0.85f, 1.35f)
+        val lineHeightScale = prefs.getFloat("reading_line_height_scale", 1.0f).coerceIn(0.9f, 1.3f)
 
         return SanctuarySettings(
             userName = name,
@@ -115,7 +119,9 @@ class SanctuaryPreferences(context: Context) {
             feedSelectedTraditions = feedTraditions,
             feedSelectedBookId = feedBookId,
             feedAlignedTraditions = feedAlignedTraditions,
-            feedMode = feedMode
+            feedMode = feedMode,
+            readingTextScale = textScale,
+            readingLineHeightScale = lineHeightScale
         )
     }
 
@@ -229,6 +235,19 @@ class SanctuaryPreferences(context: Context) {
             byokProvider = provider,
             byokApiKey = apiKey,
             byokVoiceId = voiceId
+        )
+    }
+
+    fun updateReadingComfort(textScale: Float, lineHeightScale: Float) {
+        val clampedText = textScale.coerceIn(0.85f, 1.35f)
+        val clampedLine = lineHeightScale.coerceIn(0.9f, 1.3f)
+        prefs.edit()
+            .putFloat("reading_text_scale", clampedText)
+            .putFloat("reading_line_height_scale", clampedLine)
+            .apply()
+        _settings.value = _settings.value.copy(
+            readingTextScale = clampedText,
+            readingLineHeightScale = clampedLine
         )
     }
 

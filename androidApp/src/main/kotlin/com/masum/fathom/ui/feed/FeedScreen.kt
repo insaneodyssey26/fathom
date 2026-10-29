@@ -50,9 +50,10 @@ import com.adamglin.phosphoricons.fill.Play as PlayFill
 import com.adamglin.phosphoricons.light.BookmarkSimple
 import com.adamglin.phosphoricons.light.CaretDown
 import com.adamglin.phosphoricons.light.ChatCenteredText
+import com.adamglin.phosphoricons.light.DotsThree
 import com.adamglin.phosphoricons.light.ShareFat
 import com.adamglin.phosphoricons.light.SpeakerHigh
-import com.adamglin.phosphoricons.light.DotsThree
+import com.adamglin.phosphoricons.light.TextAa
 import com.adamglin.phosphoricons.light.X
 import com.masum.fathom.core.audio.LocalOpenAmbience
 import com.masum.fathom.core.audio.LocalSacredAudioEngine
@@ -161,6 +162,9 @@ private fun FeedContent(
     val ambienceState by ambienceEngine.state.collectAsState()
     val openAmbience = LocalOpenAmbience.current
     val openMore = com.masum.fathom.ui.shell.LocalOpenMore.current
+    val preferences = com.masum.fathom.core.sanctuary.LocalSanctuaryPreferences.current
+    val settings by preferences.settings.collectAsState()
+    var showReadingComfortSheet by remember { mutableStateOf(false) }
 
     val pagerState = rememberPagerState(
         initialPage = state.currentIndex.coerceIn(0, (state.passages.size - 1).coerceAtLeast(0)),
@@ -221,6 +225,8 @@ private fun FeedContent(
                             passage = passage,
                             reveal = { (1f - abs(distance()) * 1.1f).coerceIn(0f, 1f) },
                             contentPadding = pagePadding,
+                            textScale = settings.readingTextScale,
+                            lineHeightScale = settings.readingLineHeightScale,
                             modifier = Modifier.graphicsLayer {
                                 val d = distance().coerceIn(-1f, 1f)
                                 val a = abs(d)
@@ -269,6 +275,10 @@ private fun FeedContent(
                             audioEngine.toggle(currentPassage)
                         },
                         onReflect = { onEvent(FeedUiEvent.OnOpenContext(currentPassage)) },
+                        onComfort = {
+                            haptics.light()
+                            showReadingComfortSheet = true
+                        },
                         onShare = { onEvent(FeedUiEvent.OnOpenShare(currentPassage)) },
                         onSave = {
                             if (!bookmarked) haptics.success() else haptics.light()
@@ -298,6 +308,12 @@ private fun FeedContent(
             }
             }
         )
+
+        if (showReadingComfortSheet) {
+            com.masum.fathom.ui.components.ReadingComfortSheet(
+                onDismiss = { showReadingComfortSheet = false }
+            )
+        }
     }
 }
 
@@ -430,6 +446,7 @@ private fun ActionPill(
     bookmarked: Boolean,
     onListen: () -> Unit,
     onReflect: () -> Unit,
+    onComfort: () -> Unit,
     onShare: () -> Unit,
     onSave: () -> Unit,
     modifier: Modifier = Modifier
@@ -438,20 +455,20 @@ private fun ActionPill(
     val tone = FathomTheme.tone
     val screenWidth = LocalConfiguration.current.screenWidthDp
     val cell = when {
-        screenWidth < 340 -> 32.dp
-        screenWidth < 380 -> 34.dp
-        else -> 36.dp
+        screenWidth < 340 -> 30.dp
+        screenWidth < 380 -> 32.dp
+        else -> 35.dp
     }
     val iconSize = when {
-        screenWidth < 340 -> 16.dp
-        screenWidth < 380 -> 17.dp
-        else -> 18.dp
+        screenWidth < 340 -> 15.dp
+        screenWidth < 380 -> 16.dp
+        else -> 17.dp
     }
     Row(
         modifier = modifier
             .height(42.dp)
             .glass(RoundedCornerShape(50))
-            .padding(horizontal = if (screenWidth < 340) 4.dp else 6.dp),
+            .padding(horizontal = if (screenWidth < 340) 3.dp else 5.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(if (screenWidth < 340) 1.dp else 2.dp)
     ) {
@@ -460,6 +477,9 @@ private fun ActionPill(
         }
         PillAction(cell = cell, onClick = onReflect, description = "Context and commentary") {
             Icon(PhosphorIcons.Light.ChatCenteredText, null, tint = colors.textPrimary, modifier = Modifier.size(iconSize))
+        }
+        PillAction(cell = cell, onClick = onComfort, description = "Reading comfort") {
+            Icon(PhosphorIcons.Light.TextAa, null, tint = colors.textPrimary, modifier = Modifier.size(iconSize))
         }
         PillAction(cell = cell, onClick = onShare, description = "Share as card") {
             Icon(PhosphorIcons.Light.ShareFat, null, tint = colors.textPrimary, modifier = Modifier.size(iconSize))

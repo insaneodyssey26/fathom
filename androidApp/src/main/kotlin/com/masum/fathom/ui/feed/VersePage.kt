@@ -49,6 +49,8 @@ fun VersePage(
     modifier: Modifier = Modifier,
     endGutter: androidx.compose.ui.unit.Dp = 64.dp,
     showThemes: Boolean = true,
+    textScale: Float = 1.0f,
+    lineHeightScale: Float = 1.0f,
     footer: (@Composable () -> Unit)? = null
 ) {
     val shell = LocalShell.current
@@ -63,10 +65,11 @@ fun VersePage(
         length < 320 -> 26
         else -> 22
     }
-    val size = if (shell.widthClass == WidthClass.Compact) base else base + 4
+    val rawSize = if (shell.widthClass == WidthClass.Compact) base else base + 4
+    val size = (rawSize * textScale).toInt()
     val verseStyle = typography.verseDisplay.copy(
         fontSize = size.sp,
-        lineHeight = (size * 1.28f).sp,
+        lineHeight = (size * 1.28f * lineHeightScale).sp,
         color = colors.textPrimary
     )
     val originalLong = (passage.originalText?.length ?: 0) > 110

@@ -137,6 +137,8 @@ private fun StudyContent(
     val pagerState = rememberPagerState(initialPage = 0, pageCount = { passages.size })
     val page = pagerState.currentPage
     val total = passages.size
+    val preferences = com.masum.fathom.core.sanctuary.LocalSanctuaryPreferences.current
+    val settings by preferences.settings.collectAsState()
     val tone = rememberTone(passages[page].traditionId)
     val playback by audioEngine.playbackState.collectAsState()
     val speaking = (playback as? SacredAudioState.Playing)?.passage?.id == passages[page].id
@@ -165,6 +167,8 @@ private fun StudyContent(
                             contentPadding = PaddingValues(top = 148.dp, bottom = 128.dp),
                             endGutter = 28.dp,
                             showThemes = false,
+                            textScale = settings.readingTextScale,
+                            lineHeightScale = settings.readingLineHeightScale,
                             footer = if (passage.explanations.isNotEmpty()) {
                                 { MeaningBlock(passage = passage) }
                             } else null,
