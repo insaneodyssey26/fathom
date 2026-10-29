@@ -302,7 +302,7 @@ object WidgetRepository {
 
     fun isPatron(context: Context): Boolean {
         return try {
-            val prefs = context.getSharedPreferences("fathom_subscription_prefs", Context.MODE_PRIVATE)
+            val prefs = com.masum.fathom.core.subscription.SubscriptionManager.getEncryptedPreferences(context)
             val isPatron = prefs.getBoolean("is_patron", false)
             val expiresAt = prefs.getLong("subscription_expires_at", 0L)
             val isExpired = expiresAt > 0 && System.currentTimeMillis() > expiresAt

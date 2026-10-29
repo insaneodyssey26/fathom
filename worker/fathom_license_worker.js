@@ -100,10 +100,27 @@ function uint8ArrayToBase64(bytes) {
   return btoa(binary);
 }
 
-async function signLicensePayload(payloadJson, secretKey) {
-  if (!secretKey) return "";
+async function signLicensePayload(payloadJson, env) {
   const encoder = new TextEncoder();
   const dataBytes = encoder.encode(payloadJson);
+
+  const privateKeyB64 = (env && env.LICENSE_SIGNING_KEY) || "";
+  if (privateKeyB64) {
+    try {
+      const rawBinary = Uint8Array.from(atob(privateKeyB64), c => c.charCodeAt(0));
+      const privKey = await crypto.subtle.importKey(
+        "pkcs8",
+        rawBinary,
+        { name: "Ed25519" },
+        false,
+        ["sign"]
+      );
+      const signature = await crypto.subtle.sign({ name: "Ed25519" }, privKey, dataBytes);
+      return uint8ArrayToBase64(new Uint8Array(signature));
+    } catch (_) {}
+  }
+
+  const secretKey = (env && env.LICENSE_SIGNING_SECRET) || "fathom_sanctuary_secret_key";
   const keyBytes = encoder.encode(secretKey);
 
   const cryptoKey = await crypto.subtle.importKey(
@@ -259,6 +276,18 @@ export default {
           });
         }
 
+        const callerDeviceId = (currentDeviceId || "").trim();
+        const activeList = Array.isArray(kvData.activatedDevices) ? kvData.activatedDevices : [];
+        if (callerDeviceId && activeList.length > 0) {
+          const isCallerAuthorized = activeList.some(d => d.deviceId === callerDeviceId);
+          if (!isCallerAuthorized) {
+            return new Response(JSON.stringify({ success: false, error: "Unauthorized: caller device is not recognized on this license" }), {
+              status: 403,
+              headers: { "Content-Type": "application/json" }
+            });
+          }
+        }
+
         const blocked = blockedStatus(kvData);
         if (blocked) {
           return new Response(JSON.stringify({
@@ -368,7 +397,7 @@ export default {
             expiresAt: kvData.expiresAt || 0,
             issuedAt: Date.now()
           });
-          const signature = await signLicensePayload(tokenData, env.LICENSE_SIGNING_SECRET || "fathom_sanctuary_secret_key");
+          const signature = await signLicensePayload(tokenData, env);
 
           return new Response(JSON.stringify({
             success: true,
@@ -423,7 +452,7 @@ export default {
           expiresAt: kvData.expiresAt || 0,
           issuedAt: Date.now()
         });
-        const signature = await signLicensePayload(tokenData, env.LICENSE_SIGNING_SECRET || "fathom_sanctuary_secret_key");
+        const signature = await signLicensePayload(tokenData, env);
 
         return new Response(JSON.stringify({
           success: true,
@@ -466,6 +495,18 @@ export default {
             status: 404,
             headers: { "Content-Type": "application/json" }
           });
+        }
+
+        const callerDeviceId = (body.callerDeviceId || "").trim();
+        const activeList = Array.isArray(kvData.activatedDevices) ? kvData.activatedDevices : [];
+        if (callerDeviceId && activeList.length > 0) {
+          const isCallerAuthorized = activeList.some(d => d.deviceId === callerDeviceId);
+          if (!isCallerAuthorized) {
+            return new Response(JSON.stringify({ success: false, error: "Unauthorized: caller device is not recognized on this license" }), {
+              status: 403,
+              headers: { "Content-Type": "application/json" }
+            });
+          }
         }
 
         if (Array.isArray(kvData.activatedDevices)) {

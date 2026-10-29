@@ -34,6 +34,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         NotificationChannels.register(applicationContext)
         subscriptionManager = SubscriptionManager(applicationContext)
+        com.masum.fathom.core.subscription.LicenseSyncWorker.schedule(applicationContext)
 
         intent?.data?.let { uri ->
             if (subscriptionManager.handleDeepLink(uri)) {

@@ -12,6 +12,9 @@ import java.net.HttpURLConnection
 import java.net.URL
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
+import java.security.KeyFactory
+import java.security.Signature
+import java.security.spec.X509EncodedKeySpec
 import javax.crypto.Mac
 import javax.crypto.spec.SecretKeySpec
 import android.util.Base64
@@ -40,6 +43,10 @@ class LicenseEngine(
     private val apiBaseUrl: String = "https://fathom-license-api.skmasumali-main.workers.dev",
     private val clientSigningSecret: String = "fathom_sanctuary_master_secret_2026"
 ) {
+
+    companion object {
+        private const val LICENSE_VERIFICATION_KEY = "MCowBQYDK2VwAyEAOlbDNpCFqvzphci9X7p7t2gUlgD934/wLwZtl91vFuc="
+    }
 
     private fun parseTier(identifier: String?): SubscriptionTier {
         return when (identifier?.uppercase()) {
@@ -142,6 +149,47 @@ class LicenseEngine(
         }
     }
 
+    suspend fun checkLicenseRemoteStatus(
+        licenseKey: String,
+        deviceId: String
+    ): RemoteLicenseCheckResult = withContext(Dispatchers.IO) {
+        val sanitized = licenseKey.trim().uppercase()
+        if (sanitized.isBlank()) return@withContext RemoteLicenseCheckResult.NotFound
+
+        try {
+            val encodedKey = URLEncoder.encode(sanitized, "UTF-8")
+            val encodedDev = URLEncoder.encode(deviceId, "UTF-8")
+            val endpoint = URL("$apiBaseUrl/api/devices?licenseKey=$encodedKey&deviceId=$encodedDev")
+
+            val conn = (endpoint.openConnection() as HttpURLConnection).apply {
+                requestMethod = "GET"
+                connectTimeout = 8000
+                readTimeout = 8000
+                setRequestProperty("Accept", "application/json")
+            }
+
+            val code = conn.responseCode
+            val stream = if (code in 200..299) conn.inputStream else conn.errorStream ?: conn.inputStream
+            val text = BufferedReader(InputStreamReader(stream, StandardCharsets.UTF_8)).use { it.readText() }
+            val root = JSONObject(text)
+
+            when (code) {
+                404 -> RemoteLicenseCheckResult.NotFound
+                403 -> {
+                    val status = root.optString("status", "").uppercase()
+                    if (status == "EXPIRED") RemoteLicenseCheckResult.Expired else RemoteLicenseCheckResult.Revoked
+                }
+                in 200..299 -> {
+                    val expiresAt = root.optLong("expiresAt", 0L)
+                    RemoteLicenseCheckResult.Valid(expiresAtEpochMs = expiresAt)
+                }
+                else -> RemoteLicenseCheckResult.NetworkError("HTTP $code: ${root.optString("error")}")
+            }
+        } catch (e: Exception) {
+            RemoteLicenseCheckResult.NetworkError(e.localizedMessage ?: "Connection failed")
+        }
+    }
+
     suspend fun fetchActiveDevicesRemote(
         licenseKey: String,
         currentDeviceId: String
@@ -187,7 +235,8 @@ class LicenseEngine(
 
     suspend fun revokeDeviceRemote(
         licenseKey: String,
-        deviceId: String
+        deviceId: String,
+        callerDeviceId: String = deviceId
     ): Boolean = withContext(Dispatchers.IO) {
         val sanitized = licenseKey.trim().uppercase()
         if (sanitized.isBlank() || deviceId.isBlank()) return@withContext false
@@ -206,6 +255,9 @@ class LicenseEngine(
             val body = JSONObject().apply {
                 put("licenseKey", sanitized)
                 put("deviceId", deviceId)
+                if (callerDeviceId.isNotBlank()) {
+                    put("callerDeviceId", callerDeviceId)
+                }
             }
 
             OutputStreamWriter(conn.outputStream, StandardCharsets.UTF_8).use { it.write(body.toString()); it.flush() }
@@ -223,6 +275,18 @@ class LicenseEngine(
 
     fun verifyTokenLocally(signedToken: String, signature: String): Boolean {
         if (signedToken.isBlank() || signature.isBlank()) return false
+
+        try {
+            val keyBytes = Base64.decode(LICENSE_VERIFICATION_KEY, Base64.NO_WRAP)
+            val pubKey = KeyFactory.getInstance("Ed25519").generatePublic(X509EncodedKeySpec(keyBytes))
+            val sig = Signature.getInstance("Ed25519").apply {
+                initVerify(pubKey)
+                update(signedToken.toByteArray(StandardCharsets.UTF_8))
+            }
+            val sigBytes = Base64.decode(signature, Base64.NO_WRAP)
+            if (sig.verify(sigBytes)) return true
+        } catch (_: Exception) {}
+
         return try {
             val mac = Mac.getInstance("HmacSHA256")
             val keySpec = SecretKeySpec(clientSigningSecret.toByteArray(StandardCharsets.UTF_8), "HmacSHA256")

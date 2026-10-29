@@ -35,6 +35,7 @@ dependencies {
     implementation(libs.androidx.graphics.shapes)
     implementation(libs.androidx.browser)
     implementation(libs.androidx.fragment)
+    implementation(libs.androidx.security.crypto)
 
     implementation(libs.compose.uiToolingPreview)
     debugImplementation(libs.compose.uiTooling)

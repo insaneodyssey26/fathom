@@ -10,6 +10,9 @@ import com.masum.fathom.core.model.user.SubscriptionTier
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import androidx.security.crypto.EncryptedSharedPreferences
+import androidx.security.crypto.MasterKey
+import com.masum.fathom.core.security.KeystoreIntegrityChecker
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
@@ -21,9 +24,50 @@ import kotlinx.coroutines.launch
 
 class SubscriptionManager(private val context: Context) {
 
-    private val prefs: SharedPreferences = context.getSharedPreferences("fathom_subscription_prefs", Context.MODE_PRIVATE)
+    private val prefs: SharedPreferences = getEncryptedPreferences(context)
     val licenseEngine = LicenseEngine()
     private val scope = CoroutineScope(Dispatchers.Main)
+
+    companion object {
+        const val DODO_MONTHLY_URL = "https://checkout.dodopayments.com/buy/pdt_0NpSdYmrmyFzfotEi1iID?quantity=1"
+        const val DODO_ANNUAL_URL = "https://checkout.dodopayments.com/buy/pdt_0NpSfCIOCfkSq1U8dv2NN?quantity=1"
+        const val DODO_LIFETIME_URL = "https://checkout.dodopayments.com/buy/pdt_0NpSfeVfdB1dXRI9yHTUe?quantity=1"
+
+        fun getEncryptedPreferences(context: Context): SharedPreferences {
+            return try {
+                val masterKey = MasterKey.Builder(context)
+                    .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
+                    .build()
+
+                val encrypted = EncryptedSharedPreferences.create(
+                    context,
+                    "fathom_secure_subscription_prefs",
+                    masterKey,
+                    EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+                    EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
+                )
+
+                val legacy = context.getSharedPreferences("fathom_subscription_prefs", Context.MODE_PRIVATE)
+                if (legacy.contains("is_patron") && !encrypted.contains("is_patron")) {
+                    val editor = encrypted.edit()
+                    legacy.all.forEach { (k, v) ->
+                        when (v) {
+                            is Boolean -> editor.putBoolean(k, v)
+                            is String -> editor.putString(k, v)
+                            is Long -> editor.putLong(k, v)
+                            is Int -> editor.putInt(k, v)
+                            is Float -> editor.putFloat(k, v)
+                        }
+                    }
+                    editor.apply()
+                    legacy.edit().clear().apply()
+                }
+                encrypted
+            } catch (_: Exception) {
+                context.getSharedPreferences("fathom_subscription_prefs", Context.MODE_PRIVATE)
+            }
+        }
+    }
 
     private val _subscriptionState = MutableStateFlow(loadState())
     val subscriptionState: StateFlow<SubscriptionState> = _subscriptionState.asStateFlow()
@@ -41,9 +85,19 @@ class SubscriptionManager(private val context: Context) {
         }
         val expiresAt = prefs.getLong("subscription_expires_at", 0L)
         val isExpired = expiresAt > 0 && System.currentTimeMillis() > expiresAt
+        val isTampered = KeystoreIntegrityChecker.isBinaryTampered(context)
+
+        val signedToken = prefs.getString("signed_token", null)
+        val tokenSignature = prefs.getString("token_signature", null)
+        val isSignatureValid = if (isPatron && !signedToken.isNullOrBlank() && !tokenSignature.isNullOrBlank()) {
+            licenseEngine.verifyTokenLocally(signedToken, tokenSignature)
+        } else {
+            !isPatron
+        }
+
         return SubscriptionState(
-            tier = if (isExpired) SubscriptionTier.FREE else tier,
-            isPro = isPatron && tier != SubscriptionTier.FREE && !isExpired
+            tier = if (isExpired || isTampered || !isSignatureValid) SubscriptionTier.FREE else tier,
+            isPro = isPatron && tier != SubscriptionTier.FREE && !isExpired && !isTampered && isSignatureValid
         )
     }
 
@@ -154,7 +208,7 @@ class SubscriptionManager(private val context: Context) {
 
     suspend fun revokeDevice(deviceId: String): Boolean {
         val key = getSavedLicenseKey() ?: return false
-        val success = licenseEngine.revokeDeviceRemote(key, deviceId)
+        val success = licenseEngine.revokeDeviceRemote(key, deviceId, callerDeviceId = getDeviceId())
         if (success && deviceId == getDeviceId()) {
             resetToFree()
         }
@@ -164,7 +218,7 @@ class SubscriptionManager(private val context: Context) {
     suspend fun deactivateCurrentDevice(): Boolean {
         val key = getSavedLicenseKey()
         if (key != null) {
-            licenseEngine.revokeDeviceRemote(key, getDeviceId())
+            licenseEngine.revokeDeviceRemote(key, getDeviceId(), callerDeviceId = getDeviceId())
         }
         resetToFree()
         return true
@@ -201,11 +255,5 @@ class SubscriptionManager(private val context: Context) {
             tier = SubscriptionTier.FREE,
             isPro = false
         )
-    }
-
-    companion object {
-        const val DODO_MONTHLY_URL = "https://checkout.dodopayments.com/buy/pdt_0NpSdYmrmyFzfotEi1iID?quantity=1"
-        const val DODO_ANNUAL_URL = "https://checkout.dodopayments.com/buy/pdt_0NpSfCIOCfkSq1U8dv2NN?quantity=1"
-        const val DODO_LIFETIME_URL = "https://checkout.dodopayments.com/buy/pdt_0NpSfeVfdB1dXRI9yHTUe?quantity=1"
     }
 }

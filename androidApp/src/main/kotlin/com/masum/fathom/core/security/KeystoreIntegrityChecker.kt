@@ -38,6 +38,9 @@ object KeystoreIntegrityChecker {
     }
 
     fun isBinaryTampered(context: Context, releaseCertSha256: String? = null): Boolean {
+        if (context.applicationInfo.flags and android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE != 0) {
+            return false
+        }
         val currentHash = computeSigningCertificateSha256(context) ?: return false
         if (releaseCertSha256.isNullOrBlank()) {
             return false

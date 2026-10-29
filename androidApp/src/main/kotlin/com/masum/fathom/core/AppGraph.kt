@@ -57,7 +57,6 @@ class AppGraph(context: Context) {
                 override fun onUpgrade(db: androidx.sqlite.db.SupportSQLiteDatabase, oldVersion: Int, newVersion: Int) = Unit
                 override fun onConfigure(db: androidx.sqlite.db.SupportSQLiteDatabase) {
                     db.query("PRAGMA mmap_size = 268435456;").close()
-                    db.query("PRAGMA query_only = ON;").close()
                 }
             }
         )
