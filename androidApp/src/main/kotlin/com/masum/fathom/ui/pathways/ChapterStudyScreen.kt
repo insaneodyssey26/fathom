@@ -169,6 +169,7 @@ private fun StudyContent(
                             showThemes = false,
                             textScale = settings.readingTextScale,
                             lineHeightScale = settings.readingLineHeightScale,
+                            fontFamily = settings.verseFontFamily,
                             footer = if (passage.explanations.isNotEmpty()) {
                                 { MeaningBlock(passage = passage) }
                             } else null,

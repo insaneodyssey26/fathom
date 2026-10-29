@@ -51,6 +51,7 @@ fun VersePage(
     showThemes: Boolean = true,
     textScale: Float = 1.0f,
     lineHeightScale: Float = 1.0f,
+    fontFamily: com.masum.fathom.core.sanctuary.VerseFontFamily = com.masum.fathom.core.sanctuary.VerseFontFamily.SERIF,
     footer: (@Composable () -> Unit)? = null
 ) {
     val shell = LocalShell.current
@@ -67,7 +68,12 @@ fun VersePage(
     }
     val rawSize = if (shell.widthClass == WidthClass.Compact) base else base + 4
     val size = (rawSize * textScale).toInt()
+    val chosenFamily = when (fontFamily) {
+        com.masum.fathom.core.sanctuary.VerseFontFamily.SERIF -> typography.verseDisplay.fontFamily
+        com.masum.fathom.core.sanctuary.VerseFontFamily.SANS -> com.masum.fathom.ui.theme.InterfaceFamily
+    }
     val verseStyle = typography.verseDisplay.copy(
+        fontFamily = chosenFamily,
         fontSize = size.sp,
         lineHeight = (size * 1.28f * lineHeightScale).sp,
         color = colors.textPrimary

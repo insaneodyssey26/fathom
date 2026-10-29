@@ -60,6 +60,11 @@ fun ReadingComfortSheet(onDismiss: () -> Unit) {
         mutableIntStateOf((settings.readingTextScale * 20).roundToInt())
     }
 
+    val chosenFamily = when (settings.verseFontFamily) {
+        com.masum.fathom.core.sanctuary.VerseFontFamily.SERIF -> FathomTheme.typography.verseDisplay.fontFamily
+        com.masum.fathom.core.sanctuary.VerseFontFamily.SANS -> com.masum.fathom.ui.theme.InterfaceFamily
+    }
+
     val sampleBaseSize = 24
     val previewSize = (sampleBaseSize * activeTextScale).toInt()
     val previewLineHeight = (previewSize * 1.28f * activeLineScale).sp
@@ -98,6 +103,7 @@ fun ReadingComfortSheet(onDismiss: () -> Unit) {
                     Text(
                         text = "He only is my rock and my salvation; he is my defence; I shall not be greatly moved.",
                         style = FathomTheme.typography.verseDisplay.copy(
+                            fontFamily = chosenFamily,
                             fontSize = previewSize.sp,
                             lineHeight = previewLineHeight,
                             color = colors.textPrimary
@@ -110,6 +116,69 @@ fun ReadingComfortSheet(onDismiss: () -> Unit) {
                         style = FathomTheme.typography.caption,
                         color = colors.textTertiary
                     )
+                }
+            }
+
+            Hairline()
+
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(14.dp)
+            ) {
+                Text(
+                    text = "Typeface",
+                    style = FathomTheme.typography.body,
+                    color = colors.textPrimary
+                )
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    com.masum.fathom.core.sanctuary.VerseFontFamily.entries.forEach { fontOption ->
+                        val isSelected = settings.verseFontFamily == fontOption
+                        val pillBg by animateColorAsState(
+                            targetValue = if (isSelected) tone.hue.copy(alpha = 0.15f) else colors.surfaceElevated,
+                            label = "font_pill_bg"
+                        )
+                        val textTint by animateColorAsState(
+                            targetValue = if (isSelected) tone.hue else colors.textSecondary,
+                            label = "font_pill_text"
+                        )
+
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(44.dp)
+                                .clip(RoundedCornerShape(14.dp))
+                                .background(pillBg)
+                                .border(
+                                    width = 1.dp,
+                                    color = if (isSelected) tone.hue.copy(alpha = 0.45f) else colors.hairline,
+                                    shape = RoundedCornerShape(14.dp)
+                                )
+                                .tappable(scale = 0.96f) {
+                                    haptics.light()
+                                    preferences.updateVerseFontFamily(fontOption)
+                                },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = fontOption.displayName,
+                                style = FathomTheme.typography.label.copy(
+                                    fontFamily = if (fontOption == com.masum.fathom.core.sanctuary.VerseFontFamily.SERIF) {
+                                        FathomTheme.typography.verseDisplay.fontFamily
+                                    } else {
+                                        com.masum.fathom.ui.theme.InterfaceFamily
+                                    },
+                                    fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal
+                                ),
+                                color = textTint,
+                                fontSize = 13.sp,
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                    }
                 }
             }
 

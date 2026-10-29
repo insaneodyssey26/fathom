@@ -227,6 +227,7 @@ private fun FeedContent(
                             contentPadding = pagePadding,
                             textScale = settings.readingTextScale,
                             lineHeightScale = settings.readingLineHeightScale,
+                            fontFamily = settings.verseFontFamily,
                             modifier = Modifier.graphicsLayer {
                                 val d = distance().coerceIn(-1f, 1f)
                                 val a = abs(d)

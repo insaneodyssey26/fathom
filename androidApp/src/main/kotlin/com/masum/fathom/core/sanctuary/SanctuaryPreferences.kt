@@ -17,6 +17,11 @@ enum class ByokProvider(val displayName: String) {
     OPENAI("OpenAI Audio API")
 }
 
+enum class VerseFontFamily(val displayName: String) {
+    SERIF("Newsreader (Serif)"),
+    SANS("Geist (Sans)")
+}
+
 data class SanctuarySettings(
     val userName: String = "Sanctuary Reader",
     val userTradition: String? = null,
@@ -38,7 +43,8 @@ data class SanctuarySettings(
     val feedAlignedTraditions: Set<TraditionId> = emptySet(),
     val feedMode: FeedMode = FeedMode.EXPLORATION_DISCOVERY,
     val readingTextScale: Float = 1.0f,
-    val readingLineHeightScale: Float = 1.0f
+    val readingLineHeightScale: Float = 1.0f,
+    val verseFontFamily: VerseFontFamily = VerseFontFamily.SERIF
 )
 
 class SanctuaryPreferences(context: Context) {
@@ -99,6 +105,8 @@ class SanctuaryPreferences(context: Context) {
         val feedMode = runCatching { FeedMode.valueOf(feedModeName) }.getOrDefault(FeedMode.EXPLORATION_DISCOVERY)
         val textScale = prefs.getFloat("reading_text_scale", 1.0f).coerceIn(0.85f, 1.35f)
         val lineHeightScale = prefs.getFloat("reading_line_height_scale", 1.0f).coerceIn(0.9f, 1.3f)
+        val fontName = prefs.getString("reading_verse_font", VerseFontFamily.SERIF.name) ?: VerseFontFamily.SERIF.name
+        val verseFont = runCatching { VerseFontFamily.valueOf(fontName) }.getOrDefault(VerseFontFamily.SERIF)
 
         return SanctuarySettings(
             userName = name,
@@ -121,7 +129,8 @@ class SanctuaryPreferences(context: Context) {
             feedAlignedTraditions = feedAlignedTraditions,
             feedMode = feedMode,
             readingTextScale = textScale,
-            readingLineHeightScale = lineHeightScale
+            readingLineHeightScale = lineHeightScale,
+            verseFontFamily = verseFont
         )
     }
 
@@ -238,17 +247,26 @@ class SanctuaryPreferences(context: Context) {
         )
     }
 
-    fun updateReadingComfort(textScale: Float, lineHeightScale: Float) {
+    fun updateReadingComfort(textScale: Float, lineHeightScale: Float, font: VerseFontFamily = _settings.value.verseFontFamily) {
         val clampedText = textScale.coerceIn(0.85f, 1.35f)
         val clampedLine = lineHeightScale.coerceIn(0.9f, 1.3f)
         prefs.edit()
             .putFloat("reading_text_scale", clampedText)
             .putFloat("reading_line_height_scale", clampedLine)
+            .putString("reading_verse_font", font.name)
             .apply()
         _settings.value = _settings.value.copy(
             readingTextScale = clampedText,
-            readingLineHeightScale = clampedLine
+            readingLineHeightScale = clampedLine,
+            verseFontFamily = font
         )
+    }
+
+    fun updateVerseFontFamily(font: VerseFontFamily) {
+        prefs.edit()
+            .putString("reading_verse_font", font.name)
+            .apply()
+        _settings.value = _settings.value.copy(verseFontFamily = font)
     }
 
     fun shouldShowWhatsNew(currentVersionCode: Int): Boolean {
