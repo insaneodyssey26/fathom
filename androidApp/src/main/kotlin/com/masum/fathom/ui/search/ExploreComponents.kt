@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -186,8 +187,6 @@ private fun TraditionChip(label: String, id: TraditionId?, selected: Boolean, on
     }
 }
 
-private val tileHeights = listOf(212.dp, 168.dp, 176.dp, 220.dp, 196.dp, 172.dp, 164.dp, 208.dp)
-
 @Composable
 fun TopicMosaic(
     columns: Int,
@@ -195,17 +194,23 @@ fun TopicMosaic(
     modifier: Modifier = Modifier
 ) {
     val topics = SacredTopic.entries
-    Row(modifier = modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        repeat(columns) { column ->
-            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                topics.forEachIndexed { index, topic ->
-                    if (index % columns == column) {
-                        TopicTile(
-                            topic = topic,
-                            index = index,
-                            height = tileHeights[index % tileHeights.size],
-                            onClick = { onSelect(topic) }
-                        )
+    val colCount = if (columns > 2) columns else 2
+    val rows = topics.chunked(colCount)
+    Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        rows.forEach { rowTopics ->
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                rowTopics.forEach { topic ->
+                    val index = topics.indexOf(topic)
+                    TopicTile(
+                        topic = topic,
+                        index = index,
+                        modifier = Modifier.weight(1f).height(160.dp),
+                        onClick = { onSelect(topic) }
+                    )
+                }
+                if (rowTopics.size < colCount) {
+                    repeat(colCount - rowTopics.size) {
+                        Spacer(Modifier.weight(1f))
                     }
                 }
             }
@@ -214,40 +219,58 @@ fun TopicMosaic(
 }
 
 @Composable
-private fun TopicTile(topic: SacredTopic, index: Int, height: Dp, onClick: () -> Unit) {
+private fun TopicTile(
+    topic: SacredTopic,
+    index: Int,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit
+) {
     val colors = FathomTheme.colors
     val typography = FathomTheme.typography
     val tone = remember(topic, colors.isDark, colors.background) { toneFor(topic.seed(), colors) }
-    val shape = RoundedCornerShape(28.dp)
+    val shape = RoundedCornerShape(26.dp)
     Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(height)
+        modifier = modifier
             .clip(shape)
             .background(
                 Brush.linearGradient(
-                    colors = listOf(tone.hue.copy(alpha = if (colors.isDark) 0.26f else 0.22f), tone.hue.copy(alpha = 0.06f)),
+                    colors = listOf(
+                        tone.hue.copy(alpha = if (colors.isDark) 0.24f else 0.20f),
+                        tone.hue.copy(alpha = 0.05f)
+                    ),
                     start = androidx.compose.ui.geometry.Offset.Zero,
-                    end = androidx.compose.ui.geometry.Offset(600f, 900f)
+                    end = androidx.compose.ui.geometry.Offset(600f, 600f)
                 )
             )
-            .border(0.75.dp, tone.hue.copy(alpha = 0.22f), shape)
-            .tappable(scale = 0.97f, onClick = onClick)
+            .border(1.dp, tone.hue.copy(alpha = 0.22f), shape)
+            .tappable(scale = 0.98f, onClick = onClick)
             .clipToBounds()
     ) {
         Icon(
             imageVector = topic.icon,
             contentDescription = null,
-            tint = tone.hue.copy(alpha = 0.16f),
-            modifier = Modifier.size(132.dp).align(Alignment.BottomEnd).offset(x = 34.dp, y = 30.dp)
+            tint = tone.hue.copy(alpha = 0.14f),
+            modifier = Modifier
+                .size(124.dp)
+                .align(Alignment.BottomEnd)
+                .offset(x = 28.dp, y = 24.dp)
         )
         Column(
-            modifier = Modifier.fillMaxSize().padding(20.dp),
+            modifier = Modifier.fillMaxSize().padding(horizontal = 18.dp, vertical = 18.dp),
             verticalArrangement = Arrangement.SpaceBetween
         ) {
             MonoLabel(text = (index + 1).toString().padStart(2, '0'), color = tone.hue)
-            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text(text = topic.title, style = typography.title.copy(fontSize = 22.sp, lineHeight = 26.sp), color = colors.textPrimary)
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(
+                    text = topic.title,
+                    style = typography.title.copy(
+                        fontSize = 19.sp,
+                        lineHeight = 23.sp
+                    ),
+                    color = colors.textPrimary,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
                 Text(
                     text = topic.subtitle,
                     style = typography.caption,
