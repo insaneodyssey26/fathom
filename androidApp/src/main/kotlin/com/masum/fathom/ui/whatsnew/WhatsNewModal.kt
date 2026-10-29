@@ -72,10 +72,12 @@ fun WhatsNewModal(
             title = "Welcome to the First Official Release",
             isCurrent = true,
             highlights = listOf(
-                "Smooth Back Gestures: Swipe back naturally from the screen edge to return to previous verses or pages.",
-                "Safer Vault Backups: Your reading progress, notes, and streak history are now backed up together in your vault file.",
-                "Seamless Chapter Reading: Fixed an issue where finishing a chapter could accidentally reset your place.",
-                "Faster Performance: Quicker startup, lower battery usage, and smooth 120Hz scrolling throughout."
+                "Reading comfort: Adjust text size and line spacing, and choose between Newsreader (serif) and Geist (sans) font directly from the reader.",
+                "Audio controls: Control spoken verses and ambient sounds right from your notification panel, with a seekbar to jump around.",
+                "Smooth back gestures: Swipe back naturally from the screen edge to return to previous verses or pages.",
+                "Safer backups: Your reading progress, notes, and streak history are now backed up together in your vault file.",
+                "Seamless chapter reading: Fixed an issue where finishing a chapter could accidentally reset your place.",
+                "Faster performance: Quicker startup, lower battery usage, and smooth scrolling throughout."
             )
         )
     }

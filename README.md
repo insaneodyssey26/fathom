@@ -8,7 +8,7 @@ There are no social feeds, metrics, algorithms, ads, or tracking. The app lives 
 
 ## The Vision & Experience
 
-- **A Contemplative Instrument:** Designed like a sacred physical book rather than a social app. Typographically set in Fraunces, Newsreader, Geist, and Geist Mono.
+- **A Contemplative Instrument:** Designed like a sacred physical book rather than a social app. Typographically set in Fraunces, Newsreader, and Geist, with customizable font scaling and Serif/Sans typeface toggles.
 - **100% Offline & Private:** 15,163 verses, translations, commentary, bookmarks, and reflection notes are stored in local SQLite databases right on your device. Zero telemetry leaves your phone.
 - **Dynamic Atmosphere:** Each tradition has its own tone and emblem that subtly tints the atmosphere shader, ambient backdrops, and reading chrome.
 - **Sacred Soundscapes:** Built-in looping audio environments (Temple Rain, Distant Storm, Sanctuary Night, Sacred River, Singing Bowl, Brown Noise) encoded in lightweight Opus audio for deep contemplation.
@@ -22,7 +22,7 @@ There are no social feeds, metrics, algorithms, ads, or tracking. The app lives 
 >
 > All shared logic, database schemas, and the full native SwiftUI codebase (Feed, Pathways, Search, Journal, Onboarding, Ambience Audio, and Sanctuary Hub) are written and structured cleanly so that whenever macOS hardware becomes available, the iOS app can be built and shipped directly with minimal friction.
 >
-> **Android is the primary production target right now**, currently undergoing closed testing for Google Play.
+> **Android is the primary production target right now**, released on Google Play.
 
 ---
 
@@ -50,7 +50,7 @@ flowchart TD
         direction TB
         Compose["Jetpack Compose UI<br/>Adaptive Dock / Nav Rail"]
         Shader["AGSL Atmosphere Shader<br/>Dynamic Tradition Glow"]
-        Media3["Media3 Soundscape Player<br/>Home Screen Wisdom Widget"]
+        Media["MediaSession & Soundscapes<br/>Home Screen Wisdom Widget"]
     end
 
     subgraph iOS["iOS Client (iosApp)"]
@@ -99,7 +99,7 @@ flowchart TD
 | **Language** | Kotlin 2.4 | Swift 6.0 | Kotlin Multiplatform (Kotlin 2.4) |
 | **UI Framework** | Jetpack Compose (Bespoke Design) | SwiftUI | — |
 | **Graphics & Blur** | AGSL Runtime Shaders, Backdrop | Ultra-thin material blur | — |
-| **Audio Engine** | Android Media3 / AudioTrack | AVFoundation (`AVAudioPlayer`) | — |
+| **Audio Engine** | Android `MediaPlayer` + `MediaSession` (Notification & Lock Screen Controls) | AVFoundation (`AVAudioPlayer`) | — |
 | **Database** | AndroidSqliteDriver (Memory-mapped) | NativeSqliteDriver | SQLDelight 2.0 |
 | **State & Flow** | StateFlow, Coroutines | `@StateObject`, `@Published` | Kotlinx Coroutines |
 | **Local Storage** | SharedPreferences / DataStore | `@AppStorage` (UserDefaults) | SQLite (`app_user_data.db`) |
@@ -113,9 +113,8 @@ flowchart TD
 - **Adaptive Shell:** On Android, the app dynamically morphs between a docked floating pill (phones in portrait) and an adaptive navigation rail (tablets, foldables, and landscape mode).
 - **Typography Matrix:**
   - *Fraunces:* Display, sacred headlines, and titles.
-  - *Newsreader:* Scriptures and editorial commentaries.
-  - *Geist:* Clean user interface text and buttons.
-  - *Geist Mono:* Canonical verse references and chapter indices.
+  - *Newsreader:* Scriptures and editorial commentaries (Serif option).
+  - *Geist:* Clean user interface text, button controls, and modern scripture reading (Sans option).
 
 ---
 

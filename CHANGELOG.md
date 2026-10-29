@@ -2,16 +2,19 @@
 
 All notable changes to the Fathom project are documented in this file.
 
-## [1.7.0] - 2026-10-14
+## [1.7.0]
 
 ### Added
-- **Fluid Predictive Back Gestures:** Modernized back gesture animation with organic rounded contours, smooth scaling curves, and soft elevation as you navigate back through verses and screens.
-- **Reading History in Vault Backups:** Complete reading journey and streak history are now bundled into your private, encrypted vault backup files for seamless archiving and restore.
+- **Reading Comfort:** Change font size, line spacing, and switch between Newsreader (serif) and Geist (sans) font directly from the reader.
+- **Media Controls & Lock Screen:** Play, pause, and scrub through spoken verses and ambient soundscapes right from your lock screen, notification shade, or headphones.
+- **Fluid Back Gestures:** Smooth edge-swipe back navigation throughout the app.
+- **Reading History in Backups:** Reading journey and streak history are included in vault backups.
 
 ### Changed
-- **Performance & Cold-Start Optimization:** Reduced app package size and accelerated startup times with streamlined asset pipelines, database concurrency, and smoother scrolling transitions.
-- **Pathways Chapter Progression:** Polished chapter study completion so celebration checkpoints render reliably without unintended screen resets.
-- **Sanctuary Patron Regional Clarity:** Refined regional checkout pricing and clear Purchasing Power Parity indications.
+- **Explore Screen:** Balanced feeling cards into a clean, equal grid.
+- **Backup & Restore:** Simplified backup screen in settings to make saving your journal and bookmarks straightforward.
+- **Performance:** Quicker startup, lower battery usage, and smooth scrolling throughout.
+- **Chapter Reading:** Fixed an issue where finishing a chapter could reset your reading place.
 
 ---
 
