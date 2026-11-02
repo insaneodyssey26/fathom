@@ -1,5 +1,9 @@
 package com.masum.fathom.ui.subscription
 
+import android.app.Activity
+import android.widget.Toast
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -15,23 +19,34 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.masum.fathom.core.haptics.LocalFathomHaptics
+import com.masum.fathom.core.model.user.SubscriptionTier
 import com.masum.fathom.core.subscription.LocalSubscriptionManager
+import com.masum.fathom.core.subscription.ProductTierPricing
+import com.masum.fathom.core.subscription.RestoreResult
 import com.masum.fathom.ui.design.ButtonStyle
 import com.masum.fathom.ui.design.FathomButton
 import com.masum.fathom.ui.design.FathomSheet
 import com.masum.fathom.ui.design.Hairline
 import com.masum.fathom.ui.design.MonoLabel
+import com.masum.fathom.ui.design.tappable
 import com.masum.fathom.ui.theme.FathomTheme
+import kotlinx.coroutines.launch
 
 private data class PatronPerk(val number: String, val title: String, val body: String)
 
@@ -49,11 +64,18 @@ private val PatronPerks = listOf(
 fun SanctuaryPaywallSheet(onDismiss: () -> Unit) {
     val haptics = LocalFathomHaptics.current
     val manager = LocalSubscriptionManager.current
+    val context = LocalContext.current
+    val activity = context as? Activity
+    val scope = rememberCoroutineScope()
     val colors = FathomTheme.colors
     val tone = FathomTheme.tone
     val typography = FathomTheme.typography
     val subscriptionState by manager.subscriptionState.collectAsState()
+    val pricingMap by manager.productPricing.collectAsState()
     val isPro = subscriptionState.isPro
+
+    var selectedTier by remember { mutableStateOf(SubscriptionTier.ANNUAL) }
+    var isRestoring by remember { mutableStateOf(false) }
 
     FathomSheet(onDismiss = onDismiss) {
         Column(
@@ -62,7 +84,7 @@ fun SanctuaryPaywallSheet(onDismiss: () -> Unit) {
             Column(Modifier.padding(top = 6.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 MonoLabel(text = if (isPro) "PATRON ACTIVE" else "FATHOM PATRON", color = tone.hue)
                 Text(
-                    text = if (isPro) "Patron Access Active." else "Support Fathom Patron.",
+                    text = if (isPro) "Patron Access Active." else "Support Fathom Sanctuary.",
                     style = typography.display,
                     color = colors.textPrimary
                 )
@@ -97,48 +119,94 @@ fun SanctuaryPaywallSheet(onDismiss: () -> Unit) {
             Spacer(Modifier.height(28.dp))
 
             if (!isPro) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(18.dp))
-                        .background(colors.surfaceElevated)
-                        .border(1.dp, tone.hue.copy(alpha = 0.35f), RoundedCornerShape(18.dp))
-                        .padding(horizontal = 20.dp, vertical = 20.dp)
-                ) {
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(10.dp)
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(8.dp)
-                                    .clip(CircleShape)
-                                    .background(tone.hue)
-                            )
-                            MonoLabel(
-                                text = "Patron Sanctuary",
-                                color = tone.hue
-                            )
-                        }
-                        Text(
-                            text = "Patron membership will open soon. Enjoy exploring all texts, soundscapes, and features freely.",
-                            style = FathomTheme.typography.body.copy(fontSize = 15.sp, lineHeight = 22.sp),
-                            color = colors.textPrimary
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    listOf(
+                        SubscriptionTier.ANNUAL,
+                        SubscriptionTier.MONTHLY,
+                        SubscriptionTier.LIFETIME
+                    ).forEach { tier ->
+                        PatronTierCard(
+                            tier = tier,
+                            pricing = pricingMap[tier],
+                            selected = selectedTier == tier,
+                            onClick = {
+                                haptics.light()
+                                selectedTier = tier
+                            }
                         )
                     }
                 }
 
-                Spacer(Modifier.height(20.dp))
+                Spacer(Modifier.height(24.dp))
+
+                val selectedPricing = pricingMap[selectedTier]
+                val actionLabel = if (selectedPricing != null) {
+                    "Become a Patron · ${selectedPricing.formattedPrice}"
+                } else {
+                    "Become a Patron · ${selectedTier.priceDisplay}"
+                }
+
                 FathomButton(
-                    text = "Understood",
+                    text = actionLabel,
                     onClick = {
-                        haptics.light()
-                        onDismiss()
+                        haptics.medium()
+                        if (activity != null) {
+                            val launched = manager.launchPurchase(activity, selectedTier)
+                            if (!launched) {
+                                Toast.makeText(context, "Google Play Store is connecting. Please retry in a moment.", Toast.LENGTH_SHORT).show()
+                            }
+                        }
                     },
                     style = ButtonStyle.Tone,
                     modifier = Modifier.fillMaxWidth()
                 )
+
+                Spacer(Modifier.height(14.dp))
+
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.CenterHorizontally)
+                        .tappable(scale = 0.95f) {
+                            if (!isRestoring) {
+                                isRestoring = true
+                                haptics.light()
+                                scope.launch {
+                                    val result = manager.restorePurchases()
+                                    isRestoring = false
+                                    when (result) {
+                                        is RestoreResult.Success -> {
+                                            haptics.success()
+                                            Toast.makeText(context, "Welcome back, Patron. Purchases restored.", Toast.LENGTH_LONG).show()
+                                            onDismiss()
+                                        }
+                                        is RestoreResult.NoPurchasesFound -> {
+                                            haptics.light()
+                                            Toast.makeText(context, "No active subscriptions found for this Google account.", Toast.LENGTH_SHORT).show()
+                                        }
+                                        is RestoreResult.Error -> {
+                                            haptics.error()
+                                            Toast.makeText(context, result.message, Toast.LENGTH_SHORT).show()
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        .padding(vertical = 12.dp, horizontal = 20.dp)
+                ) {
+                    if (isRestoring) {
+                        CircularProgressIndicator(
+                            color = tone.hue,
+                            modifier = Modifier.size(16.dp),
+                            strokeWidth = 2.dp
+                        )
+                    } else {
+                        Text(
+                            text = "Restore Google Play Purchases",
+                            style = typography.caption.copy(fontSize = 13.sp),
+                            color = colors.textSecondary
+                        )
+                    }
+                }
             } else {
                 FathomButton(
                     text = "Close",
@@ -150,6 +218,76 @@ fun SanctuaryPaywallSheet(onDismiss: () -> Unit) {
                     modifier = Modifier.fillMaxWidth()
                 )
             }
+        }
+    }
+}
+
+@Composable
+private fun PatronTierCard(
+    tier: SubscriptionTier,
+    pricing: ProductTierPricing?,
+    selected: Boolean,
+    onClick: () -> Unit
+) {
+    val colors = FathomTheme.colors
+    val tone = FathomTheme.tone
+    val shape = RoundedCornerShape(20.dp)
+    val border by animateColorAsState(if (selected) tone.hue else colors.hairline, tween(240), label = "tier_border")
+    val fill by animateColorAsState(if (selected) tone.hue.copy(alpha = 0.10f) else colors.surfaceElevated, tween(240), label = "tier_fill")
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(shape)
+            .background(fill)
+            .border(if (selected) 1.5.dp else 0.75.dp, border, shape)
+            .tappable(scale = 0.985f, haptic = false, onClick = onClick)
+            .padding(horizontal = 20.dp, vertical = 18.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .size(20.dp)
+                .clip(CircleShape)
+                .border(1.5.dp, if (selected) tone.hue else colors.textTertiary, CircleShape),
+            contentAlignment = Alignment.Center
+        ) {
+            if (selected) {
+                Box(
+                    Modifier
+                        .size(10.dp)
+                        .clip(CircleShape)
+                        .background(tone.hue)
+                )
+            }
+        }
+
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+            Text(text = tier.title, style = FathomTheme.typography.title, color = colors.textPrimary)
+            MonoLabel(
+                text = pricing?.billingPeriod ?: tier.billingPeriod,
+                color = colors.textTertiary
+            )
+            tier.badgeLabel?.let { badge ->
+                MonoLabel(
+                    text = badge,
+                    color = tone.hue,
+                    maxLines = 1
+                )
+            }
+        }
+
+        Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text(
+                text = pricing?.formattedPrice ?: tier.priceDisplay,
+                style = FathomTheme.typography.headline.copy(fontSize = 19.sp),
+                color = colors.textPrimary
+            )
+            MonoLabel(
+                text = tier.equivalentMonthlyPrice,
+                color = colors.textTertiary
+            )
         }
     }
 }
