@@ -37,6 +37,7 @@ dependencies {
     implementation(libs.androidx.fragment)
     implementation(libs.androidx.media)
     implementation(libs.androidx.security.crypto)
+    implementation(libs.play.billing)
 
     implementation(libs.compose.uiToolingPreview)
     debugImplementation(libs.compose.uiTooling)
