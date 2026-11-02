@@ -2,7 +2,6 @@ package com.masum.fathom
 
 import android.content.Intent
 import android.os.Bundle
-import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -34,13 +33,6 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         NotificationChannels.register(applicationContext)
         subscriptionManager = SubscriptionManager(applicationContext)
-        com.masum.fathom.core.subscription.LicenseSyncWorker.schedule(applicationContext)
-
-        intent?.data?.let { uri ->
-            if (subscriptionManager.handleDeepLink(uri)) {
-                Toast.makeText(this, "Welcome, Fathom Patron. Sanctuary unlocked.", Toast.LENGTH_LONG).show()
-            }
-        }
 
         launchPassageId = intent?.getStringExtra(DailyWisdomWidgetProvider.EXTRA_PASSAGE_ID)
 
@@ -58,11 +50,6 @@ class MainActivity : ComponentActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
-        intent.data?.let { uri ->
-            if (subscriptionManager.handleDeepLink(uri)) {
-                Toast.makeText(this, "Welcome, Fathom Patron. Sanctuary unlocked.", Toast.LENGTH_LONG).show()
-            }
-        }
         launchPassageId = intent.getStringExtra(DailyWisdomWidgetProvider.EXTRA_PASSAGE_ID)
     }
 }

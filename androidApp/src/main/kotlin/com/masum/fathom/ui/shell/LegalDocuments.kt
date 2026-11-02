@@ -63,7 +63,7 @@ object LegalDocuments {
         LegalSection(
             "Purchases & Subscriptions",
             listOf(
-                "Payments for Fathom Patron subscriptions and lifetime licenses are processed securely by Dodo Payments as the Merchant of Record. Fathom does not store or process your credit card numbers or banking credentials."
+                "In-app purchases and subscriptions for Fathom Patron are processed securely through Google Play. Fathom does not store or process your credit card numbers or banking credentials."
             )
         ),
         LegalSection(
