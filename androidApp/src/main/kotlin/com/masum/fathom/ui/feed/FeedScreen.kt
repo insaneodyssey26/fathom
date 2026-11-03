@@ -194,8 +194,9 @@ private fun FeedContent(
     )
 
     val currentPassage = state.passages.getOrNull(pagerState.currentPage)
-    val tone = rememberTone(currentPassage?.traditionId)
-    NavToneEffect(currentPassage?.traditionId)
+    val effectiveTraditionId = if (settings.dynamicTraditionTones) currentPassage?.traditionId else null
+    val tone = rememberTone(effectiveTraditionId)
+    NavToneEffect(effectiveTraditionId)
     val bookmarked = currentPassage?.let { it.id in state.bookmarkedPassageIds } ?: false
     val speaking = (playbackState as? SacredAudioState.Playing)?.passage?.id == currentPassage?.id
 

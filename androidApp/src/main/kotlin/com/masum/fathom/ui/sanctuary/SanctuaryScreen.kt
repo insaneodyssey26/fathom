@@ -88,6 +88,7 @@ import com.masum.fathom.core.update.LocalAppUpdateEngine
 import com.masum.fathom.ui.design.Atmosphere
 import com.masum.fathom.ui.design.ButtonStyle
 import com.masum.fathom.ui.design.FathomButton
+import com.masum.fathom.ui.design.FathomToggle
 import com.masum.fathom.ui.design.Hairline
 import com.masum.fathom.ui.design.fadeEdges
 import com.masum.fathom.ui.design.LocalBackdrop
@@ -274,6 +275,86 @@ fun SanctuaryScreen(
                                             )
                                         }
                                     }
+                                }
+                            }
+                        }
+
+                        item {
+                            Spacer(Modifier.height(14.dp))
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(20.dp))
+                                    .background(colors.surfaceElevated)
+                                    .border(0.75.dp, colors.hairline, RoundedCornerShape(20.dp))
+                                    .tappable(scale = 0.99f) {
+                                        if (!subscription.isPro) {
+                                            haptics.medium()
+                                            openPaywall()
+                                        } else {
+                                            haptics.light()
+                                            preferences.updateDynamicTraditionTones(!settings.dynamicTraditionTones)
+                                        }
+                                    }
+                                    .padding(horizontal = 20.dp, vertical = 18.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(16.dp)
+                            ) {
+                                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        Text(
+                                            text = "Dynamic Tradition Ambiance",
+                                            style = typography.title.copy(fontSize = 15.sp),
+                                            color = colors.textPrimary
+                                        )
+                                        if (!subscription.isPro) {
+                                            Box(
+                                                modifier = Modifier
+                                                    .clip(RoundedCornerShape(6.dp))
+                                                    .background(tone.hue.copy(alpha = 0.14f))
+                                                    .padding(horizontal = 6.dp, vertical = 2.dp)
+                                            ) {
+                                                Text(
+                                                    text = "PATRON",
+                                                    style = typography.caption.copy(
+                                                        fontSize = 10.sp,
+                                                        fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+                                                        color = tone.hue
+                                                    )
+                                                )
+                                            }
+                                        }
+                                    }
+                                    Text(
+                                        text = if (!subscription.isPro) {
+                                            "Lock feed ambiance strictly to your chosen theme with zero tradition shifts."
+                                        } else if (settings.dynamicTraditionTones) {
+                                            "Subtly shift screen atmosphere to match the lineage of each sacred passage."
+                                        } else {
+                                            "Pure reading theme atmosphere with zero lineage color shifts."
+                                        },
+                                        style = typography.body.copy(fontSize = 13.sp),
+                                        color = colors.textSecondary
+                                    )
+                                }
+                                if (subscription.isPro) {
+                                    FathomToggle(
+                                        checked = settings.dynamicTraditionTones,
+                                        onCheckedChange = {
+                                            haptics.light()
+                                            preferences.updateDynamicTraditionTones(it)
+                                        }
+                                    )
+                                } else {
+                                    Icon(
+                                        imageVector = PhosphorIcons.Light.LockSimple,
+                                        contentDescription = null,
+                                        tint = colors.textTertiary,
+                                        modifier = Modifier.size(20.dp)
+                                    )
                                 }
                             }
                         }

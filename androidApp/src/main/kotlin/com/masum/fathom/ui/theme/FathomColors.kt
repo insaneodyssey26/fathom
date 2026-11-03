@@ -47,67 +47,67 @@ val VellumColors = FathomColors(
 )
 
 val AbyssColors = FathomColors(
-    background = Color(0xFF0A1526),
-    surface = Color(0xFF132238),
-    surfaceElevated = Color(0xFF1D324F),
-    textPrimary = Color(0xFFEDF5FD),
-    textSecondary = Color(0xFF98B3D3),
-    textTertiary = Color(0xFF5B789C),
-    accent = Color(0xFF5EA8F0),
-    onAccent = Color(0xFF05111E),
-    hairline = Color(0xFF233B5C),
+    background = Color(0xFF040810),
+    surface = Color(0xFF0C1420),
+    surfaceElevated = Color(0xFF142032),
+    textPrimary = Color(0xFFEAF2FB),
+    textSecondary = Color(0xFF8BA5C4),
+    textTertiary = Color(0xFF506886),
+    accent = Color(0xFF4A98EB),
+    onAccent = Color(0xFF02070E),
+    hairline = Color(0xFF18283E),
     isDark = true
 )
 
 val MossColors = FathomColors(
-    background = Color(0xFF0B1F14),
-    surface = Color(0xFF142F20),
-    surfaceElevated = Color(0xFF1E432E),
-    textPrimary = Color(0xFFEDF8EE),
-    textSecondary = Color(0xFFA2CEAA),
-    textTertiary = Color(0xFF5F8B68),
-    accent = Color(0xFF52C478),
-    onAccent = Color(0xFF06140A),
-    hairline = Color(0xFF244F35),
+    background = Color(0xFF040C07),
+    surface = Color(0xFF0B1910),
+    surfaceElevated = Color(0xFF13281A),
+    textPrimary = Color(0xFFEAF5EB),
+    textSecondary = Color(0xFF91BE9A),
+    textTertiary = Color(0xFF527D5B),
+    accent = Color(0xFF42B768),
+    onAccent = Color(0xFF020904),
+    hairline = Color(0xFF173622),
     isDark = true
 )
 
 val SaharaColors = FathomColors(
-    background = Color(0xFF22140D),
-    surface = Color(0xFF331E14),
-    surfaceElevated = Color(0xFF462A1D),
-    textPrimary = Color(0xFFFDF1E8),
-    textSecondary = Color(0xFFCEAA97),
-    textTertiary = Color(0xFF8E6B58),
-    accent = Color(0xFFF0783A),
-    onAccent = Color(0xFF1A0A04),
-    hairline = Color(0xFF523324),
+    background = Color(0xFF0B0705),
+    surface = Color(0xFF18100B),
+    surfaceElevated = Color(0xFF271A12),
+    textPrimary = Color(0xFFFBF0E6),
+    textSecondary = Color(0xFFC49F8B),
+    textTertiary = Color(0xFF7E5D4B),
+    accent = Color(0xFFE66E30),
+    onAccent = Color(0xFF0E0402),
+    hairline = Color(0xFF352217),
     isDark = true
 )
 
 val TwilightColors = FathomColors(
-    background = Color(0xFF170E2B),
-    surface = Color(0xFF251744),
-    surfaceElevated = Color(0xFF35225E),
-    textPrimary = Color(0xFFF6F0FE),
-    textSecondary = Color(0xFFBEA8E7),
-    textTertiary = Color(0xFF7D65A8),
-    accent = Color(0xFFB878FB),
-    onAccent = Color(0xFF120422),
-    hairline = Color(0xFF3E286D),
+    background = Color(0xFF080410),
+    surface = Color(0xFF130B22),
+    surfaceElevated = Color(0xFF201336),
+    textPrimary = Color(0xFFF4EDFB),
+    textSecondary = Color(0xFFB197DD),
+    textTertiary = Color(0xFF6F569B),
+    accent = Color(0xFFA965F2),
+    onAccent = Color(0xFF0A0216),
+    hairline = Color(0xFF2C194B),
     isDark = true
 )
 
 val CinnabarColors = FathomColors(
-    background = Color(0xFF240C0E),
-    surface = Color(0xFF361317),
-    surfaceElevated = Color(0xFF4C1B20),
-    textPrimary = Color(0xFFFDECEE),
-    textSecondary = Color(0xFFDCA1A7),
-    textTertiary = Color(0xFF965C62),
-    accent = Color(0xFFF44360),
-    onAccent = Color(0xFF1E0306),
-    hairline = Color(0xFF582329),
+    background = Color(0xFF0B0405),
+    surface = Color(0xFF1A0A0C),
+    surfaceElevated = Color(0xFF2A1114),
+    textPrimary = Color(0xFFFBE9EB),
+    textSecondary = Color(0xFFD2939A),
+    textTertiary = Color(0xFF884F56),
+    accent = Color(0xFFEA3854),
+    onAccent = Color(0xFF140204),
+    hairline = Color(0xFF3B161B),
     isDark = true
 )
 

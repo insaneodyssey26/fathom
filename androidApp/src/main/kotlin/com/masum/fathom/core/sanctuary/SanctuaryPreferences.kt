@@ -44,7 +44,8 @@ data class SanctuarySettings(
     val feedMode: FeedMode = FeedMode.EXPLORATION_DISCOVERY,
     val readingTextScale: Float = 1.0f,
     val readingLineHeightScale: Float = 1.0f,
-    val verseFontFamily: VerseFontFamily = VerseFontFamily.SERIF
+    val verseFontFamily: VerseFontFamily = VerseFontFamily.SERIF,
+    val dynamicTraditionTones: Boolean = true
 )
 
 class SanctuaryPreferences(context: Context) {
@@ -107,6 +108,7 @@ class SanctuaryPreferences(context: Context) {
         val lineHeightScale = prefs.getFloat("reading_line_height_scale", 1.0f).coerceIn(0.9f, 1.3f)
         val fontName = prefs.getString("reading_verse_font", VerseFontFamily.SERIF.name) ?: VerseFontFamily.SERIF.name
         val verseFont = runCatching { VerseFontFamily.valueOf(fontName) }.getOrDefault(VerseFontFamily.SERIF)
+        val dynamicTones = prefs.getBoolean("dynamic_tradition_tones", true)
 
         return SanctuarySettings(
             userName = name,
@@ -130,7 +132,8 @@ class SanctuaryPreferences(context: Context) {
             feedMode = feedMode,
             readingTextScale = textScale,
             readingLineHeightScale = lineHeightScale,
-            verseFontFamily = verseFont
+            verseFontFamily = verseFont,
+            dynamicTraditionTones = dynamicTones
         )
     }
 
@@ -199,6 +202,11 @@ class SanctuaryPreferences(context: Context) {
             userName = cleanName,
             userTradition = cleanTradition
         )
+    }
+
+    fun updateDynamicTraditionTones(enabled: Boolean) {
+        prefs.edit().putBoolean("dynamic_tradition_tones", enabled).apply()
+        _settings.value = _settings.value.copy(dynamicTraditionTones = enabled)
     }
 
     fun updateTheme(theme: ReadingTheme) {

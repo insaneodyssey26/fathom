@@ -36,19 +36,19 @@ private fun seedFor(id: TraditionId?): ToneSeed = when (id) {
 fun toneFor(id: TraditionId?, colors: FathomColors): Tone {
     val seed = if (id != null) seedFor(id) else ToneSeed(colors.accent, lerp(colors.background, colors.accent, 0.45f))
     val bg = colors.background
-    val mute = if (id == null) 0.65f else 0.85f
+    val mute = if (id == null) 0.50f else 0.55f
     return if (colors.isDark) {
         Tone(
             hue = seed.hue,
-            glowPrimary = lerp(bg, seed.hue, 0.28f * mute),
-            glowSecondary = lerp(bg, seed.shift, 0.35f * mute),
+            glowPrimary = lerp(bg, seed.hue, 0.20f * mute),
+            glowSecondary = lerp(bg, seed.shift, 0.22f * mute),
             onHue = colors.onAccent
         )
     } else {
         Tone(
             hue = if (id == null) colors.accent else lerp(seed.hue, Color(0xFF1A140C), 0.48f),
-            glowPrimary = lerp(bg, seed.hue, 0.18f * mute),
-            glowSecondary = lerp(bg, seed.shift, 0.14f * mute),
+            glowPrimary = lerp(bg, seed.hue, 0.12f * mute),
+            glowSecondary = lerp(bg, seed.shift, 0.10f * mute),
             onHue = colors.onAccent
         )
     }
