@@ -20,15 +20,15 @@ enum class SubscriptionTier(
         title = "Monthly Seeker",
         priceDisplay = "$4.99",
         billingPeriod = "Billed monthly",
-        equivalentMonthlyPrice = "$4.99 / mo"
+        equivalentMonthlyPrice = ""
     ),
     ANNUAL(
         id = "fathom_annual",
         title = "Annual Sanctuary",
-        priceDisplay = "$48.99",
-        billingPeriod = "Billed annually ($48.99/yr)",
-        equivalentMonthlyPrice = "$4.08 / mo",
-        badgeLabel = "BEST VALUE · 18% OFF"
+        priceDisplay = "$44.99",
+        billingPeriod = "Billed annually ($44.99/yr)",
+        equivalentMonthlyPrice = "$3.75 / mo",
+        badgeLabel = "Recommended · Save 25%"
     ),
     LIFETIME(
         id = "fathom_lifetime",
@@ -36,7 +36,7 @@ enum class SubscriptionTier(
         priceDisplay = "$79.99",
         billingPeriod = "One-time purchase",
         equivalentMonthlyPrice = "Forever Access",
-        badgeLabel = "PATRON'S CHOICE · LIFETIME"
+        badgeLabel = "Lifetime · Pay Once"
     );
 
     fun localizedPriceDisplay(countryCode: String? = null): String = priceDisplay
