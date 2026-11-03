@@ -99,6 +99,7 @@ import com.masum.fathom.ui.shell.LegalDoc
 import com.masum.fathom.ui.shell.LegalDocuments
 import com.masum.fathom.ui.shell.LocalOpenLegal
 import com.masum.fathom.ui.theme.FathomTheme
+import com.masum.fathom.core.model.user.SubscriptionTier
 import com.masum.fathom.ui.theme.ReadingTheme
 import com.masum.fathom.ui.theme.palette
 import com.masum.fathom.ui.theme.rememberTone
@@ -206,6 +207,22 @@ fun SanctuaryScreen(
                         }
 
                         item {
+                            val patronLabel = if (subscription.isPro) {
+                                when (subscription.tier) {
+                                    SubscriptionTier.LIFETIME -> "Sanctuary+ Lifetime Patron"
+                                    SubscriptionTier.ANNUAL -> "Sanctuary+ Annual Patron"
+                                    SubscriptionTier.MONTHLY -> "Sanctuary+ Monthly Patron"
+                                    else -> "Sanctuary+ Patron"
+                                }
+                            } else {
+                                "Sanctuary+"
+                            }
+                            val patronSubtitle = if (subscription.isPro) {
+                                "Active membership · Tap to manage subscription."
+                            } else {
+                                "Unlock every theme, soundscape and study path."
+                            }
+
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -222,9 +239,9 @@ fun SanctuaryScreen(
                                 horizontalArrangement = Arrangement.spacedBy(16.dp)
                             ) {
                                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                                    MonoLabel(text = if (subscription.isPro) "Sanctuary+ patron" else "Sanctuary+", color = tone.hue)
+                                    MonoLabel(text = patronLabel, color = tone.hue)
                                     Text(
-                                        text = if (subscription.isPro) "Every theme, soundscape and path is open to you." else "Unlock every theme, soundscape and study path.",
+                                        text = patronSubtitle,
                                         style = typography.title,
                                         color = colors.textPrimary
                                     )

@@ -2,7 +2,9 @@ package com.masum.fathom.core.subscription
 
 import android.app.Activity
 import android.content.Context
+import android.content.Intent
 import android.content.SharedPreferences
+import android.net.Uri
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
 import com.android.billingclient.api.Purchase
@@ -124,6 +126,10 @@ class SubscriptionManager(
         )
     }
 
+    fun getPurchaseTime(): Long = prefs.getLong("purchase_time", 0L)
+    fun isAutoRenewing(): Boolean = prefs.getBoolean("is_auto_renewing", true)
+    fun getOrderId(): String? = prefs.getString("order_id", null)
+
     private suspend fun processPurchases(purchases: List<Purchase>) {
         for (purchase in purchases) {
             if (purchase.purchaseState == Purchase.PurchaseState.PURCHASED) {
@@ -132,7 +138,13 @@ class SubscriptionManager(
                 }
                 val tier = resolveTierFromProducts(purchase.products)
                 if (tier != SubscriptionTier.FREE) {
-                    persistPatronState(tier, purchase.purchaseToken)
+                    persistPatronState(
+                        tier = tier,
+                        purchaseToken = purchase.purchaseToken,
+                        purchaseTime = purchase.purchaseTime,
+                        autoRenewing = purchase.isAutoRenewing,
+                        orderId = purchase.orderId
+                    )
                     _consecrationEvents.tryEmit(tier)
                     return
                 }
@@ -149,15 +161,32 @@ class SubscriptionManager(
         }
     }
 
-    private fun persistPatronState(tier: SubscriptionTier, purchaseToken: String?) {
+    private fun persistPatronState(
+        tier: SubscriptionTier,
+        purchaseToken: String?,
+        purchaseTime: Long = 0L,
+        autoRenewing: Boolean = true,
+        orderId: String? = null
+    ) {
         val editor = prefs.edit()
             .putBoolean("is_patron", true)
             .putString("subscription_tier", tier.name)
 
+        if (purchaseTime > 0L) {
+            editor.putLong("purchase_time", purchaseTime)
+        } else if (!prefs.contains("purchase_time")) {
+            editor.putLong("purchase_time", System.currentTimeMillis())
+        }
+
+        editor.putBoolean("is_auto_renewing", autoRenewing)
+
+        if (!orderId.isNullOrEmpty()) {
+            editor.putString("order_id", orderId)
+        }
+
         if (!purchaseToken.isNullOrEmpty()) {
             editor.putString("purchase_token", purchaseToken)
         }
-
         editor.apply()
 
         _subscriptionState.value = SubscriptionState(
@@ -174,13 +203,19 @@ class SubscriptionManager(
                     billingClientWrapper.acknowledgePurchase(purchase.purchaseToken)
                 }
             }
-            val bestTier = activePurchases
-                .map { resolveTierFromProducts(it.products) }
-                .maxByOrNull { it.ordinal } ?: SubscriptionTier.FREE
+            val bestPurchase = activePurchases.maxByOrNull {
+                resolveTierFromProducts(it.products).ordinal
+            }
+            val bestTier = bestPurchase?.let { resolveTierFromProducts(it.products) } ?: SubscriptionTier.FREE
 
-            if (bestTier != SubscriptionTier.FREE) {
-                val token = activePurchases.firstOrNull()?.purchaseToken
-                persistPatronState(bestTier, token)
+            if (bestTier != SubscriptionTier.FREE && bestPurchase != null) {
+                persistPatronState(
+                    tier = bestTier,
+                    purchaseToken = bestPurchase.purchaseToken,
+                    purchaseTime = bestPurchase.purchaseTime,
+                    autoRenewing = bestPurchase.isAutoRenewing,
+                    orderId = bestPurchase.orderId
+                )
                 return true
             }
         } else if (_subscriptionState.value.isPro) {
@@ -211,17 +246,55 @@ class SubscriptionManager(
             }
         }
 
-        val restoredTier = activePurchases
-            .map { resolveTierFromProducts(it.products) }
-            .maxByOrNull { it.ordinal } ?: SubscriptionTier.FREE
+        val restoredPurchase = activePurchases.maxByOrNull {
+            resolveTierFromProducts(it.products).ordinal
+        }
+        val restoredTier = restoredPurchase?.let { resolveTierFromProducts(it.products) } ?: SubscriptionTier.FREE
 
-        if (restoredTier != SubscriptionTier.FREE) {
-            persistPatronState(restoredTier, activePurchases.first().purchaseToken)
+        if (restoredTier != SubscriptionTier.FREE && restoredPurchase != null) {
+            persistPatronState(
+                tier = restoredTier,
+                purchaseToken = restoredPurchase.purchaseToken,
+                purchaseTime = restoredPurchase.purchaseTime,
+                autoRenewing = restoredPurchase.isAutoRenewing,
+                orderId = restoredPurchase.orderId
+            )
             _consecrationEvents.tryEmit(restoredTier)
             return RestoreResult.Success(restoredTier)
         }
 
         return RestoreResult.NoPurchasesFound
+    }
+
+    fun openManageSubscriptions(context: Context, tier: SubscriptionTier = _subscriptionState.value.tier) {
+        val sku = tier.id
+        val packageName = context.packageName
+        val intent = if (tier == SubscriptionTier.MONTHLY || tier == SubscriptionTier.ANNUAL) {
+            Intent(
+                Intent.ACTION_VIEW,
+                Uri.parse("https://play.google.com/store/account/subscriptions?sku=$sku&package=$packageName")
+            )
+        } else {
+            Intent(
+                Intent.ACTION_VIEW,
+                Uri.parse("https://play.google.com/store/account/subscriptions")
+            )
+        }.apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK
+        }
+        try {
+            context.startActivity(intent)
+        } catch (_: Exception) {
+            val fallback = Intent(
+                Intent.ACTION_VIEW,
+                Uri.parse("https://play.google.com/store/account/subscriptions")
+            ).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK
+            }
+            try {
+                context.startActivity(fallback)
+            } catch (_: Exception) {}
+        }
     }
 
     fun consecratePatron(tier: SubscriptionTier) {

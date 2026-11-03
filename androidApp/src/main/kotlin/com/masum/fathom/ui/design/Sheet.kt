@@ -40,7 +40,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.LocalWindowInfo
+import androidx.compose.ui.window.DialogWindowProvider
+import android.view.WindowManager
 import androidx.compose.ui.unit.dp
 import com.adamglin.PhosphorIcons
 import com.adamglin.phosphoricons.Light
@@ -70,12 +75,16 @@ fun FathomSheet(
     val navBottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
     val contentMax = (windowHeight - statusTop - navBottom - 56.dp).coerceAtLeast(240.dp)
     val scope = rememberCoroutineScope()
+    val focusManager = LocalFocusManager.current
+    val keyboardController = LocalSoftwareKeyboardController.current
     val latestDismiss by rememberUpdatedState(onDismiss)
     var closing by remember { mutableStateOf(false) }
     val closer = remember(sheetState) {
         SheetCloser { after ->
             if (!closing) {
                 closing = true
+                keyboardController?.hide()
+                focusManager.clearFocus()
                 scope.launch { sheetState.hide() }.invokeOnCompletion {
                     latestDismiss()
                     after()
@@ -84,9 +93,17 @@ fun FathomSheet(
         }
     }
 
+    val handleDismiss = remember {
+        {
+            keyboardController?.hide()
+            focusManager.clearFocus()
+            onDismiss()
+        }
+    }
+
     CompositionLocalProvider(LocalBackdrop provides null, LocalSheetCloser provides closer) {
         ModalBottomSheet(
-            onDismissRequest = onDismiss,
+            onDismissRequest = handleDismiss,
             sheetState = sheetState,
             containerColor = colors.surface,
             scrimColor = colors.scrim,
@@ -103,6 +120,17 @@ fun FathomSheet(
             },
             modifier = modifier
         ) {
+            val view = LocalView.current
+            androidx.compose.runtime.SideEffect {
+                var parent = view.parent
+                while (parent != null) {
+                    if (parent is DialogWindowProvider) {
+                        parent.window.addFlags(WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM)
+                        break
+                    }
+                    parent = parent.parent
+                }
+            }
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
