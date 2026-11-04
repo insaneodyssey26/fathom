@@ -248,18 +248,18 @@ fun SanctuaryScreen(
                         item {
                             val membershipLabel = if (subscription.isPro) {
                                 when (subscription.tier) {
-                                    SubscriptionTier.LIFETIME -> "Sanctuary+ Lifetime"
-                                    SubscriptionTier.ANNUAL -> "Sanctuary+ Annual"
-                                    SubscriptionTier.MONTHLY -> "Sanctuary+ Monthly"
-                                    else -> "Sanctuary+"
+                                    SubscriptionTier.LIFETIME -> "Plus Lifetime"
+                                    SubscriptionTier.ANNUAL -> "Plus Annual"
+                                    SubscriptionTier.MONTHLY -> "Plus Monthly"
+                                    else -> "Fathom Plus"
                                 }
                             } else {
-                                "Sanctuary+"
+                                "Fathom Plus"
                             }
                             val membershipSubtitle = if (subscription.isPro) {
-                                "Active membership · Tap to manage subscription."
+                                "Active membership · Tap to manage subscription"
                             } else {
-                                "Unlock every theme, soundscape and study path."
+                                "Unlock every theme, soundscape and study path"
                             }
 
                             Row(
@@ -273,15 +273,30 @@ fun SanctuaryScreen(
                                         haptics.medium()
                                         openPaywall()
                                     }
-                                    .padding(24.dp),
+                                    .padding(20.dp),
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.spacedBy(16.dp)
                             ) {
                                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                                    MonoLabel(text = membershipLabel, color = tone.hue)
+                                    Box(
+                                        modifier = Modifier
+                                            .clip(RoundedCornerShape(6.dp))
+                                            .background(tone.hue.copy(alpha = 0.18f))
+                                            .padding(horizontal = 8.dp, vertical = 3.dp)
+                                    ) {
+                                        Text(
+                                            text = membershipLabel.uppercase(),
+                                            style = typography.caption.copy(
+                                                fontSize = 11.5.sp,
+                                                fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+                                                letterSpacing = 1.1.sp
+                                            ),
+                                            color = tone.hue
+                                        )
+                                    }
                                     Text(
                                         text = membershipSubtitle,
-                                        style = typography.title,
+                                        style = typography.title.copy(fontSize = 16.sp),
                                         color = colors.textPrimary
                                     )
                                 }
@@ -653,8 +668,8 @@ fun SanctuaryScreen(
                                     else -> Unit
                                 }
                                 AboutRow(
-                                    title = if (subscription.isPro) "Sanctuary+ Membership (${subscription.tier.title})" else "Membership: Free Tier",
-                                    caption = if (subscription.isPro) "Active Sanctuary license · Tap to manage" else "Unlock all sacred themes, audio & pathways"
+                                    title = if (subscription.isPro) "Fathom Plus (${subscription.tier.title})" else "Membership: Free Plan",
+                                    caption = if (subscription.isPro) "Active Plus license · Tap to manage" else "Unlock all sacred themes, audio & pathways"
                                 ) {
                                     haptics.light()
                                     openPaywall()

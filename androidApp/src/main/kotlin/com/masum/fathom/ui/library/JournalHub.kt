@@ -185,7 +185,22 @@ fun JournalHub(
                         horizontalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
                         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                            MonoLabel(text = "Sanctuary+", color = tone.hue)
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(6.dp))
+                                    .background(tone.hue.copy(alpha = 0.18f))
+                                    .padding(horizontal = 7.dp, vertical = 2.dp)
+                            ) {
+                                Text(
+                                    text = "FATHOM PLUS",
+                                    style = typography.caption.copy(
+                                        fontSize = 10.5.sp,
+                                        fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+                                        letterSpacing = 1.sp
+                                    ),
+                                    color = tone.hue
+                                )
+                            }
                             Text(text = "Unlimited reflections, narration and themes", style = typography.title, color = colors.textPrimary)
                         }
                         Icon(PhosphorIcons.Light.ArrowRight, null, tint = tone.hue, modifier = Modifier.size(22.dp))

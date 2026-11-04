@@ -136,10 +136,23 @@ fun SanctuaryPaywallSheet(onDismiss: () -> Unit) {
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                MonoLabel(
-                    text = if (isPro) "PLUS ACTIVE" else "FATHOM PLUS",
-                    color = tone.hue
-                )
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(tone.hue.copy(alpha = 0.16f))
+                        .border(1.dp, tone.hue.copy(alpha = 0.35f), RoundedCornerShape(8.dp))
+                        .padding(horizontal = 10.dp, vertical = 4.dp)
+                ) {
+                    Text(
+                        text = if (isPro) "PLUS ACTIVE" else "FATHOM PLUS",
+                        style = typography.caption.copy(
+                            fontSize = 11.5.sp,
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 1.2.sp
+                        ),
+                        color = tone.hue
+                    )
+                }
                 Text(
                     text = if (isPro) "Fathom Plus Active" else "Choose Your Plan",
                     style = typography.display.copy(fontSize = 26.sp),
@@ -318,14 +331,15 @@ private fun PatronTierSelectorTabs(
                 label = "tab_fg"
             )
 
-            Box(
+            Row(
                 modifier = Modifier
                     .weight(1f)
                     .clip(RoundedCornerShape(12.dp))
                     .background(bg)
                     .tappable(scale = 0.97f) { onSelectTier(tier) }
-                    .padding(vertical = 10.dp),
-                contentAlignment = Alignment.Center
+                    .padding(vertical = 10.dp, horizontal = 4.dp),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
                     text = label,
@@ -334,7 +348,8 @@ private fun PatronTierSelectorTabs(
                         fontSize = 12.sp
                     ),
                     color = textCol,
-                    maxLines = 1
+                    maxLines = 1,
+                    softWrap = false
                 )
             }
         }
@@ -381,11 +396,13 @@ private fun HeroPlanCard(
                     Text(
                         text = formattedPrice,
                         style = typography.headline.copy(
-                            fontSize = 36.sp,
+                            fontSize = if (formattedPrice.length > 10) 28.sp else 34.sp,
                             fontWeight = FontWeight.SemiBold,
                             letterSpacing = (-0.8).sp
                         ),
-                        color = colors.textPrimary
+                        color = colors.textPrimary,
+                        maxLines = 1,
+                        softWrap = false
                     )
                     Text(
                         text = periodSuffix,
@@ -397,24 +414,35 @@ private fun HeroPlanCard(
                     )
                 }
 
+                Spacer(Modifier.width(8.dp))
+
                 Column(
                     horizontalAlignment = Alignment.End,
                     verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     Text(
                         text = tier.title,
-                        style = typography.title.copy(fontSize = 18.sp),
-                        color = colors.textPrimary
+                        style = typography.title.copy(fontSize = 17.sp),
+                        color = colors.textPrimary,
+                        maxLines = 1
                     )
                     tier.badgeLabel?.let { badge ->
-                        Text(
-                            text = badge,
-                            style = typography.caption.copy(
-                                fontSize = 12.5.sp,
-                                fontWeight = FontWeight.Normal,
-                                color = tone.hue
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(6.dp))
+                                .background(tone.hue.copy(alpha = 0.14f))
+                                .padding(horizontal = 6.dp, vertical = 2.dp)
+                        ) {
+                            Text(
+                                text = badge,
+                                style = typography.caption.copy(
+                                    fontSize = 11.5.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = tone.hue
+                                ),
+                                maxLines = 1
                             )
-                        )
+                        }
                     } ?: run {
                         if (tier.equivalentMonthlyPrice.isNotBlank()) {
                             MonoLabel(
@@ -485,7 +513,7 @@ private fun FaqSection(faqs: List<FaqItem>) {
             )
             Text(
                 text = "Frequently Asked Questions",
-                style = typography.title.copy(fontSize = 18.sp),
+                style = typography.title.copy(fontSize = 17.sp),
                 color = colors.textPrimary
             )
         }
