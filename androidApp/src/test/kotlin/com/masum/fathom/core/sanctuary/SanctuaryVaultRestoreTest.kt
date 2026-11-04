@@ -215,4 +215,52 @@ class SanctuaryVaultRestoreTest {
         val result = engine.restoreVaultArchive(ByteArrayInputStream(ByteArray(0)))
         assertTrue(result.isFailure)
     }
+
+    @Test
+    fun testMarkdownArchiveExport() = runTest {
+        val userRepo = TestUserDataRepository()
+        userRepo.saveBookmark(Bookmark("bm_md", "gita_2_20", 1700000000000L, listOf("soul", "courage")))
+        userRepo.upsertNote(UserNote("note_md", "gita_2_20", "A beacon of inner light.", 1700000000000L, 1700000000000L))
+
+        val passageRepo = object : PassageRepository {
+            override suspend fun getPassage(id: String): FathomResult<Passage, DataError.Local> {
+                return if (id == "gita_2_20") {
+                    FathomResult.Success(
+                        Passage(
+                            id = "gita_2_20",
+                            bookId = "bhagavad_gita",
+                            traditionId = TraditionId.HINDUISM,
+                            canonicalReference = "BG 2.20",
+                            originalText = "न जायते म्रियते वा",
+                            translation = "The soul is neither born nor dies.",
+                            orderIndex = 20
+                        )
+                    )
+                } else {
+                    FathomResult.Failure(DataError.Local.NOT_FOUND)
+                }
+            }
+            override suspend fun getPassagesForBook(bookId: String, offset: Int, limit: Int): FathomResult<List<Passage>, DataError.Local> = FathomResult.Success(emptyList())
+            override suspend fun getAllBooks(): FathomResult<List<Book>, DataError.Local> = FathomResult.Success(emptyList())
+            override suspend fun getBooksForTradition(traditionId: TraditionId): FathomResult<List<Book>, DataError.Local> = FathomResult.Success(emptyList())
+            override suspend fun searchPassages(query: String, traditionId: TraditionId?, offset: Int, limit: Int): FathomResult<List<Passage>, DataError.Local> = FathomResult.Success(emptyList())
+            override suspend fun getChaptersForBook(bookId: String): FathomResult<List<Int>, DataError.Local> = FathomResult.Success(emptyList())
+            override suspend fun getPassagesForBookChapter(bookId: String, chapter: Int): FathomResult<List<Passage>, DataError.Local> = FathomResult.Success(emptyList())
+            override fun observePassage(id: String): Flow<FathomResult<Passage, DataError.Local>> = emptyFlow()
+        }
+
+        val engine = SanctuaryDataEngine(
+            context = null,
+            userDataRepository = userRepo,
+            passageRepository = passageRepo
+        )
+
+        val markdown = engine.exportMarkdownArchive()
+        assertTrue(markdown.contains("# Fathom Sanctuary Journal"))
+        assertTrue(markdown.contains("## Reflections & Notes"))
+        assertTrue(markdown.contains("BG 2.20"))
+        assertTrue(markdown.contains("A beacon of inner light."))
+        assertTrue(markdown.contains("The soul is neither born nor dies."))
+        assertTrue(markdown.contains("#soul #courage"))
+    }
 }

@@ -154,6 +154,26 @@ fun SanctuaryScreen(
         }
     }
 
+    val markdownPicker = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("text/markdown")) { destinationUri ->
+        if (destinationUri != null) {
+            scope.launch {
+                try {
+                    val mdString = dataEngine.exportMarkdownArchive()
+                    val outputStream = context.contentResolver.openOutputStream(destinationUri)
+                    if (outputStream != null) {
+                        outputStream.use { it.write(mdString.toByteArray(Charsets.UTF_8)) }
+                        haptics.success()
+                        Toast.makeText(context, "Markdown journal exported", Toast.LENGTH_SHORT).show()
+                    } else {
+                        Toast.makeText(context, "Could not write to destination", Toast.LENGTH_SHORT).show()
+                    }
+                } catch (_: Exception) {
+                    Toast.makeText(context, "Could not export markdown", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+    }
+
     val restorePicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) {
             scope.launch {
@@ -472,6 +492,24 @@ fun SanctuaryScreen(
                                         modifier = Modifier.weight(1f)
                                     )
                                 }
+
+                                Spacer(Modifier.height(10.dp))
+
+                                FathomButton(
+                                    text = "Export to Markdown (.md)",
+                                    onClick = {
+                                        if (!subscription.isPro) {
+                                            haptics.medium()
+                                            openPaywall()
+                                        } else {
+                                            haptics.light()
+                                            val dateStamp = java.time.LocalDate.now().toString()
+                                            markdownPicker.launch("fathom-journal-$dateStamp.md")
+                                        }
+                                    },
+                                    style = ButtonStyle.Ghost,
+                                    modifier = Modifier.fillMaxWidth()
+                                )
 
                                 Row(
                                     Modifier.padding(top = 16.dp),

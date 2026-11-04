@@ -200,6 +200,87 @@ class SanctuaryDataEngine(
         return byteStream.toByteArray()
     }
 
+    suspend fun exportMarkdownArchive(): String {
+        val bookmarks: List<Bookmark> = userDataRepository.observeBookmarks().first()
+        val notes: List<UserNote> = userDataRepository.observeAllNotes().first()
+        val dateStamp = java.time.LocalDate.now().toString()
+
+        val sb = StringBuilder()
+        sb.append("# Fathom Sanctuary Journal\n\n")
+        sb.append("> Exported on $dateStamp · Contemplative Sanctuary Archive\n\n")
+        sb.append("---\n\n")
+
+        sb.append("## Reflections & Notes\n\n")
+        if (notes.isEmpty()) {
+            sb.append("_No private reflections recorded yet._\n\n")
+        } else {
+            notes.forEach { note ->
+                val passageRes = passageRepository.getPassage(note.passageId).asSuccessOrNull()
+                val ref = passageRes?.canonicalReference ?: note.passageId
+                val tradition = passageRes?.traditionId?.displayName ?: "Wisdom Tradition"
+
+                sb.append("### $ref\n")
+                sb.append("**Tradition:** $tradition\n\n")
+
+                if (passageRes != null) {
+                    sb.append("> \"${passageRes.translation.trim()}\"\n\n")
+                }
+
+                sb.append("**Reflection:**\n")
+                sb.append(note.content.trim())
+                sb.append("\n\n")
+
+                val createdDate = java.time.Instant.ofEpochMilli(note.createdAtEpochMs)
+                    .atZone(java.time.ZoneId.systemDefault())
+                    .toLocalDate()
+                    .toString()
+                sb.append("_Recorded on ")
+                sb.append(createdDate)
+                sb.append("_\n\n")
+                sb.append("---\n\n")
+            }
+        }
+
+        sb.append("## Bookmarked Passages\n\n")
+        if (bookmarks.isEmpty()) {
+            sb.append("_No bookmarks saved yet._\n\n")
+        } else {
+            bookmarks.forEach { bm ->
+                val passageRes = passageRepository.getPassage(bm.passageId).asSuccessOrNull()
+                val ref = passageRes?.canonicalReference ?: bm.passageId
+                val tradition = passageRes?.traditionId?.displayName ?: "Wisdom Tradition"
+
+                sb.append("### $ref\n")
+                sb.append("**Tradition:** $tradition\n\n")
+
+                if (passageRes != null) {
+                    val original = passageRes.originalText
+                    if (!original.isNullOrBlank()) {
+                        sb.append("*${original.trim()}*\n\n")
+                    }
+                    sb.append("> \"${passageRes.translation.trim()}\"\n\n")
+                }
+
+                if (bm.tags.isNotEmpty()) {
+                    sb.append("**Tags:** ")
+                    sb.append(bm.tags.joinToString(" ") { "#$it" })
+                    sb.append("\n\n")
+                }
+
+                val savedDate = java.time.Instant.ofEpochMilli(bm.createdAtEpochMs)
+                    .atZone(java.time.ZoneId.systemDefault())
+                    .toLocalDate()
+                    .toString()
+                sb.append("_Saved on ")
+                sb.append(savedDate)
+                sb.append("_\n\n")
+                sb.append("---\n\n")
+            }
+        }
+
+        return sb.toString()
+    }
+
     suspend fun restoreVaultArchive(inputStream: InputStream): Result<VaultRestoreSummary> {
         return try {
             val rawBytes = inputStream.use { it.readBytes() }
