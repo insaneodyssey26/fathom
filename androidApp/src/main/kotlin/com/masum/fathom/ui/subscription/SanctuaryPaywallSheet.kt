@@ -70,15 +70,18 @@ import com.masum.fathom.ui.design.tappable
 import com.masum.fathom.ui.theme.FathomTheme
 import kotlinx.coroutines.launch
 
-private data class PatronPerkItem(val text: String)
+private data class PlusPerkItem(val text: String)
 
-private val PatronCorePerks = listOf(
-    PatronPerkItem("All 8 contemplative reading themes"),
-    PatronPerkItem("Guided chapter pathways across 15 sacred texts"),
-    PatronPerkItem("Unlimited reflections, verse notes & encrypted vault export"),
-    PatronPerkItem("Daily wisdom home screen streak widget & morning reminders"),
-    PatronPerkItem("All ambient soundscapes with meditation & sleep timers"),
-    PatronPerkItem("Patron emblem with zero tracking and zero ads forever")
+private val PlusCorePerks = listOf(
+    PlusPerkItem("All 8 contemplative reading themes & 6 custom app icons"),
+    PlusPerkItem("Adaptive tradition atmosphere styling on every passage"),
+    PlusPerkItem("Full access to all 15 scripture pathways and study tracks"),
+    PlusPerkItem("Unlimited personal reflections & verse notes (Free plan capped at 5)"),
+    PlusPerkItem("Obsidian & Notion-compatible Markdown (.md) journal export"),
+    PlusPerkItem("Encrypted offline vault backup & one-tap restore"),
+    PlusPerkItem("All ambient soundscapes (rain, temple, storm, wind) with sleep timer"),
+    PlusPerkItem("Multi-device synchronization across phones and tablets"),
+    PlusPerkItem("100% private: offline-first, zero analytics, and zero ads forever")
 )
 
 private data class FaqItem(val question: String, val answer: String)
@@ -86,7 +89,7 @@ private data class FaqItem(val question: String, val answer: String)
 private val SanctuaryFaqs = listOf(
     FaqItem(
         question = "Can I cancel my subscription anytime?",
-        answer = "Yes. You can manage or cancel your subscription at any time directly through Google Play Subscriptions with a single tap. You will retain full Patron access until the end of your billing cycle."
+        answer = "Yes. You can manage or cancel your subscription at any time directly through Google Play Subscriptions with a single tap. You will retain full Plus access until the end of your billing cycle."
     ),
     FaqItem(
         question = "What happens to my reflections if my plan ends?",
@@ -94,11 +97,11 @@ private val SanctuaryFaqs = listOf(
     ),
     FaqItem(
         question = "Does the Lifetime plan include future sacred texts?",
-        answer = "Yes. The Lifetime Patron Consecration gives permanent access to all existing texts, future traditions, audio soundscapes, and updates with zero recurring charges."
+        answer = "Yes. The Lifetime plan gives permanent access to all existing texts, future traditions, audio soundscapes, and updates with zero recurring charges."
     ),
     FaqItem(
         question = "Can I restore my purchase on a new phone?",
-        answer = "Yes. Simply log into the same Google account on your new device and tap 'Restore Google Play Purchases'. Your Patron sanctuary will unlock immediately."
+        answer = "Yes. Simply log into the same Google account on your new device and tap 'Restore Google Play Purchases'. Your Plus membership will unlock immediately."
     )
 )
 
@@ -134,17 +137,17 @@ fun SanctuaryPaywallSheet(onDismiss: () -> Unit) {
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 MonoLabel(
-                    text = if (isPro) "PATRON ACTIVE" else "FATHOM SANCTUARY",
+                    text = if (isPro) "PLUS ACTIVE" else "FATHOM PLUS",
                     color = tone.hue
                 )
                 Text(
-                    text = if (isPro) "Sacred Sanctuary Unlocked." else "Choose Your Plan",
+                    text = if (isPro) "Fathom Plus Active" else "Choose Your Plan",
                     style = typography.display.copy(fontSize = 26.sp),
                     color = colors.textPrimary
                 )
                 Text(
                     text = if (isPro) {
-                        "Your Patron membership is active. All sacred pathways, themes, reflections, and soundscapes are unlocked."
+                        "Your Plus membership is active. All sacred pathways, themes, reflections, and soundscapes are unlocked."
                     } else {
                         "Support independent craftsmanship and unlock all themes, pathways, notes, and ambient soundscapes."
                     },
@@ -199,7 +202,7 @@ fun SanctuaryPaywallSheet(onDismiss: () -> Unit) {
                                     when (result) {
                                         is RestoreResult.Success -> {
                                             haptics.success()
-                                            Toast.makeText(context, "Welcome back, Patron. Purchases restored.", Toast.LENGTH_LONG).show()
+                                            Toast.makeText(context, "Welcome back. Purchases restored.", Toast.LENGTH_LONG).show()
                                             onDismiss()
                                         }
                                         is RestoreResult.NoPurchasesFound -> {
@@ -429,7 +432,7 @@ private fun HeroPlanCard(
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(11.dp)
             ) {
-                PatronCorePerks.forEach { perk ->
+                PlusCorePerks.forEach { perk ->
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically,
@@ -453,7 +456,7 @@ private fun HeroPlanCard(
             Spacer(Modifier.height(2.dp))
 
             FathomButton(
-                text = "Become a Patron · $formattedPrice",
+                text = "Upgrade to Plus · $formattedPrice",
                 onClick = onPurchase,
                 style = ButtonStyle.Tone,
                 modifier = Modifier.fillMaxWidth()

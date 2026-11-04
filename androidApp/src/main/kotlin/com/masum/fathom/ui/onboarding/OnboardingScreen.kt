@@ -111,7 +111,7 @@ fun OnboardingScreen(
             if (step == 0 && name.isBlank()) name = ""
             step += 1
         } else {
-            val finalName = name.trim().ifBlank { "Seeker" }
+            val finalName = name.trim().ifBlank { "Reader" }
             val finalTradition = if (selected == "All Traditions") null else selected
             onComplete(finalName, finalTradition, personalize && finalTradition != null)
         }

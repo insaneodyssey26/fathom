@@ -122,7 +122,7 @@ fun JournalHub(
                         horizontalArrangement = Arrangement.spacedBy(14.dp),
                         modifier = Modifier.padding(top = 4.dp)
                     ) {
-                        MonoLabel(text = if (subscription.isPro) "Sanctuary+" else "Sacred seeker", color = tone.hue)
+                        MonoLabel(text = if (subscription.isPro) "Plus" else "Free Plan", color = tone.hue)
                         state.userTradition?.let { MonoLabel(text = it, color = colors.textSecondary) }
                         Row(
                             modifier = Modifier.tappable(scale = 0.95f, onClick = onEditProfile),

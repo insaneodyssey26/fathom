@@ -17,8 +17,10 @@ import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.ui.res.painterResource
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.asPaddingValues
@@ -59,9 +61,12 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.Canvas
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -73,10 +78,13 @@ import com.adamglin.phosphoricons.Light
 import com.adamglin.phosphoricons.light.ArrowRight
 import com.adamglin.phosphoricons.light.Eye
 import com.adamglin.phosphoricons.light.EyeSlash
+import com.adamglin.phosphoricons.light.Info
 import com.adamglin.phosphoricons.light.LockSimple
 import com.adamglin.phosphoricons.light.X
 import com.masum.fathom.core.audio.LocalSacredAudioEngine
 import com.masum.fathom.core.haptics.LocalFathomHaptics
+import com.masum.fathom.core.sanctuary.AppIcon
+import com.masum.fathom.core.sanctuary.AppIconManager
 import com.masum.fathom.core.sanctuary.ByokProvider
 import com.masum.fathom.core.sanctuary.SanctuaryDataEngine
 import com.masum.fathom.core.sanctuary.SanctuaryPreferences
@@ -127,6 +135,7 @@ fun SanctuaryScreen(
     val scope = rememberCoroutineScope()
     val openLegal = LocalOpenLegal.current
     val audioEngine = LocalSacredAudioEngine.current
+    val appIconManager = remember { AppIconManager(context) }
 
     var keyInput by remember { mutableStateOf(settings.byokApiKey) }
     var maskKey by remember { mutableStateOf(true) }
@@ -237,17 +246,17 @@ fun SanctuaryScreen(
                         }
 
                         item {
-                            val patronLabel = if (subscription.isPro) {
+                            val membershipLabel = if (subscription.isPro) {
                                 when (subscription.tier) {
-                                    SubscriptionTier.LIFETIME -> "Sanctuary+ Lifetime Patron"
-                                    SubscriptionTier.ANNUAL -> "Sanctuary+ Annual Patron"
-                                    SubscriptionTier.MONTHLY -> "Sanctuary+ Monthly Patron"
-                                    else -> "Sanctuary+ Patron"
+                                    SubscriptionTier.LIFETIME -> "Sanctuary+ Lifetime"
+                                    SubscriptionTier.ANNUAL -> "Sanctuary+ Annual"
+                                    SubscriptionTier.MONTHLY -> "Sanctuary+ Monthly"
+                                    else -> "Sanctuary+"
                                 }
                             } else {
                                 "Sanctuary+"
                             }
-                            val patronSubtitle = if (subscription.isPro) {
+                            val membershipSubtitle = if (subscription.isPro) {
                                 "Active membership · Tap to manage subscription."
                             } else {
                                 "Unlock every theme, soundscape and study path."
@@ -269,9 +278,9 @@ fun SanctuaryScreen(
                                 horizontalArrangement = Arrangement.spacedBy(16.dp)
                             ) {
                                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                                    MonoLabel(text = patronLabel, color = tone.hue)
+                                    MonoLabel(text = membershipLabel, color = tone.hue)
                                     Text(
-                                        text = patronSubtitle,
+                                        text = membershipSubtitle,
                                         style = typography.title,
                                         color = colors.textPrimary
                                     )
@@ -308,6 +317,44 @@ fun SanctuaryScreen(
                             }
                         }
 
+                        item { Heading("App Icon", "Home screen appearance") }
+                        item {
+                            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                                AppIcon.entries.chunked(3).forEach { rowIcons ->
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                    ) {
+                                        rowIcons.forEach { icon ->
+                                            val isLocked = icon.isPatronOnly && !subscription.isPro
+                                            val isSelected = settings.appIcon == icon
+                                            AppIconTile(
+                                                icon = icon,
+                                                selected = isSelected,
+                                                locked = isLocked,
+                                                modifier = Modifier.weight(1f),
+                                                onClick = {
+                                                    if (isLocked) {
+                                                        haptics.medium()
+                                                        openPaywall()
+                                                    } else {
+                                                        haptics.success()
+                                                        appIconManager.setAppIcon(icon)
+                                                        preferences.updateAppIcon(icon)
+                                                    }
+                                                }
+                                            )
+                                        }
+                                        if (rowIcons.size < 3) {
+                                            repeat(3 - rowIcons.size) {
+                                                Spacer(Modifier.weight(1f))
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
                         item {
                             Spacer(Modifier.height(14.dp))
                             Row(
@@ -335,7 +382,7 @@ fun SanctuaryScreen(
                                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                                     ) {
                                         Text(
-                                            text = "Dynamic Tradition Ambiance",
+                                            text = "Adaptive Tradition Themes",
                                             style = typography.title.copy(fontSize = 15.sp),
                                             color = colors.textPrimary
                                         )
@@ -347,7 +394,7 @@ fun SanctuaryScreen(
                                                     .padding(horizontal = 6.dp, vertical = 2.dp)
                                             ) {
                                                 Text(
-                                                    text = "PATRON",
+                                                    text = "PLUS",
                                                     style = typography.caption.copy(
                                                         fontSize = 10.sp,
                                                         fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
@@ -359,11 +406,11 @@ fun SanctuaryScreen(
                                     }
                                     Text(
                                         text = if (!subscription.isPro) {
-                                            "Lock feed ambiance strictly to your chosen theme with zero tradition shifts."
+                                            "Lock reading screen strictly to your chosen theme without tradition color shifts."
                                         } else if (settings.dynamicTraditionTones) {
-                                            "Subtly shift screen atmosphere to match the lineage of each sacred passage."
+                                            "Subtly adapt color tones to match the tradition of each passage."
                                         } else {
-                                            "Pure reading theme atmosphere with zero lineage color shifts."
+                                            "Consistent reading theme atmosphere without tradition color shifts."
                                         },
                                         style = typography.body.copy(fontSize = 13.sp),
                                         color = colors.textSecondary
@@ -394,6 +441,36 @@ fun SanctuaryScreen(
                         item { Heading("Voice", "Narration") }
                         item {
                             Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clip(RoundedCornerShape(16.dp))
+                                        .background(tone.hue.copy(alpha = 0.08f))
+                                        .border(0.75.dp, tone.hue.copy(alpha = 0.25f), RoundedCornerShape(16.dp))
+                                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = PhosphorIcons.Light.Info,
+                                        contentDescription = null,
+                                        tint = tone.hue,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                                        Text(
+                                            text = "Experimental Feature",
+                                            style = typography.caption.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold),
+                                            color = colors.textPrimary
+                                        )
+                                        Text(
+                                            text = "Voice recitation is actively being refined and tested. Offline speech quality depends on your device engine.",
+                                            style = typography.caption.copy(fontSize = 11.5.sp),
+                                            color = colors.textSecondary
+                                        )
+                                    }
+                                }
+
                                 Text(
                                     text = "Recitation uses your phone's free offline voice. Power users may connect their own neural voice key.",
                                     style = typography.body,
@@ -455,7 +532,7 @@ fun SanctuaryScreen(
                             }
                         }
 
-                        item { Heading("Backup", "Reflections & bookmarks") }
+                        item { Heading("Backup & Export", "Journal and bookmarks") }
                         item {
                             Column {
                                 Hairline()
@@ -576,7 +653,7 @@ fun SanctuaryScreen(
                                     else -> Unit
                                 }
                                 AboutRow(
-                                    title = if (subscription.isPro) "Patron Status: Consecrated (${subscription.tier.title})" else "Patron Status: Free Tier",
+                                    title = if (subscription.isPro) "Sanctuary+ Membership (${subscription.tier.title})" else "Membership: Free Tier",
                                     caption = if (subscription.isPro) "Active Sanctuary license · Tap to manage" else "Unlock all sacred themes, audio & pathways"
                                 ) {
                                     haptics.light()
@@ -724,6 +801,81 @@ private fun ThemeTile(
                     )
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun AppIconTile(
+    icon: AppIcon,
+    selected: Boolean,
+    locked: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val colors = FathomTheme.colors
+    val typography = FathomTheme.typography
+    val tone = FathomTheme.tone
+    val shape = RoundedCornerShape(20.dp)
+
+    Column(
+        modifier = modifier
+            .clip(shape)
+            .background(colors.surfaceElevated)
+            .border(
+                width = if (selected) 2.dp else 0.75.dp,
+                color = if (selected) tone.hue else colors.hairline,
+                shape = shape
+            )
+            .tappable(scale = 0.95f, haptic = false, onClick = onClick)
+            .padding(vertical = 12.dp, horizontal = 6.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .size(54.dp)
+                .clip(RoundedCornerShape(14.dp))
+                .border(
+                    width = 1.dp,
+                    color = if (selected) tone.hue.copy(alpha = 0.5f) else colors.hairline,
+                    shape = RoundedCornerShape(14.dp)
+                ),
+            contentAlignment = Alignment.Center
+        ) {
+            Image(
+                painter = painterResource(id = icon.previewResId),
+                contentDescription = icon.displayName,
+                modifier = Modifier.fillMaxSize()
+            )
+        }
+
+        Text(
+            text = icon.displayName,
+            style = typography.caption.copy(fontSize = 12.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.Medium),
+            color = colors.textPrimary,
+            maxLines = 1
+        )
+
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(3.dp)
+        ) {
+            if (locked) {
+                Icon(
+                    PhosphorIcons.Light.LockSimple,
+                    null,
+                    tint = tone.hue,
+                    modifier = Modifier.size(11.dp)
+                )
+            }
+            Text(
+                text = if (locked) "Plus" else if (selected) "Active" else icon.subtitle.split("&").first().trim(),
+                style = typography.caption.copy(
+                    fontSize = 10.sp,
+                    color = if (selected) tone.hue else colors.textTertiary
+                )
+            )
         }
     }
 }

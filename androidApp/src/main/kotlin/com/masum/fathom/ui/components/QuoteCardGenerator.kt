@@ -230,7 +230,7 @@ object QuoteCardRenderer {
             color = faint
             textAlign = Paint.Align.RIGHT
         }
-        canvas.drawText("SACRED WISDOM, OFFLINE", right, footerTop + 96f * unit, taglinePaint)
+        canvas.drawText("FATHOM · TIMELESS WISDOM", right, footerTop + 96f * unit, taglinePaint)
 
         return bitmap
     }
@@ -268,7 +268,7 @@ object QuoteCardRenderer {
                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
             }
 
-            val chooser = Intent.createChooser(shareIntent, "Share Sacred Quote Card")
+            val chooser = Intent.createChooser(shareIntent, "Share Quote Card")
             chooser.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             context.startActivity(chooser)
         } catch (e: Exception) {

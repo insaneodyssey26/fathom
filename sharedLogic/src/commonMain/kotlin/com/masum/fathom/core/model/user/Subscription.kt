@@ -10,21 +10,21 @@ enum class SubscriptionTier(
 ) {
     FREE(
         id = "free",
-        title = "Sacred Seeker",
+        title = "Free Plan",
         priceDisplay = "$0.00",
         billingPeriod = "Free Forever",
         equivalentMonthlyPrice = "$0.00"
     ),
     MONTHLY(
         id = "fathom_monthly",
-        title = "Monthly Seeker",
+        title = "Plus Monthly",
         priceDisplay = "$4.99",
         billingPeriod = "Billed monthly",
         equivalentMonthlyPrice = ""
     ),
     ANNUAL(
         id = "fathom_annual",
-        title = "Annual Sanctuary",
+        title = "Plus Annual",
         priceDisplay = "$44.99",
         billingPeriod = "Billed annually ($44.99/yr)",
         equivalentMonthlyPrice = "$3.75 / mo",
@@ -32,7 +32,7 @@ enum class SubscriptionTier(
     ),
     LIFETIME(
         id = "fathom_lifetime",
-        title = "Patron Consecration",
+        title = "Plus Lifetime",
         priceDisplay = "$79.99",
         billingPeriod = "One-time purchase",
         equivalentMonthlyPrice = "Forever Access",

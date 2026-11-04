@@ -23,7 +23,7 @@ enum class VerseFontFamily(val displayName: String) {
 }
 
 data class SanctuarySettings(
-    val userName: String = "Sanctuary Reader",
+    val userName: String = "Reader",
     val userTradition: String? = null,
     val feedPersonalizedToTradition: Boolean = false,
     val hasCompletedOnboarding: Boolean = false,
@@ -45,7 +45,8 @@ data class SanctuarySettings(
     val readingTextScale: Float = 1.0f,
     val readingLineHeightScale: Float = 1.0f,
     val verseFontFamily: VerseFontFamily = VerseFontFamily.SERIF,
-    val dynamicTraditionTones: Boolean = true
+    val dynamicTraditionTones: Boolean = true,
+    val appIcon: AppIcon = AppIcon.DEFAULT
 )
 
 class SanctuaryPreferences(context: Context) {
@@ -60,7 +61,7 @@ class SanctuaryPreferences(context: Context) {
     val settings: StateFlow<SanctuarySettings> = _settings.asStateFlow()
 
     private fun loadSettings(): SanctuarySettings {
-        val name = prefs.getString("user_name", "Sanctuary Reader") ?: "Sanctuary Reader"
+        val name = prefs.getString("user_name", "Reader") ?: "Reader"
         val tradition = prefs.getString("user_tradition", null)
         val feedPersonalized = prefs.getBoolean("feed_personalized", false)
         val completedVersion = prefs.getInt("completed_onboarding_version", 0)
@@ -109,6 +110,8 @@ class SanctuaryPreferences(context: Context) {
         val fontName = prefs.getString("reading_verse_font", VerseFontFamily.SERIF.name) ?: VerseFontFamily.SERIF.name
         val verseFont = runCatching { VerseFontFamily.valueOf(fontName) }.getOrDefault(VerseFontFamily.SERIF)
         val dynamicTones = prefs.getBoolean("dynamic_tradition_tones", true)
+        val iconId = prefs.getString("selected_app_icon", AppIcon.DEFAULT.id) ?: AppIcon.DEFAULT.id
+        val appIcon = AppIcon.fromId(iconId)
 
         return SanctuarySettings(
             userName = name,
@@ -133,7 +136,8 @@ class SanctuaryPreferences(context: Context) {
             readingTextScale = textScale,
             readingLineHeightScale = lineHeightScale,
             verseFontFamily = verseFont,
-            dynamicTraditionTones = dynamicTones
+            dynamicTraditionTones = dynamicTones,
+            appIcon = appIcon
         )
     }
 
@@ -207,6 +211,11 @@ class SanctuaryPreferences(context: Context) {
     fun updateDynamicTraditionTones(enabled: Boolean) {
         prefs.edit().putBoolean("dynamic_tradition_tones", enabled).apply()
         _settings.value = _settings.value.copy(dynamicTraditionTones = enabled)
+    }
+
+    fun updateAppIcon(icon: AppIcon) {
+        prefs.edit().putString("selected_app_icon", icon.id).apply()
+        _settings.value = _settings.value.copy(appIcon = icon)
     }
 
     fun updateTheme(theme: ReadingTheme) {

@@ -160,19 +160,19 @@ fun PatronConsecratedModal(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 MonoLabel(
-                    text = "SANCTUARY CONSECRATED · ${tier.title.uppercase()}",
+                    text = "MEMBERSHIP UNLOCKED · ${tier.title.uppercase()}",
                     color = tone.hue
                 )
 
                 Text(
-                    text = "Welcome, Patron of the Deep.",
+                    text = "Welcome to Fathom Plus.",
                     style = typography.display.copy(fontSize = 28.sp, lineHeight = 34.sp),
                     color = colors.textPrimary,
                     textAlign = TextAlign.Center
                 )
 
                 Text(
-                    text = "Your patronage consecrates independent sacred wisdom and sustains this contemplative space free of tracking and noise. Every sacred pathway, soundscape, theme, and neural voice is now unveiled.",
+                    text = "Thank you for supporting independent wisdom. All themes, audio soundscapes, chapter pathways, and features are now fully unlocked on your device.",
                     style = typography.body.copy(lineHeight = 22.sp),
                     color = colors.textSecondary,
                     textAlign = TextAlign.Center,
@@ -208,7 +208,7 @@ fun PatronConsecratedModal(
                 )
                 ConsecrationFeatureItem(
                     icon = { Icon(PhosphorIcons.Light.DeviceMobile, null, Modifier.size(18.dp), tint = tone.hue) },
-                    title = "Multi-Device Consecration",
+                    title = "Multi-Device Sync",
                     description = "Sync across up to 2 active devices with remote slot management"
                 )
             }
@@ -216,7 +216,7 @@ fun PatronConsecratedModal(
             Spacer(Modifier.height(26.dp))
 
             FathomButton(
-                text = "Enter Sanctuary",
+                text = "Continue",
                 onClick = {
                     haptics.light()
                     onDismiss()

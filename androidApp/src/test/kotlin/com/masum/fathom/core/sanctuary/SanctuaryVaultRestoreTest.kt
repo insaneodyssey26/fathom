@@ -256,7 +256,7 @@ class SanctuaryVaultRestoreTest {
         )
 
         val markdown = engine.exportMarkdownArchive()
-        assertTrue(markdown.contains("# Fathom Sanctuary Journal"))
+        assertTrue(markdown.contains("# Fathom Journal"))
         assertTrue(markdown.contains("## Reflections & Notes"))
         assertTrue(markdown.contains("BG 2.20"))
         assertTrue(markdown.contains("A beacon of inner light."))

@@ -52,7 +52,7 @@ sealed interface LibraryUiState {
     data object Loading : LibraryUiState
 
     data class Success(
-        val userName: String = "Sanctuary Reader",
+        val userName: String = "Reader",
         val userTradition: String? = null,
         val isEditingProfile: Boolean = false,
         val selectedTab: LibraryTab = LibraryTab.BOOKMARKS,

@@ -206,8 +206,8 @@ class SanctuaryDataEngine(
         val dateStamp = java.time.LocalDate.now().toString()
 
         val sb = StringBuilder()
-        sb.append("# Fathom Sanctuary Journal\n\n")
-        sb.append("> Exported on $dateStamp · Contemplative Sanctuary Archive\n\n")
+        sb.append("# Fathom Journal\n\n")
+        sb.append("> Exported on $dateStamp · Personal Notes & Bookmarks\n\n")
         sb.append("---\n\n")
 
         sb.append("## Reflections & Notes\n\n")
