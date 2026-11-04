@@ -132,6 +132,8 @@ fun SanctuaryScreen(
     var maskKey by remember { mutableStateOf(true) }
     var isTestingKey by remember { mutableStateOf(false) }
 
+    var isRestoringVault by remember { mutableStateOf(false) }
+
     val savePicker = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/octet-stream")) { destinationUri ->
         if (destinationUri != null) {
             scope.launch {
@@ -155,15 +157,22 @@ fun SanctuaryScreen(
     val restorePicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) {
             scope.launch {
+                isRestoringVault = true
                 val stream = context.contentResolver.openInputStream(uri)
                 if (stream == null) {
+                    isRestoringVault = false
                     Toast.makeText(context, "Could not open vault archive", Toast.LENGTH_SHORT).show()
                     return@launch
                 }
                 val outcome = dataEngine.restoreVaultArchive(stream)
-                outcome.onSuccess { count ->
+                isRestoringVault = false
+                outcome.onSuccess { summary ->
                     haptics.success()
-                    Toast.makeText(context, "Restored $count items into your vault", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(
+                        context,
+                        "Restored ${summary.bookmarksRestored} bookmarks, ${summary.reflectionsRestored} reflections",
+                        Toast.LENGTH_LONG
+                    ).show()
                 }.onFailure {
                     haptics.error()
                     Toast.makeText(context, "Invalid or corrupt .fathom archive", Toast.LENGTH_SHORT).show()
@@ -449,10 +458,15 @@ fun SanctuaryScreen(
                                     )
 
                                     FathomButton(
-                                        text = "Restore",
+                                        text = if (isRestoringVault) "Restoring..." else "Restore",
                                         onClick = {
-                                            haptics.light()
-                                            restorePicker.launch(arrayOf("*/*"))
+                                            if (!subscription.isPro) {
+                                                haptics.medium()
+                                                openPaywall()
+                                            } else if (!isRestoringVault) {
+                                                haptics.light()
+                                                restorePicker.launch(arrayOf("*/*"))
+                                            }
                                         },
                                         style = ButtonStyle.Ghost,
                                         modifier = Modifier.weight(1f)

@@ -31,7 +31,7 @@ data class SanctuaryStorageStats(
 )
 
 class SanctuaryDataEngine(
-    private val context: Context,
+    private val context: Context?,
     private val userDataRepository: UserDataRepository,
     private val passageRepository: PassageRepository
 ) {
@@ -41,6 +41,14 @@ class SanctuaryDataEngine(
         val notes = userDataRepository.observeAllNotes().first()
         val history = userDataRepository.observeReadingHistory().first()
         val booksCount = passageRepository.getAllBooks().asSuccessOrNull()?.size ?: 36
+
+        if (context == null) {
+            return SanctuaryStorageStats(
+                totalBookmarks = bookmarks.size,
+                totalReflections = notes.size,
+                totalHistoryItems = history.size
+            )
+        }
 
         val contentDbFile = context.getDatabasePath("starter_content.db")
         val userDbFile = context.getDatabasePath("app_user_data.db")
@@ -125,12 +133,13 @@ class SanctuaryDataEngine(
         }
         val compressedBytes = byteStream.toByteArray()
 
-        val backupsDir = File(context.cacheDir, "backups").apply { mkdirs() }
+        val ctx = checkNotNull(context) { "Context required for file export" }
+        val backupsDir = File(ctx.cacheDir, "backups").apply { mkdirs() }
         val dateStamp = java.time.LocalDate.now().toString()
         val backupFile = File(backupsDir, "fathom-vault-$dateStamp.fathom")
         backupFile.writeBytes(compressedBytes)
 
-        return FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", backupFile)
+        return FileProvider.getUriForFile(ctx, "${ctx.packageName}.fileprovider", backupFile)
 
     }
 
@@ -191,21 +200,32 @@ class SanctuaryDataEngine(
         return byteStream.toByteArray()
     }
 
-    suspend fun restoreVaultArchive(inputStream: InputStream): Result<Int> {
-
+    suspend fun restoreVaultArchive(inputStream: InputStream): Result<VaultRestoreSummary> {
         return try {
-            val decompressedBytes = GZIPInputStream(inputStream).use { gzip ->
-                gzip.readBytes()
+            val rawBytes = inputStream.use { it.readBytes() }
+            if (rawBytes.isEmpty()) {
+                return Result.failure(IllegalArgumentException("Empty vault archive"))
             }
-            val jsonString = String(decompressedBytes, Charsets.UTF_8)
+
+            val jsonString = try {
+                val decompressedBytes = GZIPInputStream(rawBytes.inputStream()).use { gzip ->
+                    gzip.readBytes()
+                }
+                String(decompressedBytes, Charsets.UTF_8)
+            } catch (_: Exception) {
+                String(rawBytes, Charsets.UTF_8)
+            }
+
             val root = JSONObject(jsonString)
-            var count = 0
+            var bookmarksCount = 0
+            var reflectionsCount = 0
+            var historyCount = 0
 
             if (root.has("bookmarks")) {
                 val bArr = root.getJSONArray("bookmarks")
                 for (i in 0 until bArr.length()) {
                     val item = bArr.getJSONObject(i)
-                    val id = item.getString("id")
+                    val id = item.optString("id").ifEmpty { java.util.UUID.randomUUID().toString() }
                     val passageId = item.getString("passage_id")
                     val epoch = item.optLong("created_at_epoch_ms", System.currentTimeMillis())
                     val tags = mutableListOf<String>()
@@ -223,7 +243,7 @@ class SanctuaryDataEngine(
                             tags = tags
                         )
                     )
-                    count++
+                    bookmarksCount++
                 }
             }
 
@@ -231,7 +251,7 @@ class SanctuaryDataEngine(
                 val nArr = root.getJSONArray("reflections")
                 for (i in 0 until nArr.length()) {
                     val item = nArr.getJSONObject(i)
-                    val id = item.getString("id")
+                    val id = item.optString("id").ifEmpty { java.util.UUID.randomUUID().toString() }
                     val passageId = item.getString("passage_id")
                     val content = item.getString("content")
                     val created = item.optLong("created_at_epoch_ms", System.currentTimeMillis())
@@ -245,7 +265,7 @@ class SanctuaryDataEngine(
                             updatedAtEpochMs = updated
                         )
                     )
-                    count++
+                    reflectionsCount++
                 }
             }
 
@@ -269,11 +289,17 @@ class SanctuaryDataEngine(
                             isCompleted = isCompleted
                         )
                     )
-                    count++
+                    historyCount++
                 }
             }
 
-            Result.success(count)
+            Result.success(
+                VaultRestoreSummary(
+                    bookmarksRestored = bookmarksCount,
+                    reflectionsRestored = reflectionsCount,
+                    historyRestored = historyCount
+                )
+            )
         } catch (e: Exception) {
             Result.failure(e)
         }

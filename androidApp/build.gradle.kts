@@ -43,6 +43,8 @@ dependencies {
     debugImplementation(libs.compose.uiTooling)
     testImplementation(libs.junit)
     testImplementation(libs.kotlin.test)
+    testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.json)
 }
 
 android {
@@ -60,6 +62,10 @@ android {
 
     androidResources {
         localeFilters += listOf("en")
+    }
+
+    testOptions {
+        unitTests.isReturnDefaultValues = true
     }
 
     packaging {
