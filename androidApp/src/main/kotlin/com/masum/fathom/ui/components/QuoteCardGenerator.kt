@@ -51,7 +51,9 @@ enum class CardTheme(val title: String, val reading: ReadingTheme) {
     SAHARA("Sahara", ReadingTheme.SAHARA),
     TWILIGHT("Twilight", ReadingTheme.TWILIGHT),
     CINNABAR("Cinnabar", ReadingTheme.CINNABAR),
-    DAWN("Dawn", ReadingTheme.DAWN)
+    DAWN("Dawn", ReadingTheme.DAWN),
+    AURORA("Aurora", ReadingTheme.AURORA),
+    CELESTIAL("Celestial", ReadingTheme.CELESTIAL)
 }
 
 object QuoteCardRenderer {

@@ -23,7 +23,9 @@ enum class ReadingTheme(val displayName: String) {
     SAHARA("Sahara"),
     TWILIGHT("Twilight"),
     CINNABAR("Cinnabar"),
-    DAWN("Dawn")
+    DAWN("Dawn"),
+    AURORA("Aurora"),
+    CELESTIAL("Celestial")
 }
 
 object FathomTheme {
@@ -52,6 +54,8 @@ fun ReadingTheme.palette(): FathomColors = when (this) {
     ReadingTheme.TWILIGHT -> TwilightColors
     ReadingTheme.CINNABAR -> CinnabarColors
     ReadingTheme.DAWN -> DawnColors
+    ReadingTheme.AURORA -> AuroraColors
+    ReadingTheme.CELESTIAL -> CelestialColors
 }
 
 @Composable

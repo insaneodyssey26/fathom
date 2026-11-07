@@ -124,4 +124,30 @@ val DawnColors = FathomColors(
     isDark = false
 )
 
+val AuroraColors = FathomColors(
+    background = Color(0xFF07131A),
+    surface = Color(0xFF0E232F),
+    surfaceElevated = Color(0xFF163445),
+    textPrimary = Color(0xFFE8F7F9),
+    textSecondary = Color(0xFF88CBD8),
+    textTertiary = Color(0xFF4A8B99),
+    accent = Color(0xFF2DD4BF),
+    onAccent = Color(0xFF04181B),
+    hairline = Color(0xFF1B3F52),
+    isDark = true
+)
+
+val CelestialColors = FathomColors(
+    background = Color(0xFF090D1A),
+    surface = Color(0xFF121B30),
+    surfaceElevated = Color(0xFF1C2947),
+    textPrimary = Color(0xFFEEF3FF),
+    textSecondary = Color(0xFF98AEE0),
+    textTertiary = Color(0xFF576E9E),
+    accent = Color(0xFF6366F1),
+    onAccent = Color(0xFF080C1E),
+    hairline = Color(0xFF233257),
+    isDark = true
+)
+
 val LocalFathomColors = staticCompositionLocalOf { NocturneColors }

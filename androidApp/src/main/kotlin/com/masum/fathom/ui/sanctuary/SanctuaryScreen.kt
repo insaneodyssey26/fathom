@@ -306,9 +306,9 @@ fun SanctuaryScreen(
 
                         item { Heading("Appearance", "Reading themes") }
                         item {
-                            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                 ReadingTheme.entries.chunked(2).forEach { pair ->
-                                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                         pair.forEach { theme ->
                                             val locked = theme != ReadingTheme.OBSIDIAN && theme != ReadingTheme.SEPIA && !subscription.isPro
                                             ThemeTile(
@@ -753,7 +753,7 @@ private fun ThemeTile(
     modifier: Modifier = Modifier
 ) {
     val palette = theme.palette()
-    val shape = RoundedCornerShape(24.dp)
+    val shape = RoundedCornerShape(16.dp)
     val subtitle = when (theme) {
         ReadingTheme.OBSIDIAN -> "OLED Gold"
         ReadingTheme.SEPIA -> "Warm Parchment"
@@ -763,58 +763,52 @@ private fun ThemeTile(
         ReadingTheme.TWILIGHT -> "Mystic Amethyst"
         ReadingTheme.CINNABAR -> "Imperial Lacquer"
         ReadingTheme.DAWN -> "Crisp Alabaster"
+        ReadingTheme.AURORA -> "Northern Teal"
+        ReadingTheme.CELESTIAL -> "Indigo Slate"
     }
 
-    Box(
+    Row(
         modifier = modifier
-            .aspectRatio(1.22f)
             .clip(shape)
             .background(palette.background)
-            .border(if (selected) 2.5.dp else 0.75.dp, if (selected) palette.accent else palette.hairline, shape)
+            .border(
+                width = if (selected) 2.dp else 0.75.dp,
+                color = if (selected) palette.accent else palette.hairline,
+                shape = shape
+            )
             .tappable(scale = 0.97f, haptic = false, onClick = onClick)
-            .padding(14.dp)
+            .padding(horizontal = 12.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp)
     ) {
-        Row(
+        Box(
             modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(14.dp))
+                .size(36.dp)
+                .clip(RoundedCornerShape(10.dp))
                 .background(palette.surface)
-                .border(0.75.dp, palette.hairline, RoundedCornerShape(14.dp))
-                .padding(horizontal = 12.dp, vertical = 8.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+                .border(0.75.dp, palette.hairline, RoundedCornerShape(10.dp)),
+            contentAlignment = Alignment.Center
         ) {
             Text(
                 text = "Aa",
-                style = FathomTheme.typography.headline.copy(fontSize = 26.sp, lineHeight = 28.sp),
+                style = FathomTheme.typography.title.copy(fontSize = 17.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold),
                 color = palette.textPrimary
-            )
-            Box(
-                Modifier
-                    .size(16.dp)
-                    .clip(CircleShape)
-                    .background(palette.accent)
-                    .border(1.dp, palette.surface, CircleShape)
             )
         }
 
         Column(
-            Modifier.align(Alignment.BottomStart),
-            verticalArrangement = Arrangement.spacedBy(2.dp)
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(1.dp)
         ) {
-            Text(
-                text = theme.displayName,
-                style = FathomTheme.typography.title.copy(fontSize = 15.sp),
-                color = palette.textPrimary
-            )
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 Text(
-                    text = subtitle,
-                    style = FathomTheme.typography.caption.copy(fontSize = 11.sp),
-                    color = palette.textSecondary
+                    text = theme.displayName,
+                    style = FathomTheme.typography.title.copy(fontSize = 13.5.sp),
+                    color = palette.textPrimary,
+                    maxLines = 1
                 )
                 if (locked) {
                     Icon(
@@ -825,7 +819,21 @@ private fun ThemeTile(
                     )
                 }
             }
+            Text(
+                text = subtitle,
+                style = FathomTheme.typography.caption.copy(fontSize = 10.5.sp),
+                color = palette.textSecondary,
+                maxLines = 1
+            )
         }
+
+        Box(
+            modifier = Modifier
+                .size(10.dp)
+                .clip(CircleShape)
+                .background(palette.accent)
+                .border(1.dp, palette.surface, CircleShape)
+        )
     }
 }
 
