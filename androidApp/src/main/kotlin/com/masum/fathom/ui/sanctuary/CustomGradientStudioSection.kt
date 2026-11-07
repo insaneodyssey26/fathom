@@ -141,6 +141,22 @@ fun CustomGradientStudioSection(
                             style = typography.title.copy(fontSize = 15.sp),
                             color = colors.textPrimary
                         )
+                        Box(
+                            modifier = Modifier
+                                 .clip(RoundedCornerShape(6.dp))
+                                 .background(tone.hue.copy(alpha = 0.12f))
+                                 .border(0.75.dp, tone.hue.copy(alpha = 0.35f), RoundedCornerShape(6.dp))
+                                 .padding(horizontal = 6.dp, vertical = 2.dp)
+                        ) {
+                            Text(
+                                text = "BETA",
+                                style = typography.caption.copy(
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = tone.hue
+                                )
+                            )
+                        }
                         if (!isPro) {
                             Box(
                                 modifier = Modifier

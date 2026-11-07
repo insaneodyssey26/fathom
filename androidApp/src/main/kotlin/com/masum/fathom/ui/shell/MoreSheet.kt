@@ -2,6 +2,8 @@ package com.masum.fathom.ui.shell
 
 import android.os.Build
 import android.content.pm.PackageManager
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -64,14 +66,21 @@ fun MoreSheet(
         val closeSheet = LocalSheetCloser.current ?: SheetCloser { after -> onDismiss(); after() }
         val overline = if (subscription.isPro) "fathom $versionName · sanctuary+ patron" else "fathom $versionName"
         SheetHeader(overline = overline, title = "More", onClose = onDismiss)
-        Hairline()
-        MoreRow(PhosphorIcons.Light.Waves, "Soundscapes", "Rain, bowls and a sleep timer") { closeSheet { onSoundscapes() } }
-        MoreRow(PhosphorIcons.Light.GearSix, "Settings", "Themes, reminders, backup and updates") { closeSheet { onSettings() } }
-        MoreRow(PhosphorIcons.Light.Sparkle, "What's new", "Release notes") { closeSheet { onWhatsNew() } }
-        MoreRow(PhosphorIcons.Light.Lock, "Privacy Policy", "How your data is handled") { closeSheet { onLegal(LegalDoc.PRIVACY) } }
-        MoreRow(PhosphorIcons.Light.Scroll, "Terms of Use", "The ground rules") { closeSheet { onLegal(LegalDoc.TERMS) } }
-        Spacer(Modifier.height(20.dp))
-        MonoLabel(text = "Offline by design · no accounts · no tracking", color = colors.textTertiary)
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f, fill = false)
+                .verticalScroll(rememberScrollState())
+        ) {
+            Hairline()
+            MoreRow(PhosphorIcons.Light.Waves, "Soundscapes", "Rain, bowls and a sleep timer") { closeSheet { onSoundscapes() } }
+            MoreRow(PhosphorIcons.Light.GearSix, "Settings", "Themes, reminders, backup and updates") { closeSheet { onSettings() } }
+            MoreRow(PhosphorIcons.Light.Sparkle, "What's new", "Release notes") { closeSheet { onWhatsNew() } }
+            MoreRow(PhosphorIcons.Light.Lock, "Privacy Policy", "How your data is handled") { closeSheet { onLegal(LegalDoc.PRIVACY) } }
+            MoreRow(PhosphorIcons.Light.Scroll, "Terms of Use", "The ground rules") { closeSheet { onLegal(LegalDoc.TERMS) } }
+            Spacer(Modifier.height(20.dp))
+            MonoLabel(text = "Offline by design · no accounts · no tracking", color = colors.textTertiary)
+        }
     }
 }
 

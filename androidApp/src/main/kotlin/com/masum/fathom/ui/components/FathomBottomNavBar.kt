@@ -284,7 +284,7 @@ private fun DockRail(
             )
             .glass(
                 shape = railShape,
-                tint = colors.background.copy(alpha = if (colors.isDark) 0.74f else 0.84f),
+                tint = colors.background.copy(alpha = if (colors.isDark) 0.88f else 0.94f),
                 blur = 28.dp,
                 outline = false
             )
@@ -293,10 +293,14 @@ private fun DockRail(
         Box(
             modifier = Modifier
                 .align(Alignment.TopCenter)
-                .statusBarsPadding()
                 .padding(top = 16.dp)
+                .size(36.dp)
+                .clip(CircleShape)
+                .background(colors.surfaceElevated.copy(alpha = if (colors.isDark) 0.85f else 0.90f))
+                .border(0.75.dp, hue.copy(alpha = 0.25f), CircleShape),
+            contentAlignment = Alignment.Center
         ) {
-            TraditionEmblem(traditionId = traditionId, color = hue, size = 26.dp)
+            TraditionEmblem(traditionId = traditionId, color = hue, size = 20.dp)
         }
 
         BoxWithConstraints(

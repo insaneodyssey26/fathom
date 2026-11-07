@@ -57,8 +57,8 @@ android {
         applicationId = "com.masum.fathom"
         minSdk = 26
         targetSdk = 37
-        versionCode = 15
-        versionName = "1.7.0-rc01"
+        versionCode = 16
+        versionName = "1.8.0"
         manifestPlaceholders["appLabel"] = "Fathom"
 
         val keystorePropertiesFile = rootProject.file("keystore.properties")

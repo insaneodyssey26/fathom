@@ -2,6 +2,23 @@
 
 All notable changes to the Fathom project are documented in this file.
 
+## [1.8.0] - 2026-11-08
+
+### Added
+- **New Reading Themes:** Added *Aurora* (Northern Teal) and *Celestial* (Indigo Slate), bringing the total to 10 reading themes.
+- **Custom App Icons:** Added 6 custom home screen icons with dynamic activity-alias switching.
+- **Custom Feed Gradient Studio (Beta):** Interactive 360° angle wheel and custom hex color switcher with live preview and theme-aware contrast blending.
+- **Markdown Journal Export:** Export personal reflections, highlights, and notes directly into standard Markdown files.
+- **Cryptographic Purchase Verification:** Full migration to Google Play Billing 9.1 with on-device RSA signature verification and hardware-backed KeyStore HMAC entitlement binding.
+
+### Changed
+- **Modernized Theme Selector:** Compact horizontal preview pills replacing oversized grid cards for a faster and cleaner reading setup.
+- **Sanctuary Settings Polish:** Converted Custom Feed Gradient into a smooth collapsible section with live dual-color indicator.
+- **Small-Screen Resilience:** Hardened typography, dial scales, and layout wrapping on compact displays.
+- **Sanctuary Paywall:** Streamlined subscription tiers with native Google Play sheets, clear proration handling, and instant restore.
+
+---
+
 ## [1.7.0]
 
 ### Added
