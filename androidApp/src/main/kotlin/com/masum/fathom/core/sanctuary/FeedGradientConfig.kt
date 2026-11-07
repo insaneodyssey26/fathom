@@ -126,6 +126,15 @@ object FeedGradientPresets {
         }
     }
 
+    fun calculateLuminance(color: Color): Float {
+        return (0.299f * color.red) + (0.587f * color.green) + (0.114f * color.blue)
+    }
+
+    fun isDarkGradient(colorA: Color, colorB: Color): Boolean {
+        val avgLum = (calculateLuminance(colorA) + calculateLuminance(colorB)) / 2f
+        return avgLum < 0.45f
+    }
+
     fun isValidHex(hex: String): Boolean {
         val clean = hex.trim().removePrefix("#")
         return (clean.length == 6 || clean.length == 3 || clean.length == 8) &&

@@ -73,17 +73,26 @@ fun Atmosphere(
     val grain = if (colors.isDark) 0.045f else 0.035f
 
     val canvas: Modifier = if (customBrush != null) {
+        val isThemeDark = colors.isDark
+        val overlayScrim = if (isThemeDark) {
+            listOf(
+                Color.Black.copy(alpha = 0.22f),
+                Color.Transparent,
+                Color.Black.copy(alpha = 0.38f)
+            )
+        } else {
+            listOf(
+                Color.White.copy(alpha = 0.35f),
+                Color.Transparent,
+                Color.White.copy(alpha = 0.25f)
+            )
+        }
+        val themeBaseTint = if (isThemeDark) Color.Black.copy(alpha = 0.12f) else colors.background.copy(alpha = 0.28f)
+
         Modifier.drawBehind {
             drawRect(customBrush)
-            drawRect(
-                Brush.verticalGradient(
-                    colors = listOf(
-                        Color.Black.copy(alpha = 0.18f),
-                        Color.Transparent,
-                        Color.Black.copy(alpha = 0.32f)
-                    )
-                )
-            )
+            drawRect(themeBaseTint)
+            drawRect(Brush.verticalGradient(colors = overlayScrim))
         }
     } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
         val shader = remember { RuntimeShader(AtmosphereAgsl) }

@@ -455,7 +455,8 @@ fun SanctuaryScreen(
                             CustomGradientStudioSection(
                                 settings = settings,
                                 preferences = preferences,
-                                isPro = subscription.isPro
+                                isPro = subscription.isPro,
+                                onOpenPaywall = openPaywall
                             )
                         }
 

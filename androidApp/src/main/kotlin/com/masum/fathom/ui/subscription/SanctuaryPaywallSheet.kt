@@ -73,7 +73,8 @@ import kotlinx.coroutines.launch
 private data class PlusPerkItem(val text: String)
 
 private val PlusCorePerks = listOf(
-    PlusPerkItem("All 8 contemplative reading themes & 6 custom app icons"),
+    PlusPerkItem("All 10 contemplative reading themes & 6 custom app icons"),
+    PlusPerkItem("Custom feed gradient studio with 360° interactive flow dial"),
     PlusPerkItem("Adaptive tradition atmosphere styling on every passage"),
     PlusPerkItem("Full access to all 15 scripture pathways and study tracks"),
     PlusPerkItem("Unlimited personal reflections & verse notes (Free plan capped at 5)"),

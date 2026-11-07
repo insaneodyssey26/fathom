@@ -41,6 +41,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -54,6 +55,9 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.adamglin.PhosphorIcons
+import com.adamglin.phosphoricons.Light
+import com.adamglin.phosphoricons.light.CaretDown
 import com.masum.fathom.core.haptics.LocalFathomHaptics
 import com.masum.fathom.core.sanctuary.FeedGradientPreset
 import com.masum.fathom.core.sanctuary.FeedGradientPresets
@@ -73,7 +77,8 @@ import kotlin.math.sin
 fun CustomGradientStudioSection(
     settings: SanctuarySettings,
     preferences: SanctuaryPreferences,
-    isPro: Boolean
+    isPro: Boolean,
+    onOpenPaywall: () -> Unit
 ) {
     val colors = FathomTheme.colors
     val typography = FathomTheme.typography
@@ -81,6 +86,8 @@ fun CustomGradientStudioSection(
     val haptics = LocalFathomHaptics.current
 
     val enabled = settings.feedCustomGradientEnabled
+    var isExpanded by remember { mutableStateOf(false) }
+
     var rawColorA by remember(settings.feedGradientColorA) {
         mutableStateOf(settings.feedGradientColorA.removePrefix("#"))
     }
@@ -93,6 +100,14 @@ fun CustomGradientStudioSection(
     }
 
     val cardShape = RoundedCornerShape(22.dp)
+    val chevronRotation by androidx.compose.animation.core.animateFloatAsState(
+        targetValue = if (isExpanded) 180f else 0f,
+        animationSpec = tween(220),
+        label = "chevron_turn"
+    )
+
+    val colA = remember(rawColorA) { FeedGradientPresets.parseHexColor(rawColorA) }
+    val colB = remember(rawColorB) { FeedGradientPresets.parseHexColor(rawColorB) }
 
     Box(
         modifier = Modifier
@@ -100,11 +115,16 @@ fun CustomGradientStudioSection(
             .clip(cardShape)
             .background(colors.surfaceElevated)
             .border(0.75.dp, colors.hairline, cardShape)
-            .padding(20.dp)
     ) {
-        Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        Column(modifier = Modifier.fillMaxWidth()) {
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .tappable(scale = 0.99f) {
+                        haptics.light()
+                        isExpanded = !isExpanded
+                    }
+                    .padding(horizontal = 20.dp, vertical = 18.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
@@ -121,49 +141,90 @@ fun CustomGradientStudioSection(
                             style = typography.title.copy(fontSize = 15.sp),
                             color = colors.textPrimary
                         )
-                        Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(6.dp))
-                                .background(tone.hue.copy(alpha = 0.16f))
-                                .padding(horizontal = 6.dp, vertical = 2.dp)
-                        ) {
-                            Text(
-                                text = "PLUS",
-                                style = typography.caption.copy(
-                                    fontSize = 10.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = tone.hue
+                        if (!isPro) {
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(6.dp))
+                                    .background(tone.hue.copy(alpha = 0.14f))
+                                    .padding(horizontal = 6.dp, vertical = 2.dp)
+                            ) {
+                                Text(
+                                    text = "PLUS",
+                                    style = typography.caption.copy(
+                                        fontSize = 10.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = tone.hue
+                                    )
                                 )
-                            )
+                            }
                         }
                     }
                     Text(
-                        text = "Customize your reading screen with custom hex palettes and interactive flow angles.",
+                        text = if (enabled) {
+                            "Active · #${rawColorA.uppercase()} → #${rawColorB.uppercase()}"
+                        } else {
+                            "Personalize your feed atmosphere with custom hex tones"
+                        },
                         style = typography.body.copy(fontSize = 13.sp),
-                        color = colors.textSecondary
+                        color = if (enabled) tone.hue else colors.textSecondary
                     )
                 }
 
-                Spacer(Modifier.width(12.dp))
-
-                StudioMiniToggle(
-                    checked = enabled,
-                    onCheckedChange = {
-                        haptics.light()
-                        preferences.updateFeedCustomGradientEnabled(it)
-                    }
+                androidx.compose.material3.Icon(
+                    imageVector = PhosphorIcons.Light.CaretDown,
+                    contentDescription = if (isExpanded) "Collapse" else "Expand",
+                    tint = colors.textTertiary,
+                    modifier = Modifier
+                        .size(18.dp)
+                        .rotate(chevronRotation)
                 )
             }
 
             AnimatedVisibility(
-                visible = enabled,
+                visible = isExpanded,
                 enter = expandVertically(tween(260)) + fadeIn(tween(200)),
                 exit = shrinkVertically(tween(200)) + fadeOut(tween(140))
             ) {
                 Column(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = 20.dp, end = 20.dp, bottom = 20.dp),
                     verticalArrangement = Arrangement.spacedBy(18.dp)
                 ) {
+                    com.masum.fathom.ui.design.Hairline(modifier = Modifier.padding(bottom = 2.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                            Text(
+                                text = "Enable Custom Gradient",
+                                style = typography.title.copy(fontSize = 14.sp),
+                                color = colors.textPrimary
+                            )
+                            Text(
+                                text = if (enabled) "Applied to your contemplative feed" else "Feed follows tradition & reading theme",
+                                style = typography.caption.copy(fontSize = 12.sp),
+                                color = colors.textSecondary
+                            )
+                        }
+
+                        StudioMiniToggle(
+                            checked = enabled,
+                            onCheckedChange = {
+                                if (!isPro) {
+                                    haptics.medium()
+                                    onOpenPaywall()
+                                } else {
+                                    haptics.light()
+                                    preferences.updateFeedCustomGradientEnabled(it)
+                                }
+                            }
+                        )
+                    }
+
                     BoxWithConstraints(
                         modifier = Modifier
                             .fillMaxWidth()
