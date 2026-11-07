@@ -1,3 +1,5 @@
+import java.io.FileInputStream
+import java.util.Properties
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
@@ -55,9 +57,36 @@ android {
         applicationId = "com.masum.fathom"
         minSdk = 26
         targetSdk = 37
-        versionCode = 14
-        versionName = "1.7.0"
+        versionCode = 15
+        versionName = "1.7.0-rc01"
         manifestPlaceholders["appLabel"] = "Fathom"
+
+        val keystorePropertiesFile = rootProject.file("keystore.properties")
+        val playBillingPublicKey = if (keystorePropertiesFile.exists()) {
+            val properties = Properties()
+            FileInputStream(keystorePropertiesFile).use { properties.load(it) }
+            properties.getProperty("playBillingPublicKey", "") ?: ""
+        } else {
+            ""
+        }
+        buildConfigField("String", "PLAY_LICENSE_PUBLIC_KEY", "\"$playBillingPublicKey\"")
+    }
+
+    signingConfigs {
+        val keystorePropertiesFile = rootProject.file("keystore.properties")
+        if (keystorePropertiesFile.exists()) {
+            val properties = Properties()
+            FileInputStream(keystorePropertiesFile).use { properties.load(it) }
+            val storeFilePath = properties.getProperty("storeFile")
+            if (!storeFilePath.isNullOrEmpty() && file(storeFilePath).exists()) {
+                create("releaseConfig") {
+                    storeFile = file(storeFilePath)
+                    storePassword = properties.getProperty("storePassword")
+                    keyAlias = properties.getProperty("keyAlias")
+                    keyPassword = properties.getProperty("keyPassword")
+                }
+            }
+        }
     }
 
     androidResources {
@@ -89,6 +118,10 @@ android {
             manifestPlaceholders["appLabel"] = "Fathom (Debug)"
         }
         release {
+            val releaseSigning = signingConfigs.findByName("releaseConfig")
+            if (releaseSigning != null) {
+                signingConfig = releaseSigning
+            }
             isMinifyEnabled = true
             isShrinkResources = true
             manifestPlaceholders["appLabel"] = "Fathom"
@@ -104,5 +137,6 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }

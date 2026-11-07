@@ -193,8 +193,8 @@ fun PatronConsecratedModal(
             ) {
                 ConsecrationFeatureItem(
                     icon = { Icon(PhosphorIcons.Light.Palette, null, Modifier.size(18.dp), tint = tone.hue) },
-                    title = "All 8 Contemplative Themes",
-                    description = "Monastery, Desert Father, Zen Paper, Obsidian & more"
+                    title = "All 10 Contemplative Themes",
+                    description = "Monastery, Aurora, Celestial, Zen Paper & more"
                 )
                 ConsecrationFeatureItem(
                     icon = { Icon(PhosphorIcons.Light.Headphones, null, Modifier.size(18.dp), tint = tone.hue) },

@@ -8,8 +8,11 @@ import android.net.Uri
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
 import com.android.billingclient.api.Purchase
+import com.masum.fathom.BuildConfig
+import com.masum.fathom.core.billing.FathomPurchaseVerifier
 import com.masum.fathom.core.model.user.SubscriptionState
 import com.masum.fathom.core.model.user.SubscriptionTier
+import com.masum.fathom.core.security.FathomKeystoreManager
 import com.masum.fathom.core.security.KeystoreIntegrityChecker
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -34,6 +37,22 @@ class SubscriptionManager(
     private val externalScope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 ) {
 
+    private fun decodeKey(bytes: ByteArray, salt: Byte = 0x55.toByte()): String {
+        val out = ByteArray(bytes.size)
+        for (i in bytes.indices) {
+            out[i] = (bytes[i].toInt() xor salt.toInt()).toByte()
+        }
+        return String(out, Charsets.UTF_8)
+    }
+
+    private val KEY_IS_PATRON = decodeKey(byteArrayOf(51, 52, 33, 61, 58, 56, 10, 60, 38, 10, 37, 52, 33, 39, 58, 59))
+    private val KEY_SUBSCRIPTION_TIER = decodeKey(byteArrayOf(51, 52, 33, 61, 58, 56, 10, 38, 32, 55, 38, 54, 39, 60, 37, 33, 60, 58, 59, 10, 33, 60, 48, 39))
+    private val KEY_PURCHASE_TOKEN = decodeKey(byteArrayOf(51, 52, 33, 61, 58, 56, 10, 37, 32, 39, 54, 61, 52, 38, 48, 10, 33, 58, 62, 48, 59))
+    private val KEY_ORDER_ID = decodeKey(byteArrayOf(51, 52, 33, 61, 58, 56, 10, 58, 39, 49, 48, 39, 10, 60, 49))
+    private val KEY_ENTITLEMENT_HMAC = decodeKey(byteArrayOf(51, 52, 33, 61, 58, 56, 10, 48, 59, 33, 60, 33, 57, 48, 56, 48, 59, 33, 10, 61, 56, 52, 54))
+    private val KEY_PURCHASE_TIME = decodeKey(byteArrayOf(51, 52, 33, 61, 58, 56, 10, 37, 32, 39, 54, 61, 52, 38, 48, 10, 33, 60, 56, 48))
+    private val KEY_IS_AUTO_RENEWING = decodeKey(byteArrayOf(51, 52, 33, 61, 58, 56, 10, 60, 38, 10, 52, 32, 33, 58, 10, 39, 48, 59, 48, 34, 60, 59, 50))
+
     private val prefs: SharedPreferences = getEncryptedPreferences(context)
     val billingClientWrapper: PlayBillingClientWrapper = PlayBillingClientWrapper(context, externalScope)
 
@@ -46,30 +65,13 @@ class SubscriptionManager(
                     .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
                     .build()
 
-                val encrypted = EncryptedSharedPreferences.create(
+                EncryptedSharedPreferences.create(
                     context,
                     "fathom_secure_subscription_prefs",
                     masterKey,
                     EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
                     EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
                 )
-
-                val legacy = context.getSharedPreferences("fathom_subscription_prefs", Context.MODE_PRIVATE)
-                if (legacy.contains("is_patron") && !encrypted.contains("is_patron")) {
-                    val editor = encrypted.edit()
-                    legacy.all.forEach { (k, v) ->
-                        when (v) {
-                            is Boolean -> editor.putBoolean(k, v)
-                            is String -> editor.putString(k, v)
-                            is Long -> editor.putLong(k, v)
-                            is Int -> editor.putInt(k, v)
-                            is Float -> editor.putFloat(k, v)
-                        }
-                    }
-                    editor.apply()
-                    legacy.edit().clear().apply()
-                }
-                encrypted
             } catch (_: Exception) {
                 context.getSharedPreferences("fathom_subscription_prefs", Context.MODE_PRIVATE)
             }
@@ -83,7 +85,48 @@ class SubscriptionManager(
     val consecrationEvents: SharedFlow<SubscriptionTier> = _consecrationEvents.asSharedFlow()
 
     init {
+        migrateLegacyPreferences()
         observeBillingEvents()
+    }
+
+    private fun migrateLegacyPreferences() {
+        if (prefs.contains("is_patron")) {
+            val legacyIsPatron = prefs.getBoolean("is_patron", false)
+            val legacyTier = prefs.getString("subscription_tier", SubscriptionTier.FREE.name) ?: SubscriptionTier.FREE.name
+            val legacyToken = prefs.getString("purchase_token", null)
+            val legacyOrderId = prefs.getString("order_id", null)
+            val legacyTime = prefs.getLong("purchase_time", 0L)
+            val legacyAutoRenewing = prefs.getBoolean("is_auto_renewing", true)
+
+            val editor = prefs.edit()
+                .putBoolean(KEY_IS_PATRON, legacyIsPatron)
+                .putString(KEY_SUBSCRIPTION_TIER, legacyTier)
+                .putBoolean(KEY_IS_AUTO_RENEWING, legacyAutoRenewing)
+
+            if (legacyTime > 0L) editor.putLong(KEY_PURCHASE_TIME, legacyTime)
+            if (!legacyToken.isNullOrEmpty()) editor.putString(KEY_PURCHASE_TOKEN, legacyToken)
+            if (!legacyOrderId.isNullOrEmpty()) editor.putString(KEY_ORDER_ID, legacyOrderId)
+
+            if (legacyIsPatron && !legacyToken.isNullOrEmpty()) {
+                val payload = computeEntitlementPayload(legacyTier, legacyToken, legacyOrderId)
+                val hmac = FathomKeystoreManager.generateEntitlementHmac(payload)
+                if (hmac.isNotBlank()) {
+                    editor.putString(KEY_ENTITLEMENT_HMAC, hmac)
+                }
+            }
+
+            editor.remove("is_patron")
+                .remove("subscription_tier")
+                .remove("purchase_token")
+                .remove("order_id")
+                .remove("purchase_time")
+                .remove("is_auto_renewing")
+                .apply()
+        }
+    }
+
+    private fun computeEntitlementPayload(tier: String, token: String, orderId: String?): String {
+        return "${tier.trim().uppercase()}:${token.trim()}:${(orderId ?: "").trim()}"
     }
 
     private fun observeBillingEvents() {
@@ -109,30 +152,71 @@ class SubscriptionManager(
     }
 
     private fun loadState(): SubscriptionState {
-        val isPatron = prefs.getBoolean("is_patron", false)
-        val tierName = prefs.getString("subscription_tier", SubscriptionTier.FREE.name) ?: SubscriptionTier.FREE.name
+        val isPatron = prefs.getBoolean(KEY_IS_PATRON, false)
+        if (!isPatron) {
+            return SubscriptionState(tier = SubscriptionTier.FREE, isPro = false)
+        }
+
+        val tierName = prefs.getString(KEY_SUBSCRIPTION_TIER, SubscriptionTier.FREE.name) ?: SubscriptionTier.FREE.name
         val tier = try {
             SubscriptionTier.valueOf(tierName)
         } catch (_: Exception) {
             SubscriptionTier.FREE
         }
+
+        if (tier == SubscriptionTier.FREE) {
+            return SubscriptionState(tier = SubscriptionTier.FREE, isPro = false)
+        }
+
         val expiresAt = prefs.getLong("subscription_expires_at", 0L)
-        val isExpired = expiresAt > 0 && System.currentTimeMillis() > expiresAt
-        val isTampered = KeystoreIntegrityChecker.isBinaryTampered(context)
+        if (expiresAt > 0 && System.currentTimeMillis() > expiresAt) {
+            resetToFree()
+            return SubscriptionState(tier = SubscriptionTier.FREE, isPro = false)
+        }
+
+        if (KeystoreIntegrityChecker.isBinaryTampered(context)) {
+            return SubscriptionState(tier = SubscriptionTier.FREE, isPro = false)
+        }
+
+        val token = prefs.getString(KEY_PURCHASE_TOKEN, null)
+        val orderId = prefs.getString(KEY_ORDER_ID, null)
+
+        if (!token.isNullOrEmpty()) {
+            val storedHmac = prefs.getString(KEY_ENTITLEMENT_HMAC, null)
+            val payload = computeEntitlementPayload(tier.name, token, orderId)
+            if (storedHmac.isNullOrBlank()) {
+                val generated = FathomKeystoreManager.generateEntitlementHmac(payload)
+                if (generated.isNotBlank()) {
+                    prefs.edit().putString(KEY_ENTITLEMENT_HMAC, generated).apply()
+                } else {
+                    resetToFree()
+                    return SubscriptionState(tier = SubscriptionTier.FREE, isPro = false)
+                }
+            } else {
+                val isValid = FathomKeystoreManager.verifyEntitlementHmac(payload, storedHmac)
+                if (!isValid) {
+                    resetToFree()
+                    return SubscriptionState(tier = SubscriptionTier.FREE, isPro = false)
+                }
+            }
+        }
 
         return SubscriptionState(
-            tier = if (isExpired || isTampered) SubscriptionTier.FREE else tier,
-            isPro = isPatron && tier != SubscriptionTier.FREE && !isExpired && !isTampered
+            tier = tier,
+            isPro = true
         )
     }
 
-    fun getPurchaseTime(): Long = prefs.getLong("purchase_time", 0L)
-    fun isAutoRenewing(): Boolean = prefs.getBoolean("is_auto_renewing", true)
-    fun getOrderId(): String? = prefs.getString("order_id", null)
+    fun getPurchaseTime(): Long = prefs.getLong(KEY_PURCHASE_TIME, 0L)
+    fun isAutoRenewing(): Boolean = prefs.getBoolean(KEY_IS_AUTO_RENEWING, true)
+    fun getOrderId(): String? = prefs.getString(KEY_ORDER_ID, null)
 
     private suspend fun processPurchases(purchases: List<Purchase>) {
         for (purchase in purchases) {
             if (purchase.purchaseState == Purchase.PurchaseState.PURCHASED) {
+                if (!FathomPurchaseVerifier.verify(purchase)) {
+                    continue
+                }
                 if (!purchase.isAcknowledged) {
                     billingClientWrapper.acknowledgePurchase(purchase.purchaseToken)
                 }
@@ -169,23 +253,28 @@ class SubscriptionManager(
         orderId: String? = null
     ) {
         val editor = prefs.edit()
-            .putBoolean("is_patron", true)
-            .putString("subscription_tier", tier.name)
+            .putBoolean(KEY_IS_PATRON, true)
+            .putString(KEY_SUBSCRIPTION_TIER, tier.name)
 
         if (purchaseTime > 0L) {
-            editor.putLong("purchase_time", purchaseTime)
-        } else if (!prefs.contains("purchase_time")) {
-            editor.putLong("purchase_time", System.currentTimeMillis())
+            editor.putLong(KEY_PURCHASE_TIME, purchaseTime)
+        } else if (!prefs.contains(KEY_PURCHASE_TIME)) {
+            editor.putLong(KEY_PURCHASE_TIME, System.currentTimeMillis())
         }
 
-        editor.putBoolean("is_auto_renewing", autoRenewing)
+        editor.putBoolean(KEY_IS_AUTO_RENEWING, autoRenewing)
 
         if (!orderId.isNullOrEmpty()) {
-            editor.putString("order_id", orderId)
+            editor.putString(KEY_ORDER_ID, orderId)
         }
 
         if (!purchaseToken.isNullOrEmpty()) {
-            editor.putString("purchase_token", purchaseToken)
+            editor.putString(KEY_PURCHASE_TOKEN, purchaseToken)
+            val payload = computeEntitlementPayload(tier.name, purchaseToken, orderId)
+            val hmac = FathomKeystoreManager.generateEntitlementHmac(payload)
+            if (hmac.isNotBlank()) {
+                editor.putString(KEY_ENTITLEMENT_HMAC, hmac)
+            }
         }
         editor.apply()
 
@@ -198,12 +287,13 @@ class SubscriptionManager(
     suspend fun syncPurchasesWithGooglePlay(): Boolean {
         val activePurchases = billingClientWrapper.queryActivePurchases()
         if (activePurchases.isNotEmpty()) {
-            for (purchase in activePurchases) {
+            val verifiedPurchases = activePurchases.filter { FathomPurchaseVerifier.verify(it) }
+            for (purchase in verifiedPurchases) {
                 if (!purchase.isAcknowledged) {
                     billingClientWrapper.acknowledgePurchase(purchase.purchaseToken)
                 }
             }
-            val bestPurchase = activePurchases.maxByOrNull {
+            val bestPurchase = verifiedPurchases.maxByOrNull {
                 resolveTierFromProducts(it.products).ordinal
             }
             val bestTier = bestPurchase?.let { resolveTierFromProducts(it.products) } ?: SubscriptionTier.FREE
@@ -219,7 +309,7 @@ class SubscriptionManager(
                 return true
             }
         } else if (_subscriptionState.value.isPro) {
-            val hasToken = !prefs.getString("purchase_token", null).isNullOrEmpty()
+            val hasToken = !prefs.getString(KEY_PURCHASE_TOKEN, null).isNullOrEmpty()
             if (hasToken) {
                 resetToFree()
             }
@@ -240,13 +330,18 @@ class SubscriptionManager(
             return RestoreResult.NoPurchasesFound
         }
 
-        for (purchase in activePurchases) {
+        val verifiedPurchases = activePurchases.filter { FathomPurchaseVerifier.verify(it) }
+        if (verifiedPurchases.isEmpty()) {
+            return RestoreResult.NoPurchasesFound
+        }
+
+        for (purchase in verifiedPurchases) {
             if (!purchase.isAcknowledged) {
                 billingClientWrapper.acknowledgePurchase(purchase.purchaseToken)
             }
         }
 
-        val restoredPurchase = activePurchases.maxByOrNull {
+        val restoredPurchase = verifiedPurchases.maxByOrNull {
             resolveTierFromProducts(it.products).ordinal
         }
         val restoredTier = restoredPurchase?.let { resolveTierFromProducts(it.products) } ?: SubscriptionTier.FREE
@@ -298,16 +393,20 @@ class SubscriptionManager(
     }
 
     fun consecratePatron(tier: SubscriptionTier) {
-        persistPatronState(tier, null)
-        _consecrationEvents.tryEmit(tier)
+        if (BuildConfig.DEBUG) {
+            persistPatronState(tier, "debug_patron_token")
+            _consecrationEvents.tryEmit(tier)
+        }
     }
 
     fun resetToFree() {
         prefs.edit()
-            .putBoolean("is_patron", false)
-            .putString("subscription_tier", SubscriptionTier.FREE.name)
+            .putBoolean(KEY_IS_PATRON, false)
+            .putString(KEY_SUBSCRIPTION_TIER, SubscriptionTier.FREE.name)
             .remove("subscription_expires_at")
-            .remove("purchase_token")
+            .remove(KEY_PURCHASE_TOKEN)
+            .remove(KEY_ORDER_ID)
+            .remove(KEY_ENTITLEMENT_HMAC)
             .apply()
         _subscriptionState.value = SubscriptionState(
             tier = SubscriptionTier.FREE,

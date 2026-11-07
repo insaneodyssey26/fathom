@@ -23,3 +23,7 @@
 # 4. Preserve Line Numbers for Crash Reporting
 -keepattributes SourceFile,LineNumberTable
 -renamesourcefileattribute SourceFile
+
+# 5. Obfuscation & Package Namespace Flattening
+-repackageclasses ''
+-allowaccessmodification

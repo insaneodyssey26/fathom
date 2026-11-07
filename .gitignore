@@ -19,5 +19,6 @@ captures
 node_modules/
 scripts/.cache/
 androidApp/release/
+keystore.properties
 .freebuff/
 
