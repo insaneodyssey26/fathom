@@ -46,7 +46,12 @@ data class SanctuarySettings(
     val readingLineHeightScale: Float = 1.0f,
     val verseFontFamily: VerseFontFamily = VerseFontFamily.SERIF,
     val dynamicTraditionTones: Boolean = true,
-    val appIcon: AppIcon = AppIcon.DEFAULT
+    val appIcon: AppIcon = AppIcon.DEFAULT,
+    val feedCustomGradientEnabled: Boolean = false,
+    val feedGradientColorA: String = "#0B1D28",
+    val feedGradientColorB: String = "#1A3A34",
+    val feedGradientFlow: GradientFlow = GradientFlow.DIAGONAL,
+    val feedGradientAngle: Float = 135f
 )
 
 class SanctuaryPreferences(context: Context) {
@@ -112,6 +117,12 @@ class SanctuaryPreferences(context: Context) {
         val dynamicTones = prefs.getBoolean("dynamic_tradition_tones", true)
         val iconId = prefs.getString("selected_app_icon", AppIcon.DEFAULT.id) ?: AppIcon.DEFAULT.id
         val appIcon = AppIcon.fromId(iconId)
+        val customGradientEnabled = prefs.getBoolean("feed_custom_gradient_enabled", false)
+        val gradientColorA = prefs.getString("feed_gradient_color_a", "#0B1D28") ?: "#0B1D28"
+        val gradientColorB = prefs.getString("feed_gradient_color_b", "#1A3A34") ?: "#1A3A34"
+        val flowName = prefs.getString("feed_gradient_flow", GradientFlow.DIAGONAL.name) ?: GradientFlow.DIAGONAL.name
+        val gradientFlow = runCatching { GradientFlow.valueOf(flowName) }.getOrDefault(GradientFlow.DIAGONAL)
+        val gradientAngle = prefs.getFloat("feed_gradient_angle", 135f)
 
         return SanctuarySettings(
             userName = name,
@@ -137,7 +148,12 @@ class SanctuaryPreferences(context: Context) {
             readingLineHeightScale = lineHeightScale,
             verseFontFamily = verseFont,
             dynamicTraditionTones = dynamicTones,
-            appIcon = appIcon
+            appIcon = appIcon,
+            feedCustomGradientEnabled = customGradientEnabled,
+            feedGradientColorA = gradientColorA,
+            feedGradientColorB = gradientColorB,
+            feedGradientFlow = gradientFlow,
+            feedGradientAngle = gradientAngle
         )
     }
 
@@ -284,6 +300,31 @@ class SanctuaryPreferences(context: Context) {
             .putString("reading_verse_font", font.name)
             .apply()
         _settings.value = _settings.value.copy(verseFontFamily = font)
+    }
+
+    fun updateFeedCustomGradientEnabled(enabled: Boolean) {
+        prefs.edit().putBoolean("feed_custom_gradient_enabled", enabled).apply()
+        _settings.value = _settings.value.copy(feedCustomGradientEnabled = enabled)
+    }
+
+    fun updateFeedGradientConfig(
+        colorA: String,
+        colorB: String,
+        flow: GradientFlow,
+        angle: Float = _settings.value.feedGradientAngle
+    ) {
+        prefs.edit()
+            .putString("feed_gradient_color_a", colorA)
+            .putString("feed_gradient_color_b", colorB)
+            .putString("feed_gradient_flow", flow.name)
+            .putFloat("feed_gradient_angle", angle)
+            .apply()
+        _settings.value = _settings.value.copy(
+            feedGradientColorA = colorA,
+            feedGradientColorB = colorB,
+            feedGradientFlow = flow,
+            feedGradientAngle = angle
+        )
     }
 
     fun shouldShowWhatsNew(currentVersionCode: Int): Boolean {

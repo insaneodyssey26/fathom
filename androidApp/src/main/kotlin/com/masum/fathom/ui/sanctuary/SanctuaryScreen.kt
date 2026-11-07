@@ -450,6 +450,15 @@ fun SanctuaryScreen(
                             }
                         }
 
+                        item {
+                            Spacer(Modifier.height(4.dp))
+                            CustomGradientStudioSection(
+                                settings = settings,
+                                preferences = preferences,
+                                isPro = subscription.isPro
+                            )
+                        }
+
                         item { Heading("Notifications", "Reminders and alerts") }
                         item { NotificationSettings(preferences = preferences, settings = settings) }
 

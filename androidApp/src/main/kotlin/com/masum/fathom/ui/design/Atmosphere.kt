@@ -63,6 +63,7 @@ fun Atmosphere(
     modifier: Modifier = Modifier,
     phase: () -> Float = { 0f },
     strength: Float = 1f,
+    customBrush: Brush? = null,
     content: @Composable BoxScope.() -> Unit = {}
 ) {
     val colors = FathomTheme.colors
@@ -71,7 +72,20 @@ fun Atmosphere(
     val base = colors.background
     val grain = if (colors.isDark) 0.045f else 0.035f
 
-    val canvas: Modifier = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+    val canvas: Modifier = if (customBrush != null) {
+        Modifier.drawBehind {
+            drawRect(customBrush)
+            drawRect(
+                Brush.verticalGradient(
+                    colors = listOf(
+                        Color.Black.copy(alpha = 0.18f),
+                        Color.Transparent,
+                        Color.Black.copy(alpha = 0.32f)
+                    )
+                )
+            )
+        }
+    } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
         val shader = remember { RuntimeShader(AtmosphereAgsl) }
         val brush = remember(shader) { ShaderBrush(shader) }
         Modifier.drawBehind {

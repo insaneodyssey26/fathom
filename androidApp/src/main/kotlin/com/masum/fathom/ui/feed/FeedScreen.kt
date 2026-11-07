@@ -194,7 +194,7 @@ private fun FeedContent(
     )
 
     val currentPassage = state.passages.getOrNull(pagerState.currentPage)
-    val effectiveTraditionId = if (settings.dynamicTraditionTones) currentPassage?.traditionId else null
+    val effectiveTraditionId = if (settings.dynamicTraditionTones && !settings.feedCustomGradientEnabled) currentPassage?.traditionId else null
     val tone = rememberTone(effectiveTraditionId)
     NavToneEffect(effectiveTraditionId)
     val bookmarked = currentPassage?.let { it.id in state.bookmarkedPassageIds } ?: false
@@ -204,41 +204,65 @@ private fun FeedContent(
         GlassLayer(
             modifier = modifier.fillMaxSize(),
             background = {
-                Atmosphere(
-                    tone = tone,
-                    modifier = Modifier.fillMaxSize(),
-                    phase = { (pagerState.currentPage + pagerState.currentPageOffsetFraction) * 0.85f }
-                ) {
-                    val pagePadding = PaddingValues(
-                        top = 84.dp,
-                        bottom = 96.dp + shell.bottomInset
-                    )
+                androidx.compose.foundation.layout.BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+                    val brush = remember(
+                        settings.feedCustomGradientEnabled,
+                        settings.feedGradientColorA,
+                        settings.feedGradientColorB,
+                        settings.feedGradientFlow,
+                        settings.feedGradientAngle,
+                        maxWidth,
+                        maxHeight
+                    ) {
+                        if (settings.feedCustomGradientEnabled) {
+                            val colA = com.masum.fathom.core.sanctuary.FeedGradientPresets.parseHexColor(settings.feedGradientColorA)
+                            val colB = com.masum.fathom.core.sanctuary.FeedGradientPresets.parseHexColor(settings.feedGradientColorB)
+                            settings.feedGradientFlow.createBrush(
+                                listOf(colA, colB),
+                                constraints.maxWidth.toFloat(),
+                                constraints.maxHeight.toFloat(),
+                                settings.feedGradientAngle
+                            )
+                        } else null
+                    }
 
-                    VerticalPager(
-                        state = pagerState,
-                        flingBehavior = fling,
-                        beyondViewportPageCount = 1,
-                        modifier = Modifier.fillMaxSize().statusBarsPadding()
-                    ) { page ->
-                        val passage = state.passages[page]
-                        val distance = { page - (pagerState.currentPage + pagerState.currentPageOffsetFraction) }
-                        VersePage(
-                            passage = passage,
-                            reveal = { (1f - abs(distance()) * 1.1f).coerceIn(0f, 1f) },
-                            contentPadding = pagePadding,
-                            textScale = settings.readingTextScale,
-                            lineHeightScale = settings.readingLineHeightScale,
-                            fontFamily = settings.verseFontFamily,
-                            modifier = Modifier.graphicsLayer {
-                                val d = distance().coerceIn(-1f, 1f)
-                                val a = abs(d)
-                                translationY = -d * size.height * 0.1f
-                                alpha = 1f - a * 0.85f
-                                val s = 1f - a * 0.05f
-                                scaleX = s
-                                scaleY = s
-                            }
+                    Atmosphere(
+                        tone = tone,
+                        modifier = Modifier.fillMaxSize(),
+                        phase = { (pagerState.currentPage + pagerState.currentPageOffsetFraction) * 0.85f },
+                        customBrush = brush
+                    ) {
+                        val pagePadding = PaddingValues(
+                            top = 84.dp,
+                            bottom = 96.dp + shell.bottomInset
                         )
+
+                        VerticalPager(
+                            state = pagerState,
+                            flingBehavior = fling,
+                            beyondViewportPageCount = 1,
+                            modifier = Modifier.fillMaxSize().statusBarsPadding()
+                        ) { page ->
+                            val passage = state.passages[page]
+                            val distance = { page - (pagerState.currentPage + pagerState.currentPageOffsetFraction) }
+                            VersePage(
+                                passage = passage,
+                                reveal = { (1f - abs(distance()) * 1.1f).coerceIn(0f, 1f) },
+                                contentPadding = pagePadding,
+                                textScale = settings.readingTextScale,
+                                lineHeightScale = settings.readingLineHeightScale,
+                                fontFamily = settings.verseFontFamily,
+                                modifier = Modifier.graphicsLayer {
+                                    val d = distance().coerceIn(-1f, 1f)
+                                    val a = abs(d)
+                                    translationY = -d * size.height * 0.1f
+                                    alpha = 1f - a * 0.85f
+                                    val s = 1f - a * 0.05f
+                                    scaleX = s
+                                    scaleY = s
+                                }
+                            )
+                        }
                     }
                 }
             },
