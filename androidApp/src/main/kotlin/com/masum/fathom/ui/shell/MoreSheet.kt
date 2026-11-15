@@ -64,7 +64,7 @@ fun MoreSheet(
     val subscription = LocalSubscriptionState.current
     FathomSheet(onDismiss = onDismiss) {
         val closeSheet = LocalSheetCloser.current ?: SheetCloser { after -> onDismiss(); after() }
-        val overline = if (subscription.isPro) "fathom $versionName · sanctuary+ patron" else "fathom $versionName"
+        val overline = if (subscription.isPro) "fathom $versionName · plus" else "fathom $versionName"
         SheetHeader(overline = overline, title = "More", onClose = onDismiss)
         Column(
             modifier = Modifier

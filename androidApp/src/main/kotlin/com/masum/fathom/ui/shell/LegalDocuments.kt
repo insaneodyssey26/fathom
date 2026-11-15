@@ -63,7 +63,7 @@ object LegalDocuments {
         LegalSection(
             "Purchases & Subscriptions",
             listOf(
-                "In-app purchases and subscriptions for Fathom Patron are processed securely through Google Play. Fathom does not store or process your credit card numbers or banking credentials."
+                "In-app purchases and subscriptions for Fathom Plus are processed securely through Google Play. Fathom does not store or process your credit card numbers or banking credentials."
             )
         ),
         LegalSection(
@@ -115,7 +115,7 @@ object LegalDocuments {
         LegalSection(
             "Subscriptions & Licensing",
             listOf(
-                "Patron access provides access to premium themes, soundscapes, complete pathways curriculum, and studio narration. Subscriptions renew automatically unless cancelled prior to the end of the billing period. Digital licenses allow activation on up to two personal devices."
+                "Plus access provides access to premium themes, soundscapes, complete pathways curriculum, and studio narration. Subscriptions renew automatically unless cancelled prior to the end of the billing period. Digital licenses allow activation on up to two personal devices."
             )
         ),
         LegalSection(
