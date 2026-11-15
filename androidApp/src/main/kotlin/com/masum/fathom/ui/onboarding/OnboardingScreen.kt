@@ -1,5 +1,11 @@
 package com.masum.fathom.ui.onboarding
 
+import com.masum.fathom.core.model.Passage
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.foundation.layout.width
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.AnimatedVisibility
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.animateColorAsState
@@ -77,7 +83,9 @@ private val Lineages = listOf(
     Lineage("Islam", "Islam", "The Holy Quran", TraditionId.ISLAM),
     Lineage("Christianity", "Christianity", "The Holy Bible", TraditionId.CHRISTIANITY),
     Lineage("Buddhism", "Buddhism", "Dhammapada · Zen", TraditionId.BUDDHISM),
-    Lineage("Taoism", "Taoism", "Tao Te Ching", TraditionId.TAOISM)
+    Lineage("Taoism", "Taoism", "Tao Te Ching", TraditionId.TAOISM),
+    Lineage("Stoicism", "Stoicism", "Meditations · Enchiridion", TraditionId.STOICISM),
+    Lineage("Judaism", "Judaism", "Psalms · Genesis", TraditionId.JUDAISM)
 )
 
 private val Headlines = listOf(
@@ -89,7 +97,8 @@ private val Headlines = listOf(
 @Composable
 fun OnboardingScreen(
     onComplete: (name: String, tradition: String?, personalizeFeed: Boolean) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    previewVerse: suspend (TraditionId) -> Passage? = { null }
 ) {
     val haptics = LocalFathomHaptics.current
     val colors = FathomTheme.colors
@@ -99,6 +108,11 @@ fun OnboardingScreen(
     var personalize by remember { mutableStateOf(false) }
 
     val chosen = Lineages.first { it.id == selected }
+    var verse by remember { mutableStateOf<Passage?>(null) }
+    LaunchedEffect(chosen.tradition) {
+        verse = null
+        verse = chosen.tradition?.let { previewVerse(it) }
+    }
     val tone = rememberTone(if (step >= 1) chosen.tradition else null)
     val lastStep = Headlines.lastIndex
 
@@ -176,6 +190,7 @@ fun OnboardingScreen(
                                     personalize = personalize,
                                     onPersonalize = { haptics.light(); personalize = it },
                                     chosen = chosen,
+                                    verse = verse,
                                     onDone = ::advance,
                                     modifier = Modifier.widthIn(max = 520.dp)
                                 )
@@ -207,6 +222,7 @@ fun OnboardingScreen(
                                 personalize = personalize,
                                 onPersonalize = { haptics.light(); personalize = it },
                                 chosen = chosen,
+                                verse = verse,
                                 onDone = ::advance
                             )
                             Spacer(Modifier.height(24.dp))
@@ -279,6 +295,7 @@ private fun StepBody(
     personalize: Boolean,
     onPersonalize: (Boolean) -> Unit,
     chosen: Lineage,
+    verse: Passage?,
     onDone: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -302,6 +319,7 @@ private fun StepBody(
             }
             else -> FeedChoice(
                 chosen = chosen,
+                verse = verse,
                 personalize = personalize,
                 onPersonalize = onPersonalize
             )
@@ -374,10 +392,11 @@ private fun LineageRow(lineage: Lineage, selected: Boolean, onClick: () -> Unit)
 }
 
 @Composable
-private fun FeedChoice(chosen: Lineage, personalize: Boolean, onPersonalize: (Boolean) -> Unit) {
+private fun FeedChoice(chosen: Lineage, verse: Passage?, personalize: Boolean, onPersonalize: (Boolean) -> Unit) {
     val colors = FathomTheme.colors
     val specific = chosen.tradition != null
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        VersePreview(verse = verse, chosen = chosen)
         ChoiceRow(
             tradition = null,
             title = "Every scripture",
@@ -420,6 +439,36 @@ private fun ChoiceRow(tradition: TraditionId?, title: String, body: String, sele
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(text = title, style = FathomTheme.typography.title, color = if (selected) colors.textPrimary else colors.textSecondary)
             Text(text = body, style = FathomTheme.typography.body, color = colors.textTertiary)
+        }
+    }
+}
+
+@Composable
+private fun VersePreview(verse: Passage?, chosen: Lineage) {
+    val colors = FathomTheme.colors
+    val tone = FathomTheme.tone
+    AnimatedVisibility(
+        visible = verse != null,
+        enter = fadeIn(tween(520)) + expandVertically(tween(520, 0, FathomMotion.Emphasized)),
+        exit = fadeOut(tween(160)) + shrinkVertically(tween(240))
+    ) {
+        val shown = verse ?: return@AnimatedVisibility
+        Column(
+            modifier = Modifier.fillMaxWidth().padding(bottom = 22.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp)
+        ) {
+            MonoLabel(text = "A glimpse of ${chosen.title}", color = tone.hue)
+            Row(modifier = Modifier.height(androidx.compose.foundation.layout.IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                Box(Modifier.width(2.dp).fillMaxHeight().background(tone.hue.copy(alpha = 0.7f)))
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text(
+                        text = shown.translation,
+                        style = FathomTheme.typography.verseDisplay.copy(fontSize = 22.sp, lineHeight = 30.sp),
+                        color = colors.textPrimary
+                    )
+                    MonoLabel(text = shown.canonicalReference, color = colors.textTertiary)
+                }
+            }
         }
     }
 }

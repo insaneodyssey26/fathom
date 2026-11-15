@@ -1,10 +1,14 @@
 package com.masum.fathom.ui.sanctuary
 
+import androidx.compose.ui.graphics.graphicsLayer
+import com.masum.fathom.ui.theme.FathomMotion
+import com.masum.fathom.ui.design.StaggerItem
+import com.adamglin.phosphoricons.light.ArrowLeft
+import com.masum.fathom.ui.design.Whisper
 import android.app.Activity
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
-import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
@@ -44,6 +48,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
@@ -152,12 +157,12 @@ fun SanctuaryScreen(
                     if (outputStream != null) {
                         outputStream.use { it.write(bytes) }
                         haptics.success()
-                        Toast.makeText(context, "Sacred vault saved successfully", Toast.LENGTH_SHORT).show()
+                        Whisper.show("Sacred vault saved successfully")
                     } else {
-                        Toast.makeText(context, "Could not write to destination", Toast.LENGTH_SHORT).show()
+                        Whisper.problem("Could not write to destination")
                     }
                 } catch (_: Exception) {
-                    Toast.makeText(context, "Could not export vault", Toast.LENGTH_SHORT).show()
+                    Whisper.problem("Could not export vault")
                 }
             }
         }
@@ -172,12 +177,12 @@ fun SanctuaryScreen(
                     if (outputStream != null) {
                         outputStream.use { it.write(mdString.toByteArray(Charsets.UTF_8)) }
                         haptics.success()
-                        Toast.makeText(context, "Markdown journal exported", Toast.LENGTH_SHORT).show()
+                        Whisper.show("Markdown journal exported")
                     } else {
-                        Toast.makeText(context, "Could not write to destination", Toast.LENGTH_SHORT).show()
+                        Whisper.problem("Could not write to destination")
                     }
                 } catch (_: Exception) {
-                    Toast.makeText(context, "Could not export markdown", Toast.LENGTH_SHORT).show()
+                    Whisper.problem("Could not export markdown")
                 }
             }
         }
@@ -190,21 +195,17 @@ fun SanctuaryScreen(
                 val stream = context.contentResolver.openInputStream(uri)
                 if (stream == null) {
                     isRestoringVault = false
-                    Toast.makeText(context, "Could not open vault archive", Toast.LENGTH_SHORT).show()
+                    Whisper.problem("Could not open vault archive")
                     return@launch
                 }
                 val outcome = dataEngine.restoreVaultArchive(stream)
                 isRestoringVault = false
                 outcome.onSuccess { summary ->
                     haptics.success()
-                    Toast.makeText(
-                        context,
-                        "Restored ${summary.bookmarksRestored} bookmarks, ${summary.reflectionsRestored} reflections",
-                        Toast.LENGTH_LONG
-                    ).show()
+                    Whisper.show("Restored ${summary.bookmarksRestored} bookmarks, ${summary.reflectionsRestored} reflections")
                 }.onFailure {
                     haptics.error()
-                    Toast.makeText(context, "Invalid or corrupt .fathom archive", Toast.LENGTH_SHORT).show()
+                    Whisper.problem("Invalid or corrupt .fathom archive")
                 }
             }
         }
@@ -225,27 +226,47 @@ fun SanctuaryScreen(
     val versionName = version?.versionName.orEmpty()
     val buildNumber = if (version != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) version.longVersionCode else 0L
 
+    val listState = androidx.compose.foundation.lazy.rememberLazyListState()
+    var page by androidx.compose.runtime.saveable.rememberSaveable { androidx.compose.runtime.mutableStateOf<SettingsPage?>(null) }
+    androidx.activity.compose.BackHandler(enabled = page != null) { page = null }
+    androidx.compose.runtime.LaunchedEffect(page) { listState.scrollToItem(0) }
+
     Box(Modifier.fillMaxSize()) {
         CompositionLocalProvider(LocalBackdrop provides null) {
             Atmosphere(tone = tone, modifier = Modifier.fillMaxSize()) {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
                     LazyColumn(
+                        state = listState,
                         modifier = Modifier.fillMaxHeight().widthIn(max = 640.dp).windowInsetsPadding(WindowInsets.displayCutout.only(WindowInsetsSides.Horizontal)).fadeEdges(top = 96.dp),
                         contentPadding = PaddingValues(start = 24.dp, end = 24.dp, top = 96.dp, bottom = 48.dp + WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding())
                     ) {
-                        item {
-                            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                                MonoLabel(text = "Settings", color = tone.hue)
-                                Text(text = "Sanctuary", style = typography.display, color = colors.textPrimary)
-                                Text(
-                                    text = "How Fathom looks, sounds and remembers.",
-                                    style = typography.commentaryBody,
-                                    color = colors.textSecondary
-                                )
+                        item { StaggerItem(0) {
+                            if (page == null) {
+                                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                                    MonoLabel(text = "Settings", color = tone.hue)
+                                    Text(text = "Sanctuary", style = typography.display, color = colors.textPrimary)
+                                    Text(
+                                        text = "How Fathom looks, sounds and remembers.",
+                                        style = typography.commentaryBody,
+                                        color = colors.textSecondary
+                                    )
+                                }
+                            } else {
+                                Row(
+                                    modifier = Modifier
+                                        .tappable(scale = 0.96f) { page = null }
+                                        .padding(vertical = 8.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                ) {
+                                    Icon(PhosphorIcons.Light.ArrowLeft, "Back", tint = tone.hue, modifier = Modifier.size(18.dp))
+                                    MonoLabel(text = "Settings", color = tone.hue)
+                                }
                             }
-                        }
+                         }}
 
-                        item {
+                        if (page == null) {
+                        item { StaggerItem(1) {
                             val membershipLabel = if (subscription.isPro) {
                                 when (subscription.tier) {
                                     SubscriptionTier.LIFETIME -> "Plus Lifetime"
@@ -302,10 +323,26 @@ fun SanctuaryScreen(
                                 }
                                 Icon(PhosphorIcons.Light.ArrowRight, null, tint = tone.hue, modifier = Modifier.size(22.dp))
                             }
+                         }}
+
                         }
 
-                        item { Heading("Appearance", "Reading themes") }
-                        item {
+                        if (page == null) {
+                            item(key = "hub_rows") { StaggerItem(2) {
+                                Column(Modifier.padding(top = 28.dp)) {
+                                    SettingsPage.entries.forEach { entry ->
+                                        SettingsHubRow(entry = entry, onClick = {
+                                            haptics.light()
+                                            page = entry
+                                        })
+                                    }
+                                    Hairline()
+                                }
+                             }}
+                        }
+                        if (page == SettingsPage.Appearance) {
+                        item { StaggerItem(1) { Heading("Appearance", "Reading themes")  }}
+                        item { StaggerItem(2) {
                             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                 ReadingTheme.entries.chunked(2).forEach { pair ->
                                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -330,10 +367,10 @@ fun SanctuaryScreen(
                                     }
                                 }
                             }
-                        }
+                         }}
 
-                        item { Heading("App Icon", "Home screen appearance") }
-                        item {
+                        item { StaggerItem(3) { Heading("App Icon", "Home screen appearance")  }}
+                        item { StaggerItem(4) {
                             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                                 AppIcon.entries.chunked(3).forEach { rowIcons ->
                                     Row(
@@ -368,17 +405,15 @@ fun SanctuaryScreen(
                                     }
                                 }
                             }
-                        }
+                         }}
 
-                        item {
-                            Spacer(Modifier.height(14.dp))
+                        item { StaggerItem(5) {
+                            Spacer(Modifier.height(22.dp))
+                            Hairline()
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .clip(RoundedCornerShape(20.dp))
-                                    .background(colors.surfaceElevated)
-                                    .border(0.75.dp, colors.hairline, RoundedCornerShape(20.dp))
-                                    .tappable(scale = 0.99f) {
+                                    .tappable(scale = 0.995f) {
                                         if (!subscription.isPro) {
                                             haptics.medium()
                                             openPaywall()
@@ -387,7 +422,7 @@ fun SanctuaryScreen(
                                             preferences.updateDynamicTraditionTones(!settings.dynamicTraditionTones)
                                         }
                                     }
-                                    .padding(horizontal = 20.dp, vertical = 18.dp),
+                                    .padding(vertical = 18.dp),
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.spacedBy(16.dp)
                             ) {
@@ -448,23 +483,28 @@ fun SanctuaryScreen(
                                     )
                                 }
                             }
-                        }
+                         }}
 
-                        item {
-                            Spacer(Modifier.height(4.dp))
+                        item { StaggerItem(6) {
+                            Hairline()
                             CustomGradientStudioSection(
                                 settings = settings,
                                 preferences = preferences,
                                 isPro = subscription.isPro,
                                 onOpenPaywall = openPaywall
                             )
+                            Hairline()
+                         }}
                         }
 
-                        item { Heading("Notifications", "Reminders and alerts") }
-                        item { NotificationSettings(preferences = preferences, settings = settings) }
+                        if (page == SettingsPage.Alerts) {
+                        item { StaggerItem(1) { Heading("Notifications", "Reminders and alerts")  }}
+                        item { StaggerItem(2) { NotificationSettings(preferences = preferences, settings = settings)  }}
+                        }
 
-                        item { Heading("Voice", "Narration") }
-                        item {
+                        if (page == SettingsPage.Voice) {
+                        item { StaggerItem(1) { Heading("Voice", "Narration")  }}
+                        item { StaggerItem(2) {
                             Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                                 Row(
                                     modifier = Modifier
@@ -540,25 +580,27 @@ fun SanctuaryScreen(
                                                 isTestingKey = false
                                                 res.onSuccess { msg ->
                                                     haptics.success()
-                                                    Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+                                                    Whisper.show(msg)
                                                 }.onFailure { err ->
                                                     haptics.error()
-                                                    Toast.makeText(context, err.message ?: "Connection failed", Toast.LENGTH_LONG).show()
+                                                    Whisper.problem(err.message ?: "Connection failed")
                                                 }
                                             }
                                         },
                                         onSave = {
                                             haptics.success()
                                             preferences.updateByokSettings(settings.byokProvider, keyInput.trim(), settings.byokVoiceId)
-                                            Toast.makeText(context, "Key saved on this device", Toast.LENGTH_SHORT).show()
+                                            Whisper.show("Key saved on this device")
                                         }
                                     )
                                 }
                             }
+                         }}
                         }
 
-                        item { Heading("Backup & Export", "Journal and bookmarks") }
-                        item {
+                        if (page == SettingsPage.Data) {
+                        item { StaggerItem(1) { Heading("Backup & Export", "Journal and bookmarks")  }}
+                        item { StaggerItem(2) {
                             Column {
                                 Hairline()
                                 Spacer(Modifier.height(18.dp))
@@ -622,10 +664,12 @@ fun SanctuaryScreen(
                                     Text(text = "Your journal and bookmarks remain stored on this device.", style = typography.caption, color = colors.textTertiary)
                                 }
                             }
+                         }}
                         }
 
-                        item { Heading("About", "Fathom for Android") }
-                        item {
+                        if (page == SettingsPage.About) {
+                        item { StaggerItem(1) { Heading("About", "Fathom for Android")  }}
+                        item { StaggerItem(2) {
                             Column {
                                 Hairline()
                                 Row(
@@ -711,6 +755,7 @@ fun SanctuaryScreen(
                                     }
                                 }
                             }
+                         }}
                         }
                     }
 
@@ -754,87 +799,40 @@ private fun ThemeTile(
     modifier: Modifier = Modifier
 ) {
     val palette = theme.palette()
-    val shape = RoundedCornerShape(16.dp)
-    val subtitle = when (theme) {
-        ReadingTheme.OBSIDIAN -> "OLED Gold"
-        ReadingTheme.SEPIA -> "Warm Parchment"
-        ReadingTheme.SLATE -> "Midnight Indigo"
-        ReadingTheme.FOREST -> "Forest Emerald"
-        ReadingTheme.SAHARA -> "Terracotta Clay"
-        ReadingTheme.TWILIGHT -> "Mystic Amethyst"
-        ReadingTheme.CINNABAR -> "Imperial Lacquer"
-        ReadingTheme.DAWN -> "Crisp Alabaster"
-        ReadingTheme.AURORA -> "Northern Teal"
-        ReadingTheme.CELESTIAL -> "Indigo Slate"
-    }
-
+    val shape = RoundedCornerShape(18.dp)
+    val ring by androidx.compose.animation.animateColorAsState(
+        if (selected) palette.accent else palette.hairline,
+        androidx.compose.animation.core.tween(150),
+        label = "theme_ring"
+    )
     Row(
         modifier = modifier
+            .height(68.dp)
             .clip(shape)
             .background(palette.background)
-            .border(
-                width = if (selected) 2.dp else 0.75.dp,
-                color = if (selected) palette.accent else palette.hairline,
-                shape = shape
-            )
-            .tappable(scale = 0.97f, haptic = false, onClick = onClick)
-            .padding(horizontal = 12.dp, vertical = 10.dp),
+            .border(if (selected) 1.5.dp else 0.75.dp, ring, shape)
+            .tappable(scale = 0.98f, haptic = false, onClick = onClick)
+            .padding(horizontal = 16.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(10.dp)
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Box(
-            modifier = Modifier
-                .size(36.dp)
-                .clip(RoundedCornerShape(10.dp))
-                .background(palette.surface)
-                .border(0.75.dp, palette.hairline, RoundedCornerShape(10.dp)),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text = "Aa",
-                style = FathomTheme.typography.title.copy(fontSize = 17.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold),
-                color = palette.textPrimary
-            )
-        }
-
-        Column(
-            modifier = Modifier.weight(1f),
-            verticalArrangement = Arrangement.spacedBy(1.dp)
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(4.dp)
-            ) {
-                Text(
-                    text = theme.displayName,
-                    style = FathomTheme.typography.title.copy(fontSize = 13.5.sp),
-                    color = palette.textPrimary,
-                    maxLines = 1
-                )
-                if (locked) {
-                    Icon(
-                        PhosphorIcons.Light.LockSimple,
-                        null,
-                        tint = palette.accent,
-                        modifier = Modifier.size(11.dp)
-                    )
-                }
-            }
-            Text(
-                text = subtitle,
-                style = FathomTheme.typography.caption.copy(fontSize = 10.5.sp),
-                color = palette.textSecondary,
-                maxLines = 1
-            )
-        }
-
-        Box(
-            modifier = Modifier
-                .size(10.dp)
-                .clip(CircleShape)
-                .background(palette.accent)
-                .border(1.dp, palette.surface, CircleShape)
+        Text(
+            text = "Aa",
+            style = FathomTheme.typography.headline.copy(fontSize = 24.sp, lineHeight = 28.sp),
+            color = palette.textPrimary
         )
+        Text(
+            text = theme.displayName,
+            style = FathomTheme.typography.label.copy(fontSize = 13.sp),
+            color = palette.textSecondary,
+            maxLines = 1,
+            modifier = Modifier.weight(1f)
+        )
+        if (locked) {
+            Icon(PhosphorIcons.Light.LockSimple, null, tint = palette.textTertiary, modifier = Modifier.size(14.dp))
+        } else {
+            Box(Modifier.size(9.dp).clip(CircleShape).background(palette.accent))
+        }
     }
 }
 
@@ -1000,6 +998,35 @@ private fun AboutRow(title: String, caption: String, onClick: () -> Unit) {
                 Text(text = caption, style = FathomTheme.typography.caption, color = colors.textTertiary)
             }
             Icon(PhosphorIcons.Light.ArrowRight, null, tint = colors.textTertiary, modifier = Modifier.size(18.dp))
+        }
+    }
+}
+
+private enum class SettingsPage(val title: String, val caption: String, val glyph: com.masum.fathom.ui.design.GlyphKind) {
+    Appearance("Appearance", "Themes, app icon and feed gradient", com.masum.fathom.ui.design.GlyphKind.Star),
+    Alerts("Notifications", "Daily verse and reminders", com.masum.fathom.ui.design.GlyphKind.Circle),
+    Voice("Voice", "Narration and your own API key", com.masum.fathom.ui.design.GlyphKind.Hexagon),
+    Data("Backup & Export", "Vault, journal and bookmarks", com.masum.fathom.ui.design.GlyphKind.Square),
+    About("About", "Version, updates, privacy and feedback", com.masum.fathom.ui.design.GlyphKind.Circle)
+}
+
+@Composable
+private fun SettingsHubRow(entry: SettingsPage, onClick: () -> Unit) {
+    val colors = FathomTheme.colors
+    Column {
+        Hairline()
+        Row(
+            modifier = Modifier.fillMaxWidth().tappable(scale = 0.99f, haptic = false, onClick = onClick).padding(vertical = 20.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            com.masum.fathom.ui.design.Glyph(kind = entry.glyph, color = FathomTheme.tone.hue, size = 30.dp, filled = false)
+            Spacer(Modifier.width(20.dp))
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                Text(text = entry.title, style = FathomTheme.typography.headline.copy(fontSize = 26.sp, lineHeight = 30.sp), color = colors.textPrimary)
+                MonoLabel(text = entry.caption, color = colors.textTertiary)
+            }
+            Icon(PhosphorIcons.Light.ArrowRight, null, tint = colors.textTertiary, modifier = Modifier.size(20.dp))
         }
     }
 }

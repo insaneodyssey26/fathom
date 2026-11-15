@@ -1,5 +1,6 @@
 package com.masum.fathom.ui.components
 
+import com.masum.fathom.ui.design.Whisper
 import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
@@ -17,7 +18,6 @@ import android.provider.MediaStore
 import android.text.Layout
 import android.text.StaticLayout
 import android.text.TextPaint
-import android.widget.Toast
 import androidx.compose.ui.graphics.toArgb
 import androidx.core.content.FileProvider
 import com.masum.fathom.R
@@ -102,6 +102,24 @@ object QuoteCardRenderer {
             val y = random.nextInt(height).toFloat()
             canvas.drawRect(x, y, x + speck, y + speck, grain)
         }
+
+        val markSize = maxOf(width, height) * 0.62f
+        val markLeft = width - markSize * 0.68f
+        val markTop = height * (if (format == CardFormat.SQUARE) 0.30f else 0.34f)
+        val markPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = (hue and 0x00FFFFFF) or 0x1F000000
+            style = Paint.Style.STROKE
+            strokeWidth = 3f * unit
+        }
+        val markPath = EmblemShapes.androidPath(passage.traditionId, markSize)
+        canvas.save()
+        canvas.translate(markLeft, markTop)
+        canvas.drawPath(markPath, markPaint)
+        for (ring in 1..3) {
+            markPaint.alpha = 34 - ring * 8
+            canvas.drawCircle(markSize / 2f, markSize / 2f, markSize * (0.5f + ring * 0.14f), markPaint)
+        }
+        canvas.restore()
 
         val edge = 56f * unit
         val frame = RectF(edge, edge, width - edge, height - edge)
@@ -274,7 +292,7 @@ object QuoteCardRenderer {
             chooser.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             context.startActivity(chooser)
         } catch (e: Exception) {
-            Toast.makeText(context, "Failed to share quote card: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
+            Whisper.problem("Failed to share quote card: ${e.localizedMessage}")
         }
     }
 
@@ -320,9 +338,9 @@ object QuoteCardRenderer {
 
             outputStream?.flush()
             outputStream?.close()
-            Toast.makeText(context, "Saved quote card to Pictures/Fathom", Toast.LENGTH_SHORT).show()
+            Whisper.show("Saved quote card to Pictures/Fathom")
         } catch (e: Exception) {
-            Toast.makeText(context, "Failed to save quote card: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
+            Whisper.problem("Failed to save quote card: ${e.localizedMessage}")
         }
     }
 }

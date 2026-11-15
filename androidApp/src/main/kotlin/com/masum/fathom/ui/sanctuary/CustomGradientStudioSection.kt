@@ -109,13 +109,7 @@ fun CustomGradientStudioSection(
     val colA = remember(rawColorA) { FeedGradientPresets.parseHexColor(rawColorA) }
     val colB = remember(rawColorB) { FeedGradientPresets.parseHexColor(rawColorB) }
 
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(cardShape)
-            .background(colors.surfaceElevated)
-            .border(0.75.dp, colors.hairline, cardShape)
-    ) {
+    Box(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.fillMaxWidth()) {
             Row(
                 modifier = Modifier
@@ -124,7 +118,7 @@ fun CustomGradientStudioSection(
                         haptics.light()
                         isExpanded = !isExpanded
                     }
-                    .padding(horizontal = 20.dp, vertical = 18.dp),
+                    .padding(vertical = 18.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
@@ -204,7 +198,7 @@ fun CustomGradientStudioSection(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(start = 20.dp, end = 20.dp, bottom = 20.dp),
+                        .padding(bottom = 20.dp),
                     verticalArrangement = Arrangement.spacedBy(18.dp)
                 ) {
                     com.masum.fathom.ui.design.Hairline(modifier = Modifier.padding(bottom = 2.dp))
