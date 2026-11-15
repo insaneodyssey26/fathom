@@ -131,15 +131,18 @@ fun FathomSheet(
                     parent = parent.parent
                 }
             }
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(max = contentMax)
-                    .imePadding()
-                    .padding(horizontal = 24.dp)
-                    .padding(bottom = 24.dp),
-                content = content
-            )
+            Box {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = contentMax)
+                        .imePadding()
+                        .padding(horizontal = 24.dp)
+                        .padding(bottom = 24.dp),
+                    content = content
+                )
+                WhisperHost(modifier = Modifier.align(Alignment.TopCenter), insideSheet = true)
+            }
         }
     }
 }
@@ -161,7 +164,10 @@ fun SheetHeader(
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            MonoLabel(text = overline, color = FathomTheme.tone.hue)
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                Box(Modifier.width(18.dp).height(1.5.dp).background(FathomTheme.tone.hue))
+                MonoLabel(text = overline, color = FathomTheme.tone.hue)
+            }
             Text(text = title, style = typography.headline, color = colors.textPrimary)
             if (subtitle != null) {
                 Text(text = subtitle, style = typography.body, color = colors.textSecondary)

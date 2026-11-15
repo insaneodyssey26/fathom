@@ -49,11 +49,11 @@ fun Modifier.tappable(
     val source = remember { MutableInteractionSource() }
     val pressed by source.collectIsPressedAsState()
     val haptics = LocalFathomHaptics.current
-    val s by animateFloatAsState(if (pressed) scale else 1f, FathomMotion.press(), label = "tap_scale")
+    val s = animateFloatAsState(if (pressed) scale else 1f, FathomMotion.press(), label = "tap_scale")
     return this
         .graphicsLayer {
-            scaleX = s
-            scaleY = s
+            scaleX = s.value
+            scaleY = s.value
         }
         .clickable(
             interactionSource = source,
