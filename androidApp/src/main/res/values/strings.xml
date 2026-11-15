@@ -1,7 +1,7 @@
 <resources>
     <string name="app_name">Fathom</string>
-    <string name="widget_daily_wisdom_title">Daily Sacred Wisdom</string>
-    <string name="widget_daily_wisdom_description">Contemplative wisdom passage on your home screen with scrollable text, in-place exegesis, and one-tap bookmarking.</string>
-    <string name="widget_sanctuary_streak_title">Sanctuary Streak &amp; Rituals</string>
-    <string name="widget_sanctuary_streak_description">Track your daily reading streak, weekly contemplative practice, and sacred rituals directly on your home screen.</string>
+    <string name="widget_daily_wisdom_title">Daily Verse</string>
+    <string name="widget_daily_wisdom_description">A verse for your home screen. Resize it from a single line to a full page, with one-tap context and saving.</string>
+    <string name="widget_sanctuary_streak_title">Reading Streak</string>
+    <string name="widget_sanctuary_streak_description">Your reading streak and the past week at a glance. Part of Fathom Plus.</string>
 </resources>
