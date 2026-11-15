@@ -124,17 +124,24 @@ fun VersePage(
                 .padding(start = 28.dp, end = endGutter),
             verticalArrangement = Arrangement.Center
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                MonoLabel(text = passage.traditionId.displayName, color = tone.hue)
-                Box(modifier = Modifier.size(3.dp).clip(CircleShape).background(colors.textTertiary))
-                MonoLabel(
-                    text = passage.canonicalReference,
-                    modifier = Modifier.weight(1f, fill = false),
-                    color = colors.textSecondary
+            Column(verticalArrangement = Arrangement.spacedBy(if (shell.isShort) 4.dp else 8.dp)) {
+                Text(
+                    text = passage.traditionId.displayName.uppercase(),
+                    style = typography.label.copy(fontSize = 12.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold, letterSpacing = 1.6.sp),
+                    color = tone.hue
                 )
+                Text(
+                    text = passage.canonicalReference,
+                    style = typography.headline.copy(fontSize = if (shell.isShort) 20.sp else 26.sp, lineHeight = if (shell.isShort) 24.sp else 30.sp),
+                    color = colors.textPrimary,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Spacer(Modifier.height(if (shell.isShort) 6.dp else 12.dp))
+                Hairline(modifier = Modifier.width(44.dp), color = tone.hue.copy(alpha = 0.85f))
             }
 
-            Spacer(Modifier.height(if (shell.isShort) 14.dp else 28.dp))
+            Spacer(Modifier.height(if (shell.isShort) 16.dp else 30.dp))
 
             if (wide) {
                 Row(horizontalArrangement = Arrangement.spacedBy(48.dp), verticalAlignment = Alignment.Top) {

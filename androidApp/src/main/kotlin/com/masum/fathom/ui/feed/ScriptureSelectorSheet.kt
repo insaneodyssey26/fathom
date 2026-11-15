@@ -274,15 +274,24 @@ private fun TraditionGroup(
     val turn by animateFloatAsState(if (open) 180f else 0f, tween(320, easing = FathomMotion.Emphasized), label = "group_turn")
     val ink by animateColorAsState(if (active) colors.textPrimary else colors.textSecondary, tween(240), label = "group_ink")
 
-    Column(modifier = Modifier.fillMaxWidth()) {
+    val cardShape = RoundedCornerShape(26.dp)
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(bottom = 10.dp)
+            .clip(cardShape)
+            .background(tone.hue.copy(alpha = if (active) 0.14f else 0.05f))
+            .border(0.75.dp, tone.hue.copy(alpha = if (active) 0.34f else 0.14f), cardShape)
+            .padding(horizontal = 18.dp)
+    ) {
         Row(
-            modifier = Modifier.fillMaxWidth().tappable(scale = 0.985f, haptic = false, onClick = onToggle).padding(vertical = 16.dp),
+            modifier = Modifier.fillMaxWidth().tappable(scale = 0.985f, haptic = false, onClick = onToggle).padding(vertical = 18.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            TraditionEmblem(traditionId = tradition, color = if (active) tone.hue else colors.textTertiary, size = 26.dp, filled = active)
+            TraditionEmblem(traditionId = tradition, color = if (active) tone.hue else colors.textSecondary, size = 32.dp, filled = active)
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                Text(text = tradition.displayName, style = FathomTheme.typography.title, color = ink)
+                Text(text = tradition.displayName, style = FathomTheme.typography.headline.copy(fontSize = 23.sp, lineHeight = 27.sp), color = ink)
                 MonoLabel(text = "${books.size} ${if (books.size == 1) "text" else "texts"}", color = colors.textTertiary)
             }
             Icon(PhosphorIcons.Light.CaretDown, null, tint = colors.textTertiary, modifier = Modifier.size(18.dp).rotate(turn))
@@ -315,6 +324,5 @@ private fun TraditionGroup(
                 }
             }
         }
-        Hairline()
     }
 }

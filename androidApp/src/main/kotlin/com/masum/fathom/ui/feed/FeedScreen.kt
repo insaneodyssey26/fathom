@@ -1,5 +1,9 @@
 package com.masum.fathom.ui.feed
 
+import androidx.compose.foundation.layout.Column
+import com.adamglin.phosphoricons.light.Sliders
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.offset
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
@@ -13,6 +17,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.pager.PagerDefaults
@@ -36,6 +42,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
@@ -54,6 +63,7 @@ import com.adamglin.phosphoricons.light.DotsThree
 import com.adamglin.phosphoricons.light.ShareFat
 import com.adamglin.phosphoricons.light.SpeakerHigh
 import com.adamglin.phosphoricons.light.TextAa
+import com.adamglin.phosphoricons.light.Waveform
 import com.adamglin.phosphoricons.light.X
 import com.masum.fathom.core.audio.LocalOpenAmbience
 import com.masum.fathom.core.audio.LocalSacredAudioEngine
@@ -162,6 +172,13 @@ private fun FeedContent(
     val ambienceState by ambienceEngine.state.collectAsState()
     val openAmbience = LocalOpenAmbience.current
     val openMore = com.masum.fathom.ui.shell.LocalOpenMore.current
+    val subscription = com.masum.fathom.core.subscription.LocalSubscriptionState.current
+    val openPaywall = com.masum.fathom.core.subscription.LocalOpenPaywall.current
+    val sequential = state.selectedBookId != null
+    fun lockedChapter(index: Int): Int? {
+        val chapter = state.passages.getOrNull(index)?.chapter ?: return null
+        return chapter.takeIf { sequential && com.masum.fathom.core.subscription.FreeAccess.isChapterLocked(it, subscription.isPro) }
+    }
     val preferences = com.masum.fathom.core.sanctuary.LocalSanctuaryPreferences.current
     val settings by preferences.settings.collectAsState()
     var showReadingComfortSheet by remember { mutableStateOf(false) }
@@ -178,7 +195,7 @@ private fun FeedContent(
     }
     LaunchedEffect(pagerState) {
         snapshotFlow { pagerState.settledPage }.collect { page ->
-            if (page in state.passages.indices) {
+            if (page in state.passages.indices && lockedChapter(page) == null) {
                 onEvent(FeedUiEvent.OnPassageSwiped(page))
             }
         }
@@ -199,6 +216,12 @@ private fun FeedContent(
     NavToneEffect(effectiveTraditionId)
     val bookmarked = currentPassage?.let { it.id in state.bookmarkedPassageIds } ?: false
     val speaking = (playbackState as? SacredAudioState.Playing)?.passage?.id == currentPassage?.id
+    val statusBarHeightPx = with(androidx.compose.ui.platform.LocalDensity.current) { WindowInsets.statusBars.getTop(this).toFloat() }
+    val bloomProgress = remember { Animatable(1f) }
+    var bloomOrigin by remember { mutableStateOf(Offset.Zero) }
+    val latestPassage by rememberUpdatedState(currentPassage)
+    val latestBookmarked by rememberUpdatedState(bookmarked)
+    val latestLocked by rememberUpdatedState(lockedChapter(pagerState.currentPage) != null)
 
     CompositionLocalProvider(LocalTone provides tone) {
         GlassLayer(
@@ -241,11 +264,37 @@ private fun FeedContent(
                             state = pagerState,
                             flingBehavior = fling,
                             beyondViewportPageCount = 1,
-                            modifier = Modifier.fillMaxSize().statusBarsPadding()
+                            modifier = Modifier.fillMaxSize().statusBarsPadding().pointerInput(Unit) {
+                                detectTapGestures(onDoubleTap = { tap ->
+                                    val target = latestPassage ?: return@detectTapGestures
+                                    if (latestLocked) return@detectTapGestures
+                                    bloomOrigin = Offset(tap.x, tap.y + statusBarHeightPx)
+                                    if (!latestBookmarked) {
+                                        haptics.success()
+                                        onEvent(FeedUiEvent.OnToggleBookmark(target))
+                                    } else {
+                                        haptics.light()
+                                    }
+                                    scope.launch {
+                                        bloomProgress.snapTo(0f)
+                                        bloomProgress.animateTo(1f, tween(FathomMotion.Slow, easing = FathomMotion.Emphasized))
+                                    }
+                                })
+                            }
                         ) { page ->
                             val passage = state.passages[page]
                             val distance = { page - (pagerState.currentPage + pagerState.currentPageOffsetFraction) }
-                            VersePage(
+                            val lockedAt = lockedChapter(page)
+                            if (lockedAt != null) {
+                                LockedVersePage(
+                                    chapter = lockedAt,
+                                    contentPadding = pagePadding,
+                                    onUnlock = {
+                                        haptics.medium()
+                                        openPaywall()
+                                    }
+                                )
+                            } else VersePage(
                                 passage = passage,
                                 reveal = { (1f - abs(distance()) * 1.1f).coerceIn(0f, 1f) },
                                 contentPadding = pagePadding,
@@ -267,6 +316,7 @@ private fun FeedContent(
                 }
             },
             overlay = {
+            SaveBloom(origin = { bloomOrigin }, progress = { bloomProgress.value }, hue = tone.hue)
             Header(
                 state = state,
                 traditionId = currentPassage?.traditionId,
@@ -285,7 +335,7 @@ private fun FeedContent(
                 modifier = Modifier.align(Alignment.CenterEnd).padding(end = 4.dp, bottom = 40.dp)
             )
 
-            if (currentPassage != null) {
+            if (currentPassage != null && lockedChapter(pagerState.currentPage) == null) {
                 Row(
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
@@ -299,6 +349,11 @@ private fun FeedContent(
                         onListen = {
                             haptics.medium()
                             audioEngine.toggle(currentPassage)
+                        },
+                        soundscapePlaying = ambienceState.isPlaying,
+                        onSoundscape = {
+                            haptics.light()
+                            openAmbience()
                         },
                         onReflect = { onEvent(FeedUiEvent.OnOpenContext(currentPassage)) },
                         onComfort = {
@@ -435,27 +490,13 @@ private fun Header(
         traditionId = traditionId,
         modifier = modifier
     ) {
-        Row(
-            modifier = Modifier
-                .weight(1f, fill = false)
-                .widthIn(max = 200.dp)
-                .height(40.dp)
-                .glass(RoundedCornerShape(50))
-                .tappable(scale = 0.96f, onClick = onOpenScriptures)
-                .padding(horizontal = 14.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(6.dp)
-        ) {
-            Text(
-                text = title,
-                style = FathomTheme.typography.label,
-                color = colors.textPrimary,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.weight(1f, fill = false)
-            )
-            Icon(PhosphorIcons.Light.CaretDown, null, tint = colors.textSecondary, modifier = Modifier.size(12.dp))
-        }
+        com.masum.fathom.ui.design.ScripturePill(
+            traditionId = traditionId,
+            overline = "Reading",
+            title = title,
+            onClick = onOpenScriptures,
+            modifier = Modifier.weight(1f, fill = false)
+        )
         Box {
             GlassIconButton(
                 icon = PhosphorIcons.Light.DotsThree,
@@ -470,7 +511,9 @@ private fun Header(
 private fun ActionPill(
     speaking: Boolean,
     bookmarked: Boolean,
+    soundscapePlaying: Boolean,
     onListen: () -> Unit,
+    onSoundscape: () -> Unit,
     onReflect: () -> Unit,
     onComfort: () -> Unit,
     onShare: () -> Unit,
@@ -481,9 +524,9 @@ private fun ActionPill(
     val tone = FathomTheme.tone
     val screenWidth = LocalConfiguration.current.screenWidthDp
     val cell = when {
-        screenWidth < 340 -> 30.dp
-        screenWidth < 380 -> 32.dp
-        else -> 35.dp
+        screenWidth < 340 -> 28.dp
+        screenWidth < 380 -> 30.dp
+        else -> 33.dp
     }
     val iconSize = when {
         screenWidth < 340 -> 15.dp
@@ -500,6 +543,9 @@ private fun ActionPill(
     ) {
         PillAction(cell = cell, onClick = onListen, description = "Listen") {
             if (speaking) Equalizer(color = tone.hue, size = 15.dp) else Icon(PhosphorIcons.Light.SpeakerHigh, null, tint = colors.textPrimary, modifier = Modifier.size(iconSize))
+        }
+        PillAction(cell = cell, onClick = onSoundscape, description = "Soundscapes") {
+            if (soundscapePlaying) Equalizer(color = tone.hue, size = 15.dp) else Icon(PhosphorIcons.Light.Waveform, null, tint = colors.textPrimary, modifier = Modifier.size(iconSize))
         }
         PillAction(cell = cell, onClick = onReflect, description = "Context and commentary") {
             Icon(PhosphorIcons.Light.ChatCenteredText, null, tint = colors.textPrimary, modifier = Modifier.size(iconSize))
