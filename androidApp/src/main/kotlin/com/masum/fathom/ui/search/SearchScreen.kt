@@ -1,5 +1,8 @@
 package com.masum.fathom.ui.search
 
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.lazy.itemsIndexed
+import com.masum.fathom.ui.design.StaggerItem
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -28,7 +31,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import com.adamglin.PhosphorIcons
 import com.adamglin.phosphoricons.Light
-import com.adamglin.phosphoricons.light.Sliders
+import com.adamglin.phosphoricons.light.DotsThree
 import com.masum.fathom.core.haptics.LocalFathomHaptics
 import com.masum.fathom.core.model.SacredTopic
 import com.masum.fathom.core.sanctuary.LocalOpenSanctuary
@@ -159,8 +162,14 @@ private fun ExploreRoot(
                                 bottom = shell.bottomInset + 32.dp
                             )
                         ) {
-                            item(key = "search_and_chips") {
+                            item(key = "search_and_chips") { StaggerItem(0) {
                                 Column(modifier = Modifier.fillMaxWidth().padding(bottom = 28.dp)) {
+                                    Text(
+                                        text = "What are you\nlooking for?",
+                                        style = FathomTheme.typography.display,
+                                        color = colors.textPrimary,
+                                        modifier = Modifier.padding(top = 12.dp, bottom = 22.dp)
+                                    )
                                     EditorialSearchField(
                                         query = state.searchQuery,
                                         onQueryChange = { onEvent(SearchUiEvent.OnQueryChange(it)) },
@@ -176,7 +185,7 @@ private fun ExploreRoot(
                                         horizontalPadding = 0.dp
                                     )
                                 }
-                            }
+                             }}
                             val currentTopic = state.selectedTopic
                             when {
                                 searching -> resultsItems(state, onEvent)
@@ -196,8 +205,8 @@ private fun ExploreRoot(
                         traditionId = focusTradition,
                     ) {
                         GlassIconButton(
-                            icon = PhosphorIcons.Light.Sliders,
-                            contentDescription = "Settings",
+                            icon = PhosphorIcons.Light.DotsThree,
+                            contentDescription = "More",
                             onClick = {
                                 haptics.light()
                                 openSanctuary()
@@ -216,23 +225,39 @@ private fun androidx.compose.foundation.lazy.LazyListScope.directoryItems(
     onOpenBook: (com.masum.fathom.core.model.Book) -> Unit,
     onEvent: (SearchUiEvent) -> Unit
 ) {
-    item(key = "topics_heading") {
+    item(key = "topics_heading") { StaggerItem(1) {
         SectionHeading(overline = "Cross-tradition", title = "Begin with a feeling", modifier = Modifier.padding(bottom = 20.dp))
-    }
-    item(key = "topics") {
+     }}
+    item(key = "topics") { StaggerItem(2) {
         TopicMosaic(columns = if (wide) 4 else 2, onSelect = { onEvent(SearchUiEvent.OnSelectTopic(it)) })
-    }
+     }}
     val books = if (state.selectedTradition != null) state.allBooks.filter { it.traditionId == state.selectedTradition } else state.allBooks
-    item(key = "books_heading") {
+    item(key = "books_heading") { StaggerItem(3) {
         SectionHeading(
             overline = "Canons",
             title = "The scriptures",
             trailing = "${books.size} ${if (books.size == 1) "book" else "books"}",
             modifier = Modifier.padding(top = 44.dp, bottom = 6.dp)
         )
-    }
-    items(books, key = { it.id }) { book ->
-        BookRow(book = book, onClick = { onOpenBook(book) })
+     }}
+    val columns = if (wide) 3 else 2
+    val rows = books.chunked(columns)
+    itemsIndexed(rows, key = { index, _ -> "books_row_$index" }) { index, rowBooks ->
+        StaggerItem(4 + index) {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                rowBooks.forEach { book ->
+                    BookCover(
+                        book = book,
+                        onClick = { onOpenBook(book) },
+                        modifier = Modifier.weight(1f).height(210.dp)
+                    )
+                }
+                repeat(columns - rowBooks.size) { Spacer(Modifier.weight(1f)) }
+            }
+        }
     }
 }
 
@@ -241,18 +266,18 @@ private fun androidx.compose.foundation.lazy.LazyListScope.topicItems(
     topic: SacredTopic,
     onEvent: (SearchUiEvent) -> Unit
 ) {
-    item(key = "topic_header") {
+    item(key = "topic_header") { StaggerItem(4) {
         TopicHeader(topic = topic, count = state.topicPassages.size, loading = state.isLoadingTopic, onBack = { onEvent(SearchUiEvent.OnSelectTopic(null)) })
-    }
+     }}
     when {
-        state.isLoadingTopic -> item(key = "topic_loading") {
+        state.isLoadingTopic -> item(key = "topic_loading") { StaggerItem(5) {
             Box(Modifier.fillMaxWidth().height(240.dp), contentAlignment = Alignment.Center) { BreathingMark() }
-        }
-        state.topicPassages.isEmpty() -> item(key = "topic_empty") {
+         }}
+        state.topicPassages.isEmpty() -> item(key = "topic_empty") { StaggerItem(6) {
             Box(Modifier.fillMaxWidth().padding(vertical = 56.dp), contentAlignment = Alignment.Center) {
                 QuietMessage(title = "No verses yet", body = "This theme has no passages in the selected tradition.")
             }
-        }
+         }}
         else -> items(state.topicPassages, key = { it.id }) { passage ->
             PassageEntry(
                 passage = passage,
@@ -271,25 +296,25 @@ private fun androidx.compose.foundation.lazy.LazyListScope.resultsItems(
     onEvent: (SearchUiEvent) -> Unit
 ) {
     when {
-        state.isSearching -> item(key = "searching") {
+        state.isSearching -> item(key = "searching") { StaggerItem(7) {
             Box(Modifier.fillMaxWidth().height(280.dp), contentAlignment = Alignment.Center) { BreathingMark() }
-        }
-        state.searchResults.isEmpty() -> item(key = "no_results") {
+         }}
+        state.searchResults.isEmpty() -> item(key = "no_results") { StaggerItem(8) {
             Box(Modifier.fillMaxWidth().padding(vertical = 72.dp), contentAlignment = Alignment.Center) {
                 QuietMessage(
                     title = "Nothing found",
                     body = "No verses matched “${state.searchQuery}”. Try a broader idea such as stillness, duty, light, or path."
                 )
             }
-        }
+         }}
         else -> {
-            item(key = "results_heading") {
+            item(key = "results_heading") { StaggerItem(9) {
                 MonoLabel(
                     text = "${state.searchResults.size} ${if (state.searchResults.size == 1) "verse" else "verses"}",
                     color = FathomTheme.tone.hue,
                     modifier = Modifier.padding(bottom = 4.dp)
                 )
-            }
+             }}
             items(state.searchResults, key = { it.id }) { passage ->
                 PassageEntry(
                     passage = passage,

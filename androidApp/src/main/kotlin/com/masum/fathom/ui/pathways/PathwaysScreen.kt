@@ -1,5 +1,13 @@
 package com.masum.fathom.ui.pathways
 
+import com.masum.fathom.core.subscription.FreeAccess
+import androidx.compose.foundation.shape.CircleShape
+import com.masum.fathom.ui.design.TraditionEmblem
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.border
+import com.masum.fathom.ui.design.StaggerItem
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
@@ -61,7 +69,7 @@ import com.adamglin.phosphoricons.light.ArrowUp
 import com.adamglin.phosphoricons.light.CaretDown
 import com.adamglin.phosphoricons.light.Check
 import com.adamglin.phosphoricons.light.LockSimple
-import com.adamglin.phosphoricons.light.Sliders
+import com.adamglin.phosphoricons.light.DotsThree
 import com.masum.fathom.core.haptics.LocalFathomHaptics
 import com.masum.fathom.core.sanctuary.LocalOpenSanctuary
 import com.masum.fathom.core.subscription.LocalOpenPaywall
@@ -276,32 +284,19 @@ private fun PathwaysHome(
                             title = "paths",
                             traditionId = pathway.book.traditionId
                         ) {
-                            Row(
-                                modifier = Modifier
-                                    .widthIn(max = 190.dp)
-                                    .height(44.dp)
-                                    .glass(RoundedCornerShape(50))
-                                    .tappable(scale = 0.96f) {
-                                        haptics.light()
-                                        onOpenScriptures()
-                                    }
-                                    .padding(horizontal = 18.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                Text(
-                                    text = state.selectedBook.title,
-                                    style = FathomTheme.typography.label,
-                                    color = colors.textPrimary,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                    modifier = Modifier.weight(1f, fill = false)
-                                )
-                                Icon(PhosphorIcons.Light.CaretDown, null, tint = colors.textSecondary, modifier = Modifier.size(13.dp))
-                            }
+                            com.masum.fathom.ui.design.ScripturePill(
+                                traditionId = pathway.book.traditionId,
+                                overline = "Path",
+                                title = state.selectedBook.title,
+                                onClick = {
+                                    haptics.light()
+                                    onOpenScriptures()
+                                },
+                                modifier = Modifier.weight(1f, fill = false)
+                            )
                             GlassIconButton(
-                                icon = PhosphorIcons.Light.Sliders,
-                                contentDescription = "Settings",
+                                icon = PhosphorIcons.Light.DotsThree,
+                                contentDescription = "More",
                                 onClick = {
                                     haptics.light()
                                     openSanctuary()
@@ -372,14 +367,14 @@ private fun ChapterList(
         contentPadding = contentPadding
     ) {
         if (includeHero) {
-            item(key = "hero") {
+            item(key = "hero") { StaggerItem(0) {
                 Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.TopCenter) {
                     Column(Modifier.widthIn(max = shell.contentMaxWidth).padding(horizontal = 28.dp).padding(bottom = 36.dp)) {
                         BookHero(
                             pathway = pathway,
                             onContinue = {
                                 openCurrent(pathway) { chNum ->
-                                    if (chNum > 2 && !subscription.isPro) {
+                                    if (FreeAccess.isChapterLocked(chNum, subscription.isPro)) {
                                         haptics.medium()
                                         openPaywall()
                                     } else {
@@ -390,10 +385,10 @@ private fun ChapterList(
                         )
                     }
                 }
-            }
+             }}
         }
         itemsIndexed(pathway.chapters, key = { _, c -> c.chapterNumber }) { index, chapter ->
-            val locked = chapter.chapterNumber > 2 && !subscription.isPro
+            val locked = FreeAccess.isChapterLocked(chapter.chapterNumber, subscription.isPro)
             Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.TopCenter) {
                 ChapterRow(
                     chapter = chapter,
@@ -424,45 +419,71 @@ private fun BookHero(pathway: BookPathway, onContinue: () -> Unit) {
     val started = pathway.completedChapters > 0 || pathway.readVerses > 0
     val finished = pathway.totalChapters > 0 && pathway.completedChapters >= pathway.totalChapters
     val current = pathway.chapters.firstOrNull { it.isCurrent }
+    val shape = RoundedCornerShape(32.dp)
 
-    Column(verticalArrangement = Arrangement.spacedBy(0.dp)) {
-        MonoLabel(text = pathway.book.traditionId.displayName, color = tone.hue)
-        Spacer(Modifier.height(14.dp))
-        Text(
-            text = pathway.book.title,
-            style = typography.display,
-            color = colors.textPrimary,
-            maxLines = 3,
-            overflow = TextOverflow.Ellipsis
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(shape)
+            .background(
+                Brush.linearGradient(
+                    listOf(tone.hue.copy(alpha = if (colors.isDark) 0.22f else 0.16f), tone.hue.copy(alpha = 0.04f))
+                )
+            )
+            .border(0.75.dp, tone.hue.copy(alpha = 0.28f), shape)
+    ) {
+        TraditionEmblem(
+            traditionId = pathway.book.traditionId,
+            color = tone.hue.copy(alpha = 0.16f),
+            size = 260.dp,
+            modifier = Modifier.align(Alignment.TopEnd).offset(x = 84.dp, y = (-60).dp)
         )
-        pathway.book.author?.takeIf { it.isNotBlank() }?.let {
-            Spacer(Modifier.height(10.dp))
-            Text(text = it, style = typography.commentaryBody.copy(fontStyle = FontStyle.Italic), color = colors.textSecondary)
-        }
-
-        Spacer(Modifier.height(32.dp))
-
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(28.dp)) {
-            DepthDial(progress = pathway.progressPercent, hue = tone.hue)
-            Column(verticalArrangement = Arrangement.spacedBy(18.dp)) {
-                Stat(value = "${pathway.completedChapters}/${pathway.totalChapters}", label = "Chapters")
-                Stat(value = "${pathway.readVerses}", label = "of ${pathway.totalVerses} verses")
+        Column(modifier = Modifier.padding(26.dp), verticalArrangement = Arrangement.spacedBy(0.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                TraditionEmblem(traditionId = pathway.book.traditionId, color = tone.hue, size = 20.dp, filled = true)
+                Text(
+                    text = pathway.book.traditionId.displayName,
+                    style = typography.label.copy(fontSize = 15.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold),
+                    color = tone.hue
+                )
             }
+            Spacer(Modifier.height(18.dp))
+            Text(
+                text = pathway.book.title,
+                style = typography.display,
+                color = colors.textPrimary,
+                maxLines = 3,
+                overflow = TextOverflow.Ellipsis
+            )
+            pathway.book.author?.takeIf { it.isNotBlank() }?.let {
+                Spacer(Modifier.height(8.dp))
+                Text(text = it, style = typography.commentaryBody.copy(fontStyle = FontStyle.Italic), color = colors.textSecondary)
+            }
+
+            Spacer(Modifier.height(28.dp))
+
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(24.dp)) {
+                DepthDial(progress = pathway.progressPercent, hue = tone.hue)
+                Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                    Stat(value = "${pathway.completedChapters}/${pathway.totalChapters}", label = "Chapters")
+                    Stat(value = "${pathway.readVerses}", label = "of ${pathway.totalVerses} verses")
+                }
+            }
+
+            Spacer(Modifier.height(28.dp))
+
+            FathomButton(
+                text = when {
+                    finished -> "Read again"
+                    started && current != null -> "Continue chapter ${current.chapterNumber}"
+                    else -> "Begin the path"
+                },
+                onClick = onContinue,
+                trailing = PhosphorIcons.Light.ArrowRight,
+                style = ButtonStyle.Tone,
+                modifier = Modifier.fillMaxWidth()
+            )
         }
-
-        Spacer(Modifier.height(32.dp))
-
-        FathomButton(
-            text = when {
-                finished -> "Read again"
-                started && current != null -> "Continue chapter ${current.chapterNumber}"
-                else -> "Begin the path"
-            },
-            onClick = onContinue,
-            trailing = PhosphorIcons.Light.ArrowRight,
-            style = ButtonStyle.Tone,
-            modifier = Modifier.fillMaxWidth()
-        )
     }
 }
 
@@ -557,7 +578,13 @@ private fun ChapterRow(
             )
     ) {
         Box(Modifier.width(railWidth).height(nodeY * 2), contentAlignment = Alignment.TopCenter) {
-            Box(Modifier.padding(top = nodeY - 14.dp).size(28.dp), contentAlignment = Alignment.Center) {
+            Box(
+                Modifier
+                    .padding(top = nodeY - 16.dp)
+                    .size(32.dp)
+                    .then(if (current) Modifier.border(1.dp, tone.hue.copy(alpha = 0.7f), CircleShape) else Modifier),
+                contentAlignment = Alignment.Center
+            ) {
                 if (locked) {
                     Icon(PhosphorIcons.Light.LockSimple, null, tint = tone.hue, modifier = Modifier.size(18.dp))
                 } else {
@@ -592,12 +619,12 @@ private fun ChapterRow(
                 if (locked) {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                         Icon(PhosphorIcons.Light.LockSimple, null, tint = tone.hue, modifier = Modifier.size(11.dp))
-                        MonoLabel(text = "Patron", color = tone.hue)
+                        MonoLabel(text = "Plus", color = tone.hue)
                     }
                 } else {
                     when {
                         done -> MonoLabel(text = "Complete", color = tone.hue.copy(alpha = 0.8f))
-                        current -> MonoLabel(text = "In progress", color = colors.textSecondary)
+                        current -> MonoLabel(text = "In progress", color = tone.hue)
                     }
                 }
             }

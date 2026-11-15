@@ -1,5 +1,8 @@
 package com.masum.fathom.ui.search
 
+import androidx.compose.ui.graphics.graphicsLayer
+import com.masum.fathom.ui.design.rememberDrift
+import com.masum.fathom.ui.design.staggerIn
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
@@ -204,7 +207,7 @@ fun TopicMosaic(
                     TopicTile(
                         topic = topic,
                         index = index,
-                        modifier = Modifier.weight(1f).height(160.dp),
+                        modifier = Modifier.weight(1f).height(160.dp).staggerIn(index, rise = 36.dp, step = 75, baseDelay = 180),
                         onClick = { onSelect(topic) }
                     )
                 }
@@ -246,6 +249,7 @@ private fun TopicTile(
             .tappable(scale = 0.98f, onClick = onClick)
             .clipToBounds()
     ) {
+        val drift = rememberDrift(9000 + index * 700)
         Icon(
             imageVector = topic.icon,
             contentDescription = null,
@@ -254,6 +258,11 @@ private fun TopicTile(
                 .size(124.dp)
                 .align(Alignment.BottomEnd)
                 .offset(x = 28.dp, y = 24.dp)
+                .graphicsLayer {
+                    val a = drift.value * 6.2831855f
+                    rotationZ = kotlin.math.sin(a) * 7f
+                    translationY = kotlin.math.cos(a) * 6.dp.toPx()
+                }
         )
         Column(
             modifier = Modifier.fillMaxSize().padding(horizontal = 18.dp, vertical = 18.dp),
@@ -329,5 +338,51 @@ fun SectionHeading(overline: String, title: String, modifier: Modifier = Modifie
             Text(text = title, style = FathomTheme.typography.headline, color = FathomTheme.colors.textPrimary)
         }
         if (trailing != null) MonoLabel(text = trailing, color = FathomTheme.colors.textTertiary)
+    }
+}
+
+@Composable
+fun BookCover(book: Book, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    val colors = FathomTheme.colors
+    val typography = FathomTheme.typography
+    val tone = remember(book.traditionId, colors.isDark, colors.background) { toneFor(book.traditionId, colors) }
+    val shape = RoundedCornerShape(26.dp)
+    Box(
+        modifier = modifier
+            .clip(shape)
+            .background(
+                Brush.verticalGradient(
+                    listOf(tone.hue.copy(alpha = if (colors.isDark) 0.30f else 0.22f), tone.hue.copy(alpha = 0.05f))
+                )
+            )
+            .border(0.75.dp, tone.hue.copy(alpha = 0.26f), shape)
+            .tappable(scale = 0.98f, onClick = onClick)
+            .clipToBounds()
+    ) {
+        TraditionEmblem(
+            traditionId = book.traditionId,
+            color = tone.hue.copy(alpha = 0.20f),
+            size = 170.dp,
+            modifier = Modifier.align(Alignment.BottomEnd).offset(x = 46.dp, y = 40.dp)
+        )
+        Column(
+            modifier = Modifier.fillMaxSize().padding(18.dp),
+            verticalArrangement = Arrangement.SpaceBetween
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                TraditionEmblem(traditionId = book.traditionId, color = tone.hue, size = 16.dp, filled = true)
+                Text(text = book.traditionId.displayName, style = typography.label.copy(fontSize = 13.sp), color = tone.hue, maxLines = 1)
+            }
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Text(
+                    text = book.title,
+                    style = typography.headline.copy(fontSize = 22.sp, lineHeight = 26.sp),
+                    color = colors.textPrimary,
+                    maxLines = 3,
+                    overflow = TextOverflow.Ellipsis
+                )
+                MonoLabel(text = "${book.totalPassages} verses", color = colors.textTertiary)
+            }
+        }
     }
 }

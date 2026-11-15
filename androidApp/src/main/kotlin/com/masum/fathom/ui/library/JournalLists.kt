@@ -1,5 +1,6 @@
 package com.masum.fathom.ui.library
 
+import com.masum.fathom.ui.design.StaggerItem
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
@@ -269,7 +270,7 @@ fun TimelineList(history: List<HistoryWithPassage>, topPadding: Dp, onOpen: (Pas
     val formatter = remember { DateTimeFormatter.ofPattern("EEEE · d MMMM", Locale.getDefault()) }
     ListFrame(topPadding) {
         grouped.forEach { (date, entries) ->
-            item(key = "day_$date") {
+            item(key = "day_$date") { StaggerItem(0) {
                 MonoLabel(
                     text = when (date) {
                         today -> "Today"
@@ -279,7 +280,7 @@ fun TimelineList(history: List<HistoryWithPassage>, topPadding: Dp, onOpen: (Pas
                     color = FathomTheme.tone.hue,
                     modifier = Modifier.padding(top = 28.dp, bottom = 2.dp)
                 )
-            }
+             }}
             items(entries, key = { "h_${it.record.passageId}_${it.record.lastSeenAtEpochMs}" }) { entry ->
                 HistoryRow(item = entry, onClick = { entry.passage?.let(onOpen) })
             }
@@ -306,7 +307,7 @@ fun CanonDetail(
     val listState = rememberLazyListState()
 
     ListFrame(topPadding) {
-        item(key = "canon_header") {
+        item(key = "canon_header") { StaggerItem(1) {
             Row(
                 modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
@@ -318,8 +319,8 @@ fun CanonDetail(
                     MonoLabel(text = "${canonHistory.size} read · ${canonSaved.size} saved · ${canonNotes.size} notes", color = colors.textTertiary)
                 }
             }
-        }
-        item(key = "canon_tabs") {
+         }}
+        item(key = "canon_tabs") { StaggerItem(2) {
             Row(Modifier.fillMaxWidth().padding(vertical = 20.dp), horizontalArrangement = Arrangement.spacedBy(26.dp)) {
                 labels.forEachIndexed { index, (label, count) ->
                     val selected = section == index
@@ -336,15 +337,15 @@ fun CanonDetail(
                     }
                 }
             }
-        }
+         }}
         when (section) {
-            0 -> if (canonHistory.isEmpty()) item(key = "e0") { EmptySection("Nothing read from ${traditionId.displayName} yet.") }
+            0 -> if (canonHistory.isEmpty()) item(key = "e0") { StaggerItem(3) { EmptySection("Nothing read from ${traditionId.displayName} yet.")  }}
             else items(canonHistory, key = { "ch_${it.record.passageId}" }) { entry -> HistoryRow(item = entry, onClick = { entry.passage?.let { onEvent(LibraryUiEvent.OnOpenContext(it)) } }) }
 
-            1 -> if (canonSaved.isEmpty()) item(key = "e1") { EmptySection("No saved passages from ${traditionId.displayName}.") }
+            1 -> if (canonSaved.isEmpty()) item(key = "e1") { StaggerItem(4) { EmptySection("No saved passages from ${traditionId.displayName}.")  }}
             else items(canonSaved, key = { "cs_${it.bookmark.id}" }) { entry -> entry.passage?.let { SavedEntry(item = entry, passage = it, onEvent = onEvent) } }
 
-            else -> if (canonNotes.isEmpty()) item(key = "e2") { EmptySection("No reflections on ${traditionId.displayName} yet.") }
+            else -> if (canonNotes.isEmpty()) item(key = "e2") { StaggerItem(5) { EmptySection("No reflections on ${traditionId.displayName} yet.")  }}
             else items(canonNotes, key = { "cn_${it.note.id}" }) { entry -> NoteEntry(item = entry, onEvent = onEvent) }
         }
     }

@@ -97,12 +97,26 @@ fun PassageEntry(
     val hue = remember(passage.traditionId, colors.isDark, colors.background) { toneFor(passage.traditionId, colors).hue }
 
     Column(modifier = modifier.fillMaxWidth()) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             if (showTradition) {
-                MonoLabel(text = passage.traditionId.displayName, color = hue)
-                Box(Modifier.size(3.dp).clip(CircleShape).background(colors.textTertiary))
+                com.masum.fathom.ui.design.TraditionEmblem(traditionId = passage.traditionId, color = hue, size = 24.dp, filled = true)
             }
-            MonoLabel(text = passage.canonicalReference, color = colors.textSecondary, modifier = Modifier.weight(1f, fill = false))
+            Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
+                Text(
+                    text = passage.canonicalReference,
+                    style = typography.title.copy(fontSize = 19.sp, lineHeight = 23.sp),
+                    color = colors.textPrimary,
+                    maxLines = 2,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                )
+                if (showTradition) {
+                    Text(
+                        text = passage.traditionId.displayName,
+                        style = typography.label.copy(fontSize = 13.sp),
+                        color = hue
+                    )
+                }
+            }
         }
 
         val original = passage.originalText
