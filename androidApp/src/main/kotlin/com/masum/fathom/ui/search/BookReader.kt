@@ -1,5 +1,9 @@
 package com.masum.fathom.ui.search
 
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.Icon
+import com.adamglin.phosphoricons.light.LockSimple
+import com.masum.fathom.core.subscription.FreeAccess
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
@@ -80,6 +84,8 @@ fun BookReader(
     val tone = rememberTone(book.traditionId)
     NavToneEffect(book.traditionId)
     val tabsState = rememberLazyListState()
+    val subscription = com.masum.fathom.core.subscription.LocalSubscriptionState.current
+    val openPaywall = com.masum.fathom.core.subscription.LocalOpenPaywall.current
     var panelHeight by remember { mutableIntStateOf(0) }
 
     val initialPage = selectedChapter?.let { chapters.indexOf(it).takeIf { index -> index >= 0 } } ?: 0
@@ -90,7 +96,7 @@ fun BookReader(
             val target = chapters[pagerState.currentPage]
             if (target != selectedChapter) {
                 haptics.light()
-                onEvent(SearchUiEvent.OnSelectChapter(target))
+                if (!FreeAccess.isChapterLocked(target, subscription.isPro)) onEvent(SearchUiEvent.OnSelectChapter(target))
             }
             tabsState.animateScrollToItem((pagerState.currentPage - 1).coerceAtLeast(0))
         }
@@ -121,7 +127,21 @@ fun BookReader(
                         val chapter = chapters.getOrNull(page)
                         val passages = chapter?.let { chapterPassagesMap[it] } ?: emptyList()
                         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
-                            if (passages.isEmpty()) {
+                            if (chapter != null && FreeAccess.isChapterLocked(chapter, subscription.isPro)) {
+                                LockedChapter(
+                                    prefix = prefix,
+                                    number = chapter,
+                                    onUnlock = {
+                                        haptics.medium()
+                                        openPaywall()
+                                    },
+                                    onBackToFree = {
+                                        haptics.light()
+                                        val free = chapters.indexOfLast { !FreeAccess.isChapterLocked(it, subscription.isPro) }
+                                        if (free >= 0) scope.launch { pagerState.animateScrollToPage(free, animationSpec = tween(260, easing = FathomMotion.Emphasized)) }
+                                    }
+                                )
+                            } else if (passages.isEmpty()) {
                                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                                     if (isLoading) BreathingMark() else QuietMessage(title = "Nothing here", body = "No verses found in this chapter.")
                                 }
@@ -190,6 +210,7 @@ fun BookReader(
                                 ChapterTab(
                                     prefix = prefix,
                                     number = chapters[index],
+                                    locked = FreeAccess.isChapterLocked(chapters[index], subscription.isPro),
                                     selected = pagerState.currentPage == index,
                                     onClick = {
                                         haptics.light()
@@ -206,7 +227,7 @@ fun BookReader(
 }
 
 @Composable
-private fun ChapterTab(prefix: String, number: Int, selected: Boolean, onClick: () -> Unit) {
+private fun ChapterTab(prefix: String, number: Int, locked: Boolean, selected: Boolean, onClick: () -> Unit) {
     val colors = FathomTheme.colors
     val tone = FathomTheme.tone
     val ink by animateColorAsState(if (selected) colors.textPrimary else colors.textTertiary, tween(220), label = "tab_ink")
@@ -217,7 +238,48 @@ private fun ChapterTab(prefix: String, number: Int, selected: Boolean, onClick: 
         verticalArrangement = Arrangement.spacedBy(2.dp)
     ) {
         MonoLabel(text = prefix, color = ink)
-        Text(text = number.toString(), style = FathomTheme.typography.headline.copy(fontSize = 24.sp, lineHeight = 28.sp), color = ink)
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+            Text(text = number.toString(), style = FathomTheme.typography.headline.copy(fontSize = 24.sp, lineHeight = 28.sp), color = ink)
+            if (locked) Icon(PhosphorIcons.Light.LockSimple, null, tint = colors.textTertiary, modifier = Modifier.size(12.dp))
+        }
         Box(Modifier.width(22.dp).height(2.dp).background(rule))
+    }
+}
+
+@Composable
+private fun LockedChapter(prefix: String, number: Int, onUnlock: () -> Unit, onBackToFree: () -> Unit) {
+    val colors = FathomTheme.colors
+    val tone = FathomTheme.tone
+    Column(
+        modifier = Modifier.fillMaxSize().padding(horizontal = 36.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Icon(PhosphorIcons.Light.LockSimple, null, tint = tone.hue, modifier = Modifier.size(30.dp))
+        Spacer(Modifier.height(22.dp))
+        Text(
+            text = "$prefix $number is part of Fathom Plus",
+            style = FathomTheme.typography.headline,
+            color = colors.textPrimary,
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+        )
+        Spacer(Modifier.height(10.dp))
+        Text(
+            text = "The first ${FreeAccess.ChapterLimit} chapters of every scripture are free to read.",
+            style = FathomTheme.typography.commentaryBody,
+            color = colors.textSecondary,
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+        )
+        Spacer(Modifier.height(28.dp))
+        com.masum.fathom.ui.design.FathomButton(
+            text = "Unlock with Plus",
+            onClick = onUnlock,
+            style = com.masum.fathom.ui.design.ButtonStyle.Tone,
+            modifier = Modifier.fillMaxWidth().widthIn(max = 360.dp)
+        )
+        Spacer(Modifier.height(6.dp))
+        Box(Modifier.tappable(scale = 0.97f, haptic = false, onClick = onBackToFree).padding(vertical = 14.dp, horizontal = 18.dp)) {
+            MonoLabel(text = "Back to free chapters", color = colors.textSecondary)
+        }
     }
 }
