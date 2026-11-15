@@ -1,5 +1,6 @@
 package com.masum.fathom.ui.shell
 
+import com.masum.fathom.ui.design.WhisperHost
 import android.content.pm.PackageManager
 import android.os.Build
 import androidx.compose.animation.AnimatedContent
@@ -137,6 +138,15 @@ fun traditionIdForLabel(label: String?): TraditionId? = when (label) {
     else -> null
 }
 
+private suspend fun previewVerseFor(graph: AppGraph, tradition: TraditionId): com.masum.fathom.core.model.Passage? {
+    val books = (graph.passageRepository.getBooksForTradition(tradition) as? com.masum.fathom.core.common.result.FathomResult.Success)?.data.orEmpty()
+    val book = books.firstOrNull() ?: return null
+    val passages = (graph.passageRepository.getPassagesForBook(book.id, 0, 60) as? com.masum.fathom.core.common.result.FathomResult.Success)?.data.orEmpty()
+    return passages
+        .filter { it.translation.length in 40..170 }
+        .minByOrNull { kotlin.math.abs(it.translation.length - 100) }
+}
+
 @Composable
 fun FathomApp(
     graph: AppGraph,
@@ -249,6 +259,17 @@ fun FathomApp(
         LocalOpenPaywall provides { showPaywall = true },
         LocalAppUpdateEngine provides updateEngine
     ) {
+        androidx.compose.runtime.LaunchedEffect(settings.theme, subscriptionState.isPro) {
+            com.masum.fathom.core.widget.WidgetRepository.redrawAll(context)
+        }
+        val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
+        androidx.compose.runtime.DisposableEffect(lifecycleOwner) {
+            val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
+                if (event == androidx.lifecycle.Lifecycle.Event.ON_STOP) com.masum.fathom.core.widget.WidgetRepository.redrawAll(context)
+            }
+            lifecycleOwner.lifecycle.addObserver(observer)
+            onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+        }
         FathomTheme(readingTheme = settings.theme) {
             val stage = when {
                 !splashDone -> AppStage.Splash
@@ -268,6 +289,7 @@ fun FathomApp(
                 when (target) {
                     AppStage.Splash -> SplashScreen(onSplashFinished = { splashDone = true })
                     AppStage.Onboarding -> OnboardingScreen(
+                        previewVerse = { tradition -> previewVerseFor(graph, tradition) },
                         onComplete = { name, tradition, personalize ->
                             preferences.completeOnboarding(name, tradition, personalize)
                             feedViewModel.setTraditionFocus(if (personalize) traditionIdForLabel(tradition) else null)
@@ -419,11 +441,8 @@ private fun MainStage(
                         transitionSpec = { routeTransition(forward = true) },
                         popTransitionSpec = { routeTransition(forward = false) },
                         predictivePopTransitionSpec = { _ ->
-                            (fadeIn(tween(360, easing = FathomMotion.Emphasized)) + scaleIn(tween(400, easing = FathomMotion.Emphasized), initialScale = 0.95f))
-                                .togetherWith(
-                                    fadeOut(tween(280, delayMillis = 100)) +
-                                    scaleOut(tween(360, easing = FathomMotion.Emphasized), targetScale = 0.88f)
-                                )
+                            fadeIn(tween(180))
+                                .togetherWith(slideOutHorizontally(tween(240, easing = FathomMotion.Emphasized)) { it / 3 } + fadeOut(tween(200)))
                         },
                         entryProvider = entryProvider {
                             entry<AppRoute.Tab> { route ->
@@ -578,6 +597,7 @@ private fun MainStage(
             if (consecratedTier != null) PatronConsecratedModal(tier = consecratedTier, onDismiss = onDismissConsecrated)
             if (showWhatsNew) WhatsNewModal(onDismiss = onDismissWhatsNew)
             if (showAmbience) AmbienceSoundscapeSheet(onDismiss = onDismissAmbience)
+            WhisperHost(modifier = Modifier.align(Alignment.TopCenter))
             if (showMore) {
                 MoreSheet(
                     onDismiss = onDismissMore,
@@ -594,25 +614,22 @@ private fun MainStage(
 private fun AnimatedContentTransitionScope<Scene<AppRoute>>.routeTransition(forward: Boolean): ContentTransform {
     val from = initialState.entries.lastOrNull()?.contentKey as? AppRoute
     val to = targetState.entries.lastOrNull()?.contentKey as? AppRoute
-    val sign = if (forward) 1 else -1
     return when {
         from is AppRoute.Tab && to is AppRoute.Tab -> {
-            val dir = if (to.item.ordinal >= from.item.ordinal) 1 else -1
-            (fadeIn(tween(320, 60)) + slideInHorizontally(tween(420, 0, FathomMotion.Emphasized)) { dir * it / 14 })
-                .togetherWith(fadeOut(tween(180)) + slideOutHorizontally(tween(320, 0, FathomMotion.Emphasized)) { -dir * it / 18 })
+            fadeIn(tween(170, 40)).togetherWith(fadeOut(tween(110)))
         }
         to == AppRoute.Settings || from == AppRoute.Settings -> {
             if (forward) {
-                (fadeIn(tween(300, 40)) + slideInVertically(tween(460, 0, FathomMotion.Emphasized)) { it / 10 })
-                    .togetherWith(fadeOut(tween(220)))
+                (fadeIn(tween(170, 20)) + slideInVertically(tween(230, 0, FathomMotion.Emphasized)) { it / 24 })
+                    .togetherWith(fadeOut(tween(110)))
             } else {
-                fadeIn(tween(260)).togetherWith(fadeOut(tween(200)) + slideOutVertically(tween(360, 0, FathomMotion.Emphasized)) { it / 10 })
+                fadeIn(tween(150)).togetherWith(fadeOut(tween(120)) + slideOutVertically(tween(200, 0, FathomMotion.Emphasized)) { it / 24 })
             }
         }
-        forward -> (fadeIn(tween(320, 60)) + slideInHorizontally(tween(460, 0, FathomMotion.Emphasized)) { it / 5 })
-            .togetherWith(fadeOut(tween(200)) + slideOutHorizontally(tween(360, 0, FathomMotion.Emphasized)) { -it / 8 })
-        else -> (fadeIn(tween(320, 60)) + slideInHorizontally(tween(460, 0, FathomMotion.Emphasized)) { -it / 8 })
-            .togetherWith(fadeOut(tween(200)) + slideOutHorizontally(tween(360, 0, FathomMotion.Emphasized)) { it / 5 })
+        forward -> (fadeIn(tween(170, 30)) + slideInHorizontally(tween(230, 0, FathomMotion.Emphasized)) { it / 16 })
+            .togetherWith(fadeOut(tween(110)) + slideOutHorizontally(tween(200, 0, FathomMotion.Emphasized)) { -it / 24 })
+        else -> (fadeIn(tween(170, 30)) + slideInHorizontally(tween(230, 0, FathomMotion.Emphasized)) { -it / 24 })
+            .togetherWith(fadeOut(tween(110)) + slideOutHorizontally(tween(200, 0, FathomMotion.Emphasized)) { it / 16 })
     }
 }
 
