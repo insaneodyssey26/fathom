@@ -139,7 +139,7 @@ fun AmbienceSoundscapeSheet(onDismiss: () -> Unit) {
                             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                                 Text(text = track.title, style = FathomTheme.typography.title, color = ink)
                                 if (locked) {
-                                    MonoLabel(text = "Patron", color = tone.hue)
+                                    MonoLabel(text = "Plus", color = tone.hue)
                                 }
                             }
                             MonoLabel(text = track.subtitle, color = colors.textTertiary, maxLines = 2)

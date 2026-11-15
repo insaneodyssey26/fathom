@@ -108,19 +108,18 @@ fun SacredAudioPlayerBar(
 
     AnimatedVisibility(
         visible = visible && current != null,
-        enter = slideInVertically(tween(460, 0, FathomMotion.Emphasized)) { it / 2 } +
-                fadeIn(tween(260)) +
-                scaleIn(tween(360, easing = FathomMotion.Emphasized), initialScale = 0.94f),
-        exit = slideOutVertically(tween(280, 0, FathomMotion.EmphasizedOut)) { it / 2 } +
-                fadeOut(tween(180)) +
-                scaleOut(tween(220), targetScale = 0.94f),
+        enter = slideInVertically(tween(220, 0, FathomMotion.Emphasized)) { it / 3 } + fadeIn(tween(160)),
+        exit = slideOutVertically(tween(160, 0, FathomMotion.EmphasizedOut)) { it / 3 } + fadeOut(tween(120)),
         modifier = modifier
     ) {
         if (current == null) return@AnimatedVisibility
-        val playerShape = RoundedCornerShape(26.dp)
-        val edgeColor = if (colors.isDark) Color.White.copy(alpha = 0.12f) else Color.Black.copy(alpha = 0.08f)
-        val innerGlow = if (colors.isDark) Color.White.copy(alpha = 0.05f) else Color.White.copy(alpha = 0.40f)
-        val activeVerseSnippet = (if (original) current.originalText else current.translation) ?: current.translation
+        val shape = RoundedCornerShape(22.dp)
+        val snippet = (if (original) current.originalText else current.translation) ?: current.translation
+        val modeLabel = when (mode) {
+            RecitationMode.TRANSLATION_ONLY -> "English"
+            RecitationMode.ORIGINAL_ONLY -> "Original"
+            RecitationMode.FULL -> "Both"
+        }
 
         Box(
             modifier = Modifier
@@ -133,70 +132,91 @@ fun SacredAudioPlayerBar(
                 modifier = Modifier
                     .widthIn(max = 440.dp)
                     .fillMaxWidth()
-                    .shadow(
-                        elevation = if (colors.isDark) 20.dp else 14.dp,
-                        shape = playerShape,
-                        ambientColor = if (colors.isDark) Color.Black.copy(alpha = 0.65f) else Color.Black.copy(alpha = 0.12f),
-                        spotColor = tone.hue.copy(alpha = 0.28f)
-                    )
-                    .glass(
-                        shape = playerShape,
-                        tint = colors.surfaceElevated.copy(alpha = if (colors.isDark) 0.88f else 0.94f),
-                        blur = 32.dp,
-                        outline = false
-                    )
-                    .border(width = 0.75.dp, color = edgeColor, shape = playerShape)
-                    .drawBehind {
-                        drawRoundRect(
-                            brush = Brush.verticalGradient(
-                                colors = listOf(innerGlow, Color.Transparent),
-                                startY = 0f,
-                                endY = size.height * 0.35f
-                            ),
-                            cornerRadius = CornerRadius(26.dp.toPx(), 26.dp.toPx())
-                        )
-                    }
-                    .padding(horizontal = 16.dp, vertical = 14.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
+                    .clip(shape)
+                    .background(colors.surfaceElevated)
+                    .border(0.75.dp, colors.hairline, shape)
             ) {
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().padding(start = 10.dp, end = 6.dp, top = 10.dp),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    Box(
+                        modifier = Modifier
+                            .size(44.dp)
+                            .clip(CircleShape)
+                            .background(tone.hue)
+                            .tappable(scale = 0.92f, haptic = false) {
+                                haptics.medium()
+                                audio.toggle(current, mode)
+                            },
+                        contentAlignment = Alignment.Center
                     ) {
-                        Equalizer(color = tone.hue, size = 15.dp, active = playing)
-                        MonoLabel(
-                            text = current.canonicalReference,
-                            color = tone.hue
+                        Icon(
+                            imageVector = if (playing) PhosphorIcons.Fill.PauseFill else PhosphorIcons.Fill.PlayFill,
+                            contentDescription = if (playing) "Pause recitation" else "Play recitation",
+                            tint = tone.onHue,
+                            modifier = Modifier.size(18.dp)
                         )
-                        Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(6.dp))
-                                .background(tone.hue.copy(alpha = 0.12f))
-                                .padding(horizontal = 6.dp, vertical = 2.dp)
-                        ) {
-                            Text(
-                                text = if (original) "ORIGINAL" else "TRANSLATION",
-                                style = FathomTheme.typography.caption.copy(
-                                    fontSize = 9.sp,
-                                    letterSpacing = 0.8.sp,
-                                    fontWeight = FontWeight.SemiBold
-                                ),
-                                color = tone.hue
+                    }
+                    Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Equalizer(color = tone.hue, size = 12.dp, active = playing)
+                            MonoLabel(text = current.canonicalReference, color = tone.hue)
+                        }
+                        Text(
+                            text = snippet,
+                            style = FathomTheme.typography.commentaryBody.copy(
+                                fontFamily = ScriptureFamily,
+                                fontSize = 14.sp,
+                                lineHeight = 19.sp,
+                                fontStyle = if (original) FontStyle.Italic else FontStyle.Normal
+                            ),
+                            color = colors.textPrimary,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            MonoLabel(
+                                text = modeLabel,
+                                color = colors.textSecondary,
+                                modifier = Modifier
+                                    .tappable(scale = 0.94f, haptic = false) {
+                                        haptics.light()
+                                        audio.setMode(
+                                            when (mode) {
+                                                RecitationMode.TRANSLATION_ONLY -> RecitationMode.ORIGINAL_ONLY
+                                                RecitationMode.ORIGINAL_ONLY -> RecitationMode.FULL
+                                                RecitationMode.FULL -> RecitationMode.TRANSLATION_ONLY
+                                            }
+                                        )
+                                    }
+                                    .padding(vertical = 5.dp)
+                            )
+                            MonoLabel(text = "·", color = colors.textTertiary)
+                            MonoLabel(
+                                text = "${String.format(Locale.US, "%.1f", speed)}×",
+                                color = colors.textSecondary,
+                                modifier = Modifier
+                                    .tappable(scale = 0.94f, haptic = false) {
+                                        haptics.light()
+                                        audio.setSpeed(
+                                            when {
+                                                speed <= 0.85f -> 1.0f
+                                                speed <= 1.05f -> 1.2f
+                                                speed <= 1.25f -> 1.5f
+                                                else -> 0.8f
+                                            }
+                                        )
+                                    }
+                                    .padding(vertical = 5.dp)
                             )
                         }
                     }
-
                     Box(
                         modifier = Modifier
-                            .size(28.dp)
+                            .size(40.dp)
                             .clip(CircleShape)
-                            .background(colors.surfaceElevated.copy(alpha = 0.50f))
-                            .border(0.75.dp, colors.hairline, CircleShape)
                             .tappable(scale = 0.88f, haptic = false) {
                                 haptics.light()
                                 audio.stop()
@@ -207,118 +227,17 @@ fun SacredAudioPlayerBar(
                             imageVector = PhosphorIcons.Light.X,
                             contentDescription = "Stop recitation",
                             tint = colors.textSecondary,
-                            modifier = Modifier.size(14.dp)
+                            modifier = Modifier.size(16.dp)
                         )
                     }
                 }
-
-                Text(
-                    text = activeVerseSnippet,
-                    style = FathomTheme.typography.commentaryBody.copy(
-                        fontFamily = ScriptureFamily,
-                        fontSize = 14.5.sp,
-                        lineHeight = 20.sp,
-                        fontStyle = if (original) FontStyle.Italic else FontStyle.Normal
-                    ),
-                    color = colors.textPrimary,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
-                )
-
                 Seekline(
                     progress = progress,
                     onSeek = audio::seekTo,
                     color = tone.hue,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp).padding(top = 2.dp, bottom = 10.dp)
                 )
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        PlayerPillButton(
-                            text = when (mode) {
-                                RecitationMode.TRANSLATION_ONLY -> "English"
-                                RecitationMode.ORIGINAL_ONLY -> "Original"
-                                RecitationMode.FULL -> "Dual"
-                            }
-                        ) {
-                            haptics.light()
-                            audio.setMode(
-                                when (mode) {
-                                    RecitationMode.TRANSLATION_ONLY -> RecitationMode.ORIGINAL_ONLY
-                                    RecitationMode.ORIGINAL_ONLY -> RecitationMode.FULL
-                                    RecitationMode.FULL -> RecitationMode.TRANSLATION_ONLY
-                                }
-                            )
-                        }
-
-                        PlayerPillButton(text = "${String.format(Locale.US, "%.1f", speed)}×") {
-                            haptics.light()
-                            audio.setSpeed(
-                                when {
-                                    speed <= 0.85f -> 1.0f
-                                    speed <= 1.05f -> 1.2f
-                                    speed <= 1.25f -> 1.5f
-                                    else -> 0.8f
-                                }
-                            )
-                        }
-                    }
-
-                    Box(
-                        modifier = Modifier
-                            .size(38.dp)
-                            .shadow(elevation = 6.dp, shape = CircleShape, spotColor = tone.hue.copy(alpha = 0.40f))
-                            .clip(CircleShape)
-                            .background(tone.hue)
-                            .tappable(scale = 0.90f, haptic = false) {
-                                haptics.medium()
-                                audio.toggle(current, mode)
-                            },
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = if (playing) PhosphorIcons.Fill.PauseFill else PhosphorIcons.Fill.PlayFill,
-                            contentDescription = if (playing) "Pause recitation" else "Play recitation",
-                            tint = tone.onHue,
-                            modifier = Modifier.size(17.dp)
-                        )
-                    }
-                }
             }
         }
     }
 }
-
-@Composable
-private fun PlayerPillButton(
-    text: String,
-    onClick: () -> Unit
-) {
-    val colors = FathomTheme.colors
-    Box(
-        modifier = Modifier
-            .clip(RoundedCornerShape(50))
-            .background(colors.surfaceElevated.copy(alpha = 0.50f))
-            .border(0.75.dp, colors.hairline, RoundedCornerShape(50))
-            .tappable(scale = 0.92f, haptic = false, onClick = onClick)
-            .padding(horizontal = 11.dp, vertical = 5.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        Text(
-            text = text,
-            style = FathomTheme.typography.caption.copy(
-                fontSize = 11.5.sp,
-                fontWeight = FontWeight.Medium
-            ),
-            color = colors.textPrimary
-        )
-    }
-}
-

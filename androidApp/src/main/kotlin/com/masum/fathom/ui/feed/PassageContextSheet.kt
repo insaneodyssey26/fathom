@@ -1,5 +1,8 @@
 package com.masum.fathom.ui.feed
 
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.animation.togetherWith
+import androidx.compose.runtime.setValue
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.animation.core.animateFloatAsState
@@ -84,76 +87,90 @@ fun PassageContextSheet(
                 onClose = onDismiss
             )
 
+            val tabs = remember(passage.id) {
+                buildList {
+                    add("Context")
+                    add("Reflect")
+                    if (passage.explanations.isNotEmpty()) add("Commentary")
+                }
+            }
+            var tab by androidx.compose.runtime.saveable.rememberSaveable(passage.id) { androidx.compose.runtime.mutableIntStateOf(0) }
+
             Column(
                 modifier = Modifier.fillMaxWidth().weight(1f, fill = false).verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(30.dp)
+                verticalArrangement = Arrangement.spacedBy(22.dp)
             ) {
-                Recitation(passage = passage, state = playback, onToggle = {
+                VerseCard(passage = passage, state = playback, onToggle = {
                     haptics.medium()
                     audio.toggle(passage)
                 }, onMode = audio::setMode, onSpeed = audio::setSpeed)
 
-                passage.originalText?.takeIf { it.isNotBlank() }?.let {
-                    Section(label = "In the original") {
-                        Text(
-                            text = it,
-                            style = typography.verseOriginal.copy(textDirection = TextDirection.Content),
-                            color = colors.textSecondary
-                        )
-                    }
-                }
+                com.masum.fathom.ui.design.SegmentedControl(options = tabs, selectedIndex = tab.coerceIn(0, tabs.lastIndex), onSelect = { tab = it })
 
-                Section(label = "Context") {
-                    Text(text = exegesis.title, style = typography.title, color = colors.textPrimary)
-                    Text(text = exegesis.contextSummary, style = typography.commentaryBody, color = colors.textSecondary)
-                }
-
-                Section(label = "Contemplate") {
-                    Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min)) {
-                        Box(Modifier.padding(end = 16.dp).width(2.dp).fillMaxHeight().background(tone.hue))
-                        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                            Text(
-                                text = exegesis.spiritualInsight,
-                                style = typography.verseDisplay.copy(fontFamily = ScriptureFamily, fontStyle = FontStyle.Italic, fontSize = 21.sp, lineHeight = 30.sp),
-                                color = colors.textPrimary
-                            )
-                            MonoLabel(text = exegesis.sourceAttribution, color = colors.textTertiary)
-                        }
-                    }
-                }
-
-                if (passage.explanations.isNotEmpty()) {
-                    Section(label = "Commentary") {
-                        passage.explanations.forEachIndexed { index, explanation ->
-                            if (index > 0) Hairline(Modifier.padding(vertical = 8.dp))
-                            explanation.title?.takeIf { it.isNotBlank() }?.let {
-                                Text(text = it, style = typography.title, color = colors.textPrimary)
+                androidx.compose.animation.AnimatedContent(
+                    targetState = tabs[tab.coerceIn(0, tabs.lastIndex)],
+                    transitionSpec = {
+                        androidx.compose.animation.fadeIn(androidx.compose.animation.core.tween(160, 40))
+                            .togetherWith(androidx.compose.animation.fadeOut(androidx.compose.animation.core.tween(100)))
+                    },
+                    label = "context_tab"
+                ) { label ->
+                    Column(verticalArrangement = Arrangement.spacedBy(26.dp)) {
+                        when (label) {
+                            "Context" -> {
+                                Section(label = "About this passage") {
+                                    Text(text = exegesis.title, style = typography.title, color = colors.textPrimary)
+                                    Text(text = exegesis.contextSummary, style = typography.commentaryBody, color = colors.textSecondary)
+                                }
+                                passage.originalText?.takeIf { it.isNotBlank() }?.let {
+                                    Section(label = "In the original") {
+                                        Text(
+                                            text = it,
+                                            style = typography.verseOriginal.copy(textDirection = TextDirection.Content),
+                                            color = colors.textSecondary
+                                        )
+                                    }
+                                }
+                                Section(label = background.title) {
+                                    Text(text = background.summary, style = typography.body.copy(fontSize = 15.sp, lineHeight = 23.sp), color = colors.textTertiary)
+                                    MonoLabel(text = background.period, color = colors.textTertiary)
+                                }
                             }
-                            Text(text = explanation.body, style = typography.commentaryBody, color = colors.textSecondary)
-                            val credit = listOfNotNull(explanation.author, explanation.source).joinToString(" · ")
-                            if (credit.isNotBlank()) MonoLabel(text = credit, color = colors.textTertiary)
+                            "Reflect" -> Section(label = "Contemplate") {
+                                Text(
+                                    text = exegesis.spiritualInsight,
+                                    style = typography.verseDisplay.copy(fontFamily = ScriptureFamily, fontStyle = FontStyle.Italic, fontSize = 22.sp, lineHeight = 32.sp),
+                                    color = colors.textPrimary
+                                )
+                                MonoLabel(text = exegesis.sourceAttribution, color = colors.textTertiary)
+                            }
+                            else -> Section(label = "Commentary") {
+                                passage.explanations.forEachIndexed { index, explanation ->
+                                    if (index > 0) Hairline(Modifier.padding(vertical = 8.dp))
+                                    explanation.title?.takeIf { it.isNotBlank() }?.let {
+                                        Text(text = it, style = typography.title, color = colors.textPrimary)
+                                    }
+                                    Text(text = explanation.body, style = typography.commentaryBody, color = colors.textSecondary)
+                                    val credit = listOfNotNull(explanation.author, explanation.source).joinToString(" · ")
+                                    if (credit.isNotBlank()) MonoLabel(text = credit, color = colors.textTertiary)
+                                }
+                            }
                         }
                     }
-                }
-
-                Section(label = "Background") {
-                    Text(text = background.summary, style = typography.body.copy(fontSize = 15.sp, lineHeight = 23.sp), color = colors.textTertiary)
                 }
 
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clip(RoundedCornerShape(50))
-                        .border(0.75.dp, colors.hairline, RoundedCornerShape(50))
-                        .tappable(scale = 0.98f) {
+                        .tappable(scale = 0.99f) {
                             val query = "${passage.canonicalReference} commentary exegesis"
                             context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://www.google.com/search?q=${Uri.encode(query)}")))
                         }
-                        .padding(horizontal = 24.dp, vertical = 16.dp),
+                        .padding(vertical = 14.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(text = "Search the commentary online", style = typography.label, color = colors.textPrimary)
+                    Text(text = "Search the commentary online", style = typography.label, color = colors.textSecondary)
                     Icon(PhosphorIcons.Light.ArrowUpRight, null, tint = tone.hue, modifier = Modifier.size(18.dp))
                 }
             }
@@ -170,7 +187,7 @@ private fun Section(label: String, content: @Composable ColumnScope.() -> Unit) 
 }
 
 @Composable
-private fun Recitation(
+private fun VerseCard(
     passage: Passage,
     state: SacredAudioState,
     onToggle: () -> Unit,
@@ -179,7 +196,7 @@ private fun Recitation(
 ) {
     val colors = FathomTheme.colors
     val tone = FathomTheme.tone
-    val haptics = LocalFathomHaptics.current
+    val typography = FathomTheme.typography
 
     val active = when (state) {
         is SacredAudioState.Playing -> state.passage.id == passage.id
@@ -202,83 +219,79 @@ private fun Recitation(
         is SacredAudioState.Paused -> state.speed
         SacredAudioState.Idle -> 1f
     }
-    val original = (state as? SacredAudioState.Playing)?.isOriginalPart ?: (state as? SacredAudioState.Paused)?.isOriginalPart ?: false
     val fill by animateFloatAsState(progress.coerceIn(0f, 1f), tween(200), label = "recitation_progress")
+    val modes = listOf(RecitationMode.TRANSLATION_ONLY, RecitationMode.ORIGINAL_ONLY, RecitationMode.FULL)
+    val speeds = listOf(0.8f, 1.0f, 1.2f, 1.5f)
+    val speedIndex = speeds.indices.minByOrNull { kotlin.math.abs(speeds[it] - speed) } ?: 1
+    val shape = RoundedCornerShape(28.dp)
 
-    Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(shape)
+            .background(tone.hue.copy(alpha = 0.09f))
+            .border(0.75.dp, tone.hue.copy(alpha = 0.22f), shape)
+            .padding(horizontal = 22.dp, vertical = 20.dp),
+        verticalArrangement = Arrangement.spacedBy(18.dp)
+    ) {
+        Text(
+            text = "\u201C",
+            style = typography.display.copy(fontSize = 56.sp, lineHeight = 40.sp),
+            color = tone.hue.copy(alpha = 0.6f)
+        )
+        Text(
+            text = passage.translation,
+            style = typography.verseDisplay.copy(fontFamily = ScriptureFamily, fontStyle = FontStyle.Italic, fontSize = 21.sp, lineHeight = 30.sp),
+            color = colors.textPrimary
+        )
+        Hairline(color = tone.hue.copy(alpha = 0.2f))
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(50))
-                .background(if (active) tone.hue else colors.surfaceElevated)
-                .tappable(scale = 0.98f, onClick = onToggle)
-                .padding(horizontal = 24.dp)
-                .height(56.dp),
-            horizontalArrangement = Arrangement.Center,
-            verticalAlignment = Alignment.CenterVertically
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-            Icon(
-                imageVector = if (playing) PhosphorIcons.Fill.PauseFill else PhosphorIcons.Fill.PlayFill,
-                contentDescription = null,
-                tint = if (active) tone.onHue else tone.hue,
-                modifier = Modifier.size(18.dp)
-            )
-            Spacer(Modifier.width(10.dp))
-            Text(
-                text = if (playing) "Pause recitation" else if (active) "Resume recitation" else "Listen to the recitation",
-                style = FathomTheme.typography.label,
-                color = if (active) tone.onHue else colors.textPrimary
-            )
+            Box(
+                modifier = Modifier
+                    .size(46.dp)
+                    .clip(CircleShape)
+                    .background(tone.hue)
+                    .tappable(scale = 0.92f, haptic = false, onClick = onToggle),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = if (playing) PhosphorIcons.Fill.PauseFill else PhosphorIcons.Fill.PlayFill,
+                    contentDescription = if (playing) "Pause recitation" else "Play recitation",
+                    tint = tone.onHue,
+                    modifier = Modifier.size(19.dp)
+                )
+            }
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(
+                    text = if (playing) "Playing recitation" else if (active) "Paused" else "Listen to the recitation",
+                    style = typography.label,
+                    color = colors.textPrimary
+                )
+                Box(Modifier.fillMaxWidth().height(2.dp).background(colors.hairline)) {
+                    Box(Modifier.fillMaxHeight().fillMaxWidth(if (active) fill else 0f).background(tone.hue))
+                }
+            }
         }
         if (active) {
-            Box(Modifier.fillMaxWidth().height(2.dp).background(colors.hairline)) {
-                Box(Modifier.fillMaxHeight().fillMaxWidth(fill).background(tone.hue))
-            }
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
-                ControlChip(
-                    text = if (original) "Original" else "English",
-                    onClick = {
-                        haptics.light()
-                        onMode(
-                            when (mode) {
-                                RecitationMode.TRANSLATION_ONLY -> RecitationMode.ORIGINAL_ONLY
-                                RecitationMode.ORIGINAL_ONLY -> RecitationMode.FULL
-                                RecitationMode.FULL -> RecitationMode.TRANSLATION_ONLY
-                            }
-                        )
-                    }
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                com.masum.fathom.ui.design.SegmentedControl(
+                    options = listOf("English", "Original", "Both"),
+                    selectedIndex = modes.indexOf(mode).coerceAtLeast(0),
+                    onSelect = { onMode(modes[it]) },
+                    height = 38.dp
                 )
-                ControlChip(
-                    text = "${String.format(Locale.US, "%.1f", speed)}×",
-                    onClick = {
-                        haptics.light()
-                        onSpeed(
-                            when {
-                                speed <= 0.85f -> 1.0f
-                                speed <= 1.05f -> 1.2f
-                                speed <= 1.25f -> 1.5f
-                                else -> 0.8f
-                            }
-                        )
-                    }
+                com.masum.fathom.ui.design.SegmentedControl(
+                    options = speeds.map { String.format(Locale.US, "%.1f\u00D7", it) },
+                    selectedIndex = speedIndex,
+                    onSelect = { onSpeed(speeds[it]) },
+                    height = 38.dp
                 )
             }
         }
-    }
-}
-
-@Composable
-private fun ControlChip(text: String, onClick: () -> Unit) {
-    val colors = FathomTheme.colors
-    Box(
-        modifier = Modifier
-            .clip(RoundedCornerShape(50))
-            .border(0.75.dp, colors.hairline, RoundedCornerShape(50))
-            .tappable(scale = 0.94f, haptic = false, onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 9.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        Text(text = text, style = FathomTheme.typography.label, color = colors.textSecondary)
     }
 }
 
