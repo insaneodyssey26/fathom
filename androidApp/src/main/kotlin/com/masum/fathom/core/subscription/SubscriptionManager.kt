@@ -213,6 +213,10 @@ class SubscriptionManager(
     fun getOrderId(): String? = prefs.getString(KEY_ORDER_ID, null)
 
     private suspend fun processPurchases(purchases: List<Purchase>) {
+        if (KeystoreIntegrityChecker.isBinaryTampered(context)) {
+            resetToFree()
+            return
+        }
         for (purchase in purchases) {
             if (purchase.purchaseState == Purchase.PurchaseState.PURCHASED) {
                 if (!FathomPurchaseVerifier.verify(purchase)) {
@@ -295,6 +299,10 @@ class SubscriptionManager(
     }
 
     suspend fun syncPurchasesWithGooglePlay(): Boolean {
+        if (KeystoreIntegrityChecker.isBinaryTampered(context)) {
+            resetToFree()
+            return false
+        }
         val activePurchases = billingClientWrapper.queryActivePurchases()
         if (activePurchases.isNotEmpty()) {
             val verifiedPurchases = activePurchases.filter { FathomPurchaseVerifier.verify(it) }
@@ -328,12 +336,20 @@ class SubscriptionManager(
     }
 
     fun launchPurchase(activity: Activity, tier: SubscriptionTier): Boolean {
+        if (KeystoreIntegrityChecker.isBinaryTampered(context)) {
+            resetToFree()
+            return false
+        }
         val pricing = productPricing.value[tier] ?: return false
         val result = billingClientWrapper.launchBillingFlow(activity, pricing)
         return result.responseCode == com.android.billingclient.api.BillingClient.BillingResponseCode.OK
     }
 
     suspend fun restorePurchases(): RestoreResult {
+        if (KeystoreIntegrityChecker.isBinaryTampered(context)) {
+            resetToFree()
+            return RestoreResult.Error("Signature verification failed")
+        }
         billingClientWrapper.startConnection()
         val activePurchases = billingClientWrapper.queryActivePurchases()
         if (activePurchases.isEmpty()) {
