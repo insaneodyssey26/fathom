@@ -230,6 +230,7 @@ private fun FeedContent(
                 androidx.compose.foundation.layout.BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
                     val brush = remember(
                         settings.feedCustomGradientEnabled,
+                        subscription.isPro,
                         settings.feedGradientColorA,
                         settings.feedGradientColorB,
                         settings.feedGradientFlow,
@@ -237,7 +238,7 @@ private fun FeedContent(
                         maxWidth,
                         maxHeight
                     ) {
-                        if (settings.feedCustomGradientEnabled) {
+                        if (settings.feedCustomGradientEnabled && subscription.isPro) {
                             val colA = com.masum.fathom.core.sanctuary.FeedGradientPresets.parseHexColor(settings.feedGradientColorA)
                             val colB = com.masum.fathom.core.sanctuary.FeedGradientPresets.parseHexColor(settings.feedGradientColorB)
                             settings.feedGradientFlow.createBrush(

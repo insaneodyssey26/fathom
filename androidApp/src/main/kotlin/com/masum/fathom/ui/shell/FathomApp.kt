@@ -262,6 +262,20 @@ fun FathomApp(
         androidx.compose.runtime.LaunchedEffect(settings.theme, subscriptionState.isPro) {
             com.masum.fathom.core.widget.WidgetRepository.redrawAll(context)
         }
+        androidx.compose.runtime.LaunchedEffect(subscriptionState.isPro) {
+            if (!subscriptionState.isPro) {
+                if (settings.theme != com.masum.fathom.ui.theme.ReadingTheme.OBSIDIAN && settings.theme != com.masum.fathom.ui.theme.ReadingTheme.SEPIA) {
+                    preferences.updateTheme(com.masum.fathom.ui.theme.ReadingTheme.OBSIDIAN)
+                }
+                if (settings.feedCustomGradientEnabled) {
+                    preferences.updateFeedCustomGradientEnabled(false)
+                }
+                if (settings.appIcon.isPatronOnly) {
+                    com.masum.fathom.core.sanctuary.AppIconManager(context).setAppIcon(com.masum.fathom.core.sanctuary.AppIcon.DEFAULT)
+                    preferences.updateAppIcon(com.masum.fathom.core.sanctuary.AppIcon.DEFAULT)
+                }
+            }
+        }
         val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
         androidx.compose.runtime.DisposableEffect(lifecycleOwner) {
             val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->

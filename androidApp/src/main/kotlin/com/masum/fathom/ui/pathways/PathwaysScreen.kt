@@ -166,6 +166,19 @@ fun PathwaysChapterScreen(
         return
     }
 
+    val subscription = com.masum.fathom.core.subscription.LocalSubscriptionState.current
+    val openPaywall = com.masum.fathom.core.subscription.LocalOpenPaywall.current
+    if (FreeAccess.isChapterLocked(chapterNumber, subscription.isPro)) {
+        Box(modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            com.masum.fathom.ui.feed.LockedVersePage(
+                chapter = chapterNumber,
+                contentPadding = PaddingValues(0.dp),
+                onUnlock = openPaywall
+            )
+        }
+        return
+    }
+
     val chapter = success.currentPathway.chapters.find { it.chapterNumber == chapterNumber }
     ChapterStudyScreen(
         chapterNumber = chapterNumber,

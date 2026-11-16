@@ -198,7 +198,11 @@ fun SanctuaryScreen(
                     Whisper.problem("Could not open vault archive")
                     return@launch
                 }
-                val outcome = dataEngine.restoreVaultArchive(stream)
+                val outcome = dataEngine.restoreVaultArchive(
+                    inputStream = stream,
+                    isPro = subscription.isPro,
+                    freeNotesLimit = subscription.freeNotesLimit
+                )
                 isRestoringVault = false
                 outcome.onSuccess { summary ->
                     haptics.success()

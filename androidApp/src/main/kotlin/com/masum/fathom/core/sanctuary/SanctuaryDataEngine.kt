@@ -281,7 +281,11 @@ class SanctuaryDataEngine(
         return sb.toString()
     }
 
-    suspend fun restoreVaultArchive(inputStream: InputStream): Result<VaultRestoreSummary> {
+    suspend fun restoreVaultArchive(
+        inputStream: InputStream,
+        isPro: Boolean = true,
+        freeNotesLimit: Int = 5
+    ): Result<VaultRestoreSummary> {
         return try {
             val rawBytes = inputStream.use { it.readBytes() }
             if (rawBytes.isEmpty()) {
@@ -330,7 +334,8 @@ class SanctuaryDataEngine(
 
             if (root.has("reflections")) {
                 val nArr = root.getJSONArray("reflections")
-                for (i in 0 until nArr.length()) {
+                val limit = if (isPro) nArr.length() else minOf(nArr.length(), freeNotesLimit)
+                for (i in 0 until limit) {
                     val item = nArr.getJSONObject(i)
                     val id = item.optString("id").ifEmpty { java.util.UUID.randomUUID().toString() }
                     val passageId = item.getString("passage_id")

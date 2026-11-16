@@ -52,6 +52,7 @@ class SubscriptionManager(
     private val KEY_ENTITLEMENT_HMAC = decodeKey(byteArrayOf(51, 52, 33, 61, 58, 56, 10, 48, 59, 33, 60, 33, 57, 48, 56, 48, 59, 33, 10, 61, 56, 52, 54))
     private val KEY_PURCHASE_TIME = decodeKey(byteArrayOf(51, 52, 33, 61, 58, 56, 10, 37, 32, 39, 54, 61, 52, 38, 48, 10, 33, 60, 56, 48))
     private val KEY_IS_AUTO_RENEWING = decodeKey(byteArrayOf(51, 52, 33, 61, 58, 56, 10, 60, 38, 10, 52, 32, 33, 58, 10, 39, 48, 59, 48, 34, 60, 59, 50))
+    private val KEY_SUBSCRIPTION_EXPIRES_AT = "subscription_expires_at"
 
     private val prefs: SharedPreferences = getEncryptedPreferences(context)
     val billingClientWrapper: PlayBillingClientWrapper = PlayBillingClientWrapper(context, externalScope)
@@ -168,7 +169,7 @@ class SubscriptionManager(
             return SubscriptionState(tier = SubscriptionTier.FREE, isPro = false)
         }
 
-        val expiresAt = prefs.getLong("subscription_expires_at", 0L)
+        val expiresAt = prefs.getLong(KEY_SUBSCRIPTION_EXPIRES_AT, 0L)
         if (expiresAt > 0 && System.currentTimeMillis() > expiresAt) {
             resetToFree()
             return SubscriptionState(tier = SubscriptionTier.FREE, isPro = false)
@@ -263,6 +264,15 @@ class SubscriptionManager(
         }
 
         editor.putBoolean(KEY_IS_AUTO_RENEWING, autoRenewing)
+
+        val baseTime = if (purchaseTime > 0L) purchaseTime else System.currentTimeMillis()
+        val expiresAt = when (tier) {
+            SubscriptionTier.LIFETIME -> Long.MAX_VALUE
+            SubscriptionTier.ANNUAL -> baseTime + (375L * 24L * 60L * 60L * 1000L)
+            SubscriptionTier.MONTHLY -> baseTime + (35L * 24L * 60L * 60L * 1000L)
+            SubscriptionTier.FREE -> 0L
+        }
+        editor.putLong(KEY_SUBSCRIPTION_EXPIRES_AT, expiresAt)
 
         if (!orderId.isNullOrEmpty()) {
             editor.putString(KEY_ORDER_ID, orderId)
@@ -403,7 +413,7 @@ class SubscriptionManager(
         prefs.edit()
             .putBoolean(KEY_IS_PATRON, false)
             .putString(KEY_SUBSCRIPTION_TIER, SubscriptionTier.FREE.name)
-            .remove("subscription_expires_at")
+            .remove(KEY_SUBSCRIPTION_EXPIRES_AT)
             .remove(KEY_PURCHASE_TOKEN)
             .remove(KEY_ORDER_ID)
             .remove(KEY_ENTITLEMENT_HMAC)
