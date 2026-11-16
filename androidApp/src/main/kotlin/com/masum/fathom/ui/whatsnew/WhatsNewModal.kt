@@ -57,9 +57,22 @@ fun WhatsNewModal(
     val releases = remember {
         listOf(
             ReleaseNote(
+                version = "v1.8.5",
+                title = "Refined Design & Interactive Widgets",
+                isCurrent = true,
+                highlights = listOf(
+                    "Double-tap to save: Double-tap any verse you love to bookmark it instantly with gentle haptics.",
+                    "Interactive widgets: Fresh home screen widgets drawn sharply at any size, adapting naturally to your home screen layout.",
+                    "Calendar & streak journal: Track your daily contemplative journey with an activity calendar and weekly streak dots.",
+                    "Refreshed audio & comfort: A slimmer floating sound player, plus sliding controls for typeface, size, and line spacing.",
+                    "Fathom Plus: Clearer plan choices, automatic multi-month discounts, and the first two chapters of every scripture free to explore.",
+                    "Faster, quieter app: In-app notices replace popups, with smoother transitions and improved battery efficiency."
+                )
+            ),
+            ReleaseNote(
                 version = "v1.8.0",
                 title = "Colors, App Icons & Streamlined Sanctuary",
-                isCurrent = true,
+                isCurrent = false,
                 highlights = listOf(
                     "Two new reading themes: Northern Teal (Aurora) and Indigo Slate (Celestial), along with a redesigned compact theme picker.",
                     "Custom app icons: Choose from 6 custom app icons to match your home screen style.",

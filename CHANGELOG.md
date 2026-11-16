@@ -2,7 +2,25 @@
 
 All notable changes to the Fathom project are documented in this file.
 
-## [1.8.0] - 2026-11-08
+## [1.8.5]
+
+### Added
+- **Double-Tap Quick Save:** Direct gesture to bookmark verses with haptic confirmation and an animated bloom effect.
+- **Canvas-Rendered Responsive Widgets:** Re-engineered Daily Verse and Streak widgets with size-aware Canvas rendering, supporting exact custom app fonts and zero list-service overhead.
+- **Journal Activity Calendar:** Full monthly activity calendar with color-coded dot matrix and 7-day streak tracker in the Journal hub.
+- **In-App Whisper System:** Non-intrusive floating status banner replacing generic Android Toasts for clipboard, backup, and state alerts.
+- **Chapter Free Tier:** Structured FreeAccess rule granting the first two chapters of every scripture free, with dedicated locked previews and paywall triggers for deeper chapters.
+
+### Changed
+- **Fathom Plus Rebrand & Paywall:** Modernized subscription screen with localized Google Play Store price discount calculations and a clear tiered presentation.
+- **Sliding Segmented Controls:** Modernized reading comfort controls (typeface, size, line spacing) and settings with smooth sliding tab selectors.
+- **Audio Bar Refinement:** Compact single-row floating audio player with embedded seekbar and ambient soundscape controls.
+- **Settings Architecture:** Split settings into a multi-page hub (Appearance, Reading, Audio, Data & Backup, About) with live onboarding verse previews.
+- **Entitlement & Backup Hardening:** Added Android 12+ and legacy backup extraction rules to prevent cross-device entitlement bleeding, implemented offline grace period expiration tracking, and hardened multi-point anti-tamper verifications.
+
+---
+
+## [1.8.0]
 
 ### Added
 - **New Reading Themes:** Added *Aurora* (Northern Teal) and *Celestial* (Indigo Slate), bringing the total to 10 reading themes.
@@ -35,7 +53,7 @@ All notable changes to the Fathom project are documented in this file.
 
 ---
 
-## [1.6.0] - 2026-10-11
+## [1.6.0]
 
 ### Added
 - **Sanctuary Patron Consecration:** Introduced optional patron membership (monthly, annual, and lifetime) to support independent development, unlocking all 8 themes, soundscapes, and full pathway progressions.
@@ -49,7 +67,7 @@ All notable changes to the Fathom project are documented in this file.
 
 ---
 
-## [1.5.0] - 2026-10-07
+## [1.5.0]
 
 ### Added
 - **Home screen widgets.** Put sacred wisdom and your reading streak directly on your home screen with scrollable reflections and compact banners.
@@ -64,7 +82,7 @@ All notable changes to the Fathom project are documented in this file.
 
 ---
 
-## [1.4.0] - 2026-10-05
+## [1.4.0]
 
 ### Added
 - **Daily verse notification.** One verse a day at a time you choose, picked from the bundled texts. Short verses are preferred so they read well on a lock screen. You can draw from every tradition or only your own. The notification has Save and Share buttons, and tapping it opens that verse.
@@ -98,7 +116,7 @@ All notable changes to the Fathom project are documented in this file.
 
 ---
 
-## [1.3.0] - 2026-09-30
+## [1.3.0]
 
 ### Added
 - **High-Fidelity Ambient Soundscapes Suite**: 6 curated contemplative background soundscapes (Tibetan Singing Bowl, Himalayan Monks Chanting, Gentle Rain on Monastery, Temple Bells & Stream, Binaural 432Hz Solfeggio Tone, Deep Om Drone) with seamless looping and independent background audio mixing.
@@ -109,7 +127,7 @@ All notable changes to the Fathom project are documented in this file.
 
 ---
 
-## [1.2.0] - 2026-09-27
+## [1.2.0]
 
 ### Added
 - **Sacred Daily Wisdom Home Screen Widget**: An Android home screen widget with automatic midnight passage refreshes, tactile reload controls, and direct deep-linking into verse reader.
@@ -127,7 +145,7 @@ All notable changes to the Fathom project are documented in this file.
 
 ---
 
-## [1.1.0] - 2026-09-25
+## [1.1.0]
 
 ### Added
 - **4 Sacred Reading Themes**:
@@ -143,7 +161,7 @@ All notable changes to the Fathom project are documented in this file.
 
 ---
 
-## [0.1.0-alpha] - 2026-09-23
+## [0.1.0-alpha]
 
 ### Added
 - **Complete Offline Canonical Corpus**: 15,163 verses spanning 7 spiritual and philosophical traditions:
