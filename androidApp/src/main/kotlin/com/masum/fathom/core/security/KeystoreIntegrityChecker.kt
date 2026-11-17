@@ -21,6 +21,15 @@ object KeystoreIntegrityChecker {
 
     private val PLAY_STORE_SIGNING_FINGERPRINT = decodeMasked(
         byteArrayOf(
+            49, 103, 101, 103, 100, 98, 48, 102, 98, 55, 55, 103, 108, 99, 97, 109,
+            55, 55, 55, 101, 49, 48, 103, 102, 49, 97, 108, 48, 109, 49, 49, 102,
+            96, 49, 103, 52, 108, 48, 96, 49, 98, 99, 99, 97, 49, 102, 99, 49,
+            109, 99, 48, 100, 54, 101, 97, 97, 51, 103, 98, 51, 102, 108, 102, 108
+        )
+    )
+
+    private val LEGACY_PLAY_STORE_FINGERPRINT = decodeMasked(
+        byteArrayOf(
             54, 108, 103, 100, 109, 48, 97, 100, 99, 96, 54, 52, 98, 51, 54, 108,
             51, 48, 109, 54, 98, 100, 52, 100, 51, 96, 96, 108, 109, 54, 100, 99,
             54, 49, 52, 51, 98, 109, 51, 97, 48, 48, 55, 97, 49, 102, 49, 101,
@@ -105,6 +114,7 @@ object KeystoreIntegrityChecker {
             signatures.any { sig ->
                 val digest = md.digest(sig.toByteArray()).joinToString("") { "%02x".format(it) }
                 digest.equals(PLAY_STORE_SIGNING_FINGERPRINT, ignoreCase = true) ||
+                    digest.equals(LEGACY_PLAY_STORE_FINGERPRINT, ignoreCase = true) ||
                     digest.equals(LOCAL_UPLOAD_KEY_FINGERPRINT, ignoreCase = true) ||
                     (BuildConfig.DEBUG && digest.equals(DEBUG_KEY_FINGERPRINT, ignoreCase = true))
             }

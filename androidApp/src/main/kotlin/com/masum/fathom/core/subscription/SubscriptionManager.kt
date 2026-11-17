@@ -340,7 +340,11 @@ class SubscriptionManager(
             resetToFree()
             return false
         }
-        val pricing = productPricing.value[tier] ?: return false
+        val pricing = productPricing.value[tier]
+        if (pricing == null) {
+            billingClientWrapper.startConnection()
+            return false
+        }
         val result = billingClientWrapper.launchBillingFlow(activity, pricing)
         return result.responseCode == com.android.billingclient.api.BillingClient.BillingResponseCode.OK
     }
