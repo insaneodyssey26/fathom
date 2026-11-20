@@ -13,6 +13,15 @@
   </a>
 </p>
 
+<p align="center">
+  <a href="https://www.producthunt.com/posts/fathom-sacred-wisdom-reader?embed=true&amp;utm_source=badge-featured&amp;utm_medium=badge&amp;utm_campaign=badge-fathom&#0045;sacred&#0045;wisdom&#0045;reader" target="_blank" rel="noopener noreferrer">
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1323893&amp;theme=dark">
+      <img alt="Fathom: Sacred Wisdom Reader - A quiet, offline reader for ancient philosophy and wisdom | Product Hunt" height="54" width="250" src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1323893&amp;theme=light">
+    </picture>
+  </a>
+</p>
+
 Fathom is an offline-first sacred wisdom and philosophical text reader. It gathers over 15,000 verses across 7 ancient traditions—Sanatana Dharma (Hinduism), Buddhism, Taoism, Stoicism, Christianity, Islam, and Judaism—into a calm, distraction-free reading sanctuary.
 
 There are no social feeds, metrics, algorithms, ads, or tracking. The app lives completely on your device.
